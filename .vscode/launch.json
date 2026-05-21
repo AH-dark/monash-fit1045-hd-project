@@ -1,0 +1,62 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Debug bcmd (server, insecure)",
+      "type": "lldb",
+      "request": "launch",
+      "program": "${workspaceFolder}/build/debug/bcmd",
+      "args": ["--insecure", "--bind", "127.0.0.1:50051"],
+      "cwd": "${workspaceFolder}",
+      "preLaunchTask": "build:debug"
+    },
+    {
+      "name": "Debug bcmd (server, TLS)",
+      "type": "lldb",
+      "request": "launch",
+      "program": "${workspaceFolder}/build/debug/bcmd",
+      "args": [
+        "--bind", "127.0.0.1:50051",
+        "--cert", "${workspaceFolder}/certs/dev/server.pem",
+        "--key", "${workspaceFolder}/certs/dev/server.key"
+      ],
+      "cwd": "${workspaceFolder}",
+      "preLaunchTask": "build:debug"
+    },
+    {
+      "name": "Debug bcli (client)",
+      "type": "lldb",
+      "request": "launch",
+      "program": "${workspaceFolder}/build/debug/bcli",
+      "args": [
+        "--server", "127.0.0.1:50051",
+        "--ca", "${workspaceFolder}/certs/dev/ca.pem",
+        "--username", "dev"
+      ],
+      "cwd": "${workspaceFolder}",
+      "preLaunchTask": "build:debug"
+    },
+    {
+      "name": "Debug Catch2 test (by --test-spec)",
+      "type": "lldb",
+      "request": "launch",
+      "program": "${workspaceFolder}/build/debug/${input:testBinary}",
+      "args": ["--test-spec", "${input:testFilter}", "--break"],
+      "cwd": "${workspaceFolder}",
+      "preLaunchTask": "build:debug"
+    }
+  ],
+  "inputs": [
+    {
+      "id": "testBinary",
+      "type": "promptString",
+      "description": "Test binary path relative to build/debug/ (e.g. tests/unit/server/domain/channel_test)"
+    },
+    {
+      "id": "testFilter",
+      "type": "promptString",
+      "description": "Catch2 --test-spec pattern (e.g. 'Channel join *' or '*broadcast*')",
+      "default": "*"
+    }
+  ]
+}

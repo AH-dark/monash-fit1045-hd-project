@@ -7,7 +7,7 @@ import "bcmd/v1/common.proto";
 option optimize_for = SPEED;
 
 service BroadcastService {
-  // Discrete actions (unary) — browser-compatible via gRPC-Web
+  // Discrete actions (unary)
   rpc Connect(ConnectRequest) returns (ConnectResponse);
   rpc Disconnect(DisconnectRequest) returns (DisconnectResponse);
 
@@ -16,7 +16,7 @@ service BroadcastService {
   rpc LeaveChannel(LeaveChannelRequest) returns (LeaveChannelResponse);
   rpc SendMessage(SendMessageRequest) returns (SendMessageResponse);
 
-    // Event subscription (server-streaming) — browser-compatible
+  // Event subscription (server-streaming)
   rpc SubscribeToChannel(SubscribeRequest) returns (stream ChannelEvent);
 }
 

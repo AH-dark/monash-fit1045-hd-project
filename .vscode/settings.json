@@ -1,0 +1,51 @@
+{
+  "C_Cpp.intelliSenseEngine": "disabled",
+  "C_Cpp.autocomplete": "disabled",
+  "C_Cpp.errorSquiggles": "disabled",
+  "C_Cpp.formatting": "disabled",
+  "C_Cpp.default.compileCommands": null,
+
+  "clangd.arguments": [
+    "--background-index",
+    "--clang-tidy",
+    "--header-insertion=iwyu",
+    "--completion-style=detailed",
+    "--function-arg-placeholders=true",
+    "--pch-storage=memory",
+    "--query-driver=/usr/bin/clang++,/opt/homebrew/opt/llvm/bin/clang++,/usr/local/opt/llvm/bin/clang++,/usr/bin/g++,/usr/local/bin/g++",
+    "-j=4"
+  ],
+  "clangd.onConfigChanged": "restart",
+  "clangd.checkUpdates": false,
+
+  "cmake.useCMakePresets": "always",
+  "cmake.configureOnOpen": false,
+  "cmake.configureOnEdit": false,
+  "cmake.buildBeforeRun": true,
+  "cmake.parallelJobs": 0,
+
+  "editor.formatOnSave": true,
+  "editor.rulers": [100],
+  "[cpp]": { "editor.defaultFormatter": "llvm-vs-code-extensions.vscode-clangd" },
+  "[c]":   { "editor.defaultFormatter": "llvm-vs-code-extensions.vscode-clangd" },
+  "[proto3]": { "editor.tabSize": 2, "editor.formatOnSave": false },
+  "[cmake]":  { "editor.formatOnSave": false },
+
+  "files.associations": {
+    "*.hpp": "cpp",
+    "*.tpp": "cpp",
+    "*.ipp": "cpp",
+    "*.proto": "proto3",
+    "*.conan": "ini"
+  },
+  "files.watcherExclude": {
+    "**/build/**": true,
+    "**/.conan2/**": true,
+    "**/.cache/**": true
+  },
+  "search.exclude": {
+    "**/build/**": true,
+    "**/.conan2/**": true,
+    "**/.cache/**": true
+  }
+}
