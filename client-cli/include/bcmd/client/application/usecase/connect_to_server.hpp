@@ -16,7 +16,7 @@ public:
     bcmd::Result<std::string> execute(std::string_view username);
 
 private:
-    std::shared_ptr<port::IServerGateway> gateway_;
+    std::shared_ptr<port::IServerGateway> gateway_{};
 };
 
 }  // namespace bcmd::client::application::usecase

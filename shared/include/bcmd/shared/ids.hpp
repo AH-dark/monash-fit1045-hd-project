@@ -53,7 +53,7 @@ public:
 private:
     explicit StrongId(std::string raw) : value_(std::move(raw)) {}
 
-    std::string value_;
+    std::string value_{};
 };
 
 // Phantom tag types — empty by design; their sole purpose is to make

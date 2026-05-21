@@ -22,9 +22,9 @@ public:
                                         std::uint32_t count) override;
 
 private:
-    mutable std::shared_mutex mutex_;
-    std::uint32_t cap_;
-    std::unordered_map<std::string, std::deque<domain::Message>> buffers_;
+    mutable std::shared_mutex mutex_{};
+    std::uint32_t cap_{kDefaultCap};
+    std::unordered_map<std::string, std::deque<domain::Message>> buffers_{};
 };
 
 }  // namespace bcmd::server::adapter::persistence

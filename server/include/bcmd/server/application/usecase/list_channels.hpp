@@ -15,7 +15,7 @@ public:
     std::vector<domain::Channel> execute();
 
 private:
-    std::shared_ptr<port::IChannelRepository> channels_;
+    std::shared_ptr<port::IChannelRepository> channels_{};
 };
 
 }  // namespace bcmd::server::application::usecase

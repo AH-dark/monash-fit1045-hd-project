@@ -49,14 +49,14 @@ public:
         ::grpc::ServerWriter<bcmd::v1::ChannelEvent>* writer) override;
 
 private:
-    std::shared_ptr<application::usecase::JoinChannel> join_channel_;
-    std::shared_ptr<application::usecase::LeaveChannel> leave_channel_;
-    std::shared_ptr<application::usecase::SendMessage> send_message_;
-    std::shared_ptr<application::usecase::ListChannels> list_channels_;
-    std::shared_ptr<application::usecase::GetRecentMessages> get_recent_;
-    std::shared_ptr<application::usecase::SubscribeToChannel> subscribe_;
-    std::shared_ptr<GrpcClientPublisher> publisher_;
-    std::shared_ptr<application::port::IClientRegistry> client_registry_;
+    std::shared_ptr<application::usecase::JoinChannel> join_channel_{};
+    std::shared_ptr<application::usecase::LeaveChannel> leave_channel_{};
+    std::shared_ptr<application::usecase::SendMessage> send_message_{};
+    std::shared_ptr<application::usecase::ListChannels> list_channels_{};
+    std::shared_ptr<application::usecase::GetRecentMessages> get_recent_{};
+    std::shared_ptr<application::usecase::SubscribeToChannel> subscribe_{};
+    std::shared_ptr<GrpcClientPublisher> publisher_{};
+    std::shared_ptr<application::port::IClientRegistry> client_registry_{};
 
     static ::grpc::Status error_to_status(bcmd::Error error);
 };

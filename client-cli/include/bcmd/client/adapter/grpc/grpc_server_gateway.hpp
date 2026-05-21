@@ -32,7 +32,7 @@ public:
                                         MessageCallback callback) override;
 
 private:
-    std::unique_ptr<bcmd::v1::BroadcastService::Stub> stub_;
+    std::unique_ptr<bcmd::v1::BroadcastService::Stub> stub_{};
 
     static bcmd::Error grpc_status_to_error(const ::grpc::Status& status);
 };

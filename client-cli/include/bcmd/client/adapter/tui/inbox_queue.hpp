@@ -16,8 +16,8 @@ public:
     void drainTo(std::vector<domain::InboxMessage>& out, std::size_t max_count = 50);
 
 private:
-    std::mutex mutex_;
-    std::queue<domain::InboxMessage> messages_;
+    std::mutex mutex_{};
+    std::queue<domain::InboxMessage> messages_{};
 };
 
 }  // namespace bcmd::client::adapter::tui

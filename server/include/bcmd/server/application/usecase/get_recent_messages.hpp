@@ -21,7 +21,7 @@ public:
     std::vector<domain::Message> execute(const bcmd::ChannelId& channel_id, std::uint32_t count);
 
 private:
-    std::shared_ptr<port::IMessageRepository> messages_;
+    std::shared_ptr<port::IMessageRepository> messages_{};
 };
 
 }  // namespace bcmd::server::application::usecase

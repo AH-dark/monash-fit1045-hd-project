@@ -24,15 +24,15 @@ public:
     bool wait_until_started(std::chrono::milliseconds timeout);
 
 private:
-    std::string bind_address_;
-    std::vector<::grpc::Service*> services_;
+    std::string bind_address_{};
+    std::vector<::grpc::Service*> services_{};
     bool insecure_{false};
-    std::string cert_pem_;
-    std::string key_pem_;
-    mutable std::mutex mutex_;
-    std::condition_variable started_cv_;
-    std::unique_ptr<::grpc::Server> server_;
-    std::string bound_address_;
+    std::string cert_pem_{};
+    std::string key_pem_{};
+    mutable std::mutex mutex_{};
+    std::condition_variable started_cv_{};
+    std::unique_ptr<::grpc::Server> server_{};
+    std::string bound_address_{};
     bool started_{false};
 };
 

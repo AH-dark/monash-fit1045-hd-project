@@ -17,7 +17,7 @@ public:
     bcmd::Result<std::string> execute(std::string_view client_id, std::string_view channel_name);
 
 private:
-    std::shared_ptr<port::IServerGateway> gateway_;
+    std::shared_ptr<port::IServerGateway> gateway_{};
 };
 
 }  // namespace bcmd::client::application::usecase

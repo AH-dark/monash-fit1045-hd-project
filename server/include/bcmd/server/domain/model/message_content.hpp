@@ -25,7 +25,7 @@ public:
 private:
     explicit MessageContent(std::string raw) : value_(std::move(raw)) {}
 
-    std::string value_;
+    std::string value_{};
 };
 
 }  // namespace bcmd::server::domain

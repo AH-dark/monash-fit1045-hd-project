@@ -27,9 +27,9 @@ public:
                              std::uint32_t replay_count);
 
 private:
-    std::shared_ptr<port::IChannelRepository> channels_;
-    std::shared_ptr<port::IMessageRepository> messages_;
-    std::shared_ptr<port::IMessagePublisher> publisher_;
+    std::shared_ptr<port::IChannelRepository> channels_{};
+    std::shared_ptr<port::IMessageRepository> messages_{};
+    std::shared_ptr<port::IMessagePublisher> publisher_{};
 };
 
 }  // namespace bcmd::server::application::usecase
