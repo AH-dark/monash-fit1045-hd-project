@@ -22,6 +22,7 @@ public:
     struct Actions {
         std::function<void(std::string)> send_message{};
         std::function<void(std::string)> join_channel{};
+        std::function<void(std::string)> create_channel{};
         std::function<void()> leave_channel{};
         std::function<void()> list_channels{};
     };

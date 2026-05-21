@@ -7,10 +7,10 @@
 #include "bcmd/server/domain/model/client_session.hpp"
 #include "bcmd/shared/ids.hpp"
 #include "bcmd/shared/result.hpp"
+#include "bcmd/shared/string_utils.hpp"
 
 #include <expected>
 #include <memory>
-#include <optional>
 #include <string_view>
 #include <utility>
 
@@ -52,22 +52,17 @@ bcmd::Result<bcmd::ChannelId> JoinChannel::executeByName(const bcmd::ClientId& c
         return std::unexpected(session.error());
     }
 
-    auto validated_name = domain::ChannelName::create(channel_name);
+    const auto trimmed_name = bcmd::trim(channel_name);
+    auto validated_name = domain::ChannelName::create(trimmed_name);
     if (!validated_name.has_value()) {
         return std::unexpected(bcmd::Error::InvalidChannelName);
     }
 
-    std::optional<domain::Channel> channel_opt;
-    if (auto existing = channels_->findByName(*validated_name); existing.has_value()) {
-        channel_opt.emplace(*existing);
-    } else {
-        auto created = channels_->create(*validated_name);
-        if (!created.has_value()) {
-            return std::unexpected(created.error());
-        }
-        channel_opt.emplace(*created);
+    auto existing = channels_->findByName(*validated_name);
+    if (!existing.has_value()) {
+        return std::unexpected(existing.error());
     }
-    auto& channel = *channel_opt;
+    auto channel = *existing;
 
     if (auto added = channel.addMember(client_id); !added.has_value()) {
         return std::unexpected(added.error());

@@ -6,6 +6,7 @@ find_package(stduuid REQUIRED CONFIG)
 add_library(bcmd_shared STATIC
     src/result.cpp
     src/logging.cpp
+    src/string_utils.cpp
 )
 
 target_include_directories(bcmd_shared PUBLIC

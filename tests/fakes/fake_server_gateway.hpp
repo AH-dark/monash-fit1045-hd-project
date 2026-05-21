@@ -22,6 +22,7 @@ public:
     bcmd::Result<std::string> connect_result{std::string{"client-1"}};
     bcmd::VoidResult disconnect_result{};
     bcmd::Result<std::vector<ChannelInfo>> list_channels_result{std::vector<ChannelInfo>{}};
+    bcmd::Result<std::string> create_channel_result{std::string{"channel-1"}};
     bcmd::VoidResult join_channel_result{};
     bcmd::Result<std::string> join_channel_by_name_result{std::string{"channel-1"}};
     bcmd::VoidResult leave_channel_result{};
@@ -33,6 +34,7 @@ public:
     int connect_calls{0};
     int disconnect_calls{0};
     int list_channels_calls{0};
+    int create_channel_calls{0};
     int join_channel_calls{0};
     int join_channel_by_name_calls{0};
     int leave_channel_calls{0};
@@ -61,6 +63,14 @@ public:
     bcmd::Result<std::vector<ChannelInfo>> listChannels() override {
         ++list_channels_calls;
         return list_channels_result;
+    }
+
+    bcmd::Result<std::string> createChannel(std::string_view client_id,
+                                            std::string_view channel_name) override {
+        ++create_channel_calls;
+        last_client_id = std::string{client_id};
+        last_channel_name = std::string{channel_name};
+        return create_channel_result;
     }
 
     bcmd::VoidResult joinChannel(std::string_view client_id, std::string_view channel_id) override {

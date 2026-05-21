@@ -2,6 +2,7 @@
 
 #include "bcmd/server/adapter/grpc/client_publisher.hpp"
 #include "bcmd/server/application/port/i_client_registry.hpp"
+#include "bcmd/server/application/usecase/create_channel.hpp"
 #include "bcmd/server/application/usecase/get_recent_messages.hpp"
 #include "bcmd/server/application/usecase/join_channel.hpp"
 #include "bcmd/server/application/usecase/leave_channel.hpp"
@@ -11,6 +12,7 @@
 #include "bcmd/server/domain/model/username.hpp"
 #include "bcmd/shared/ids.hpp"
 #include "bcmd/shared/result.hpp"
+#include "bcmd/shared/string_utils.hpp"
 #include "bcmd/v1/broadcast.pb.h"
 
 #include <grpcpp/server_context.h>
@@ -31,6 +33,7 @@ BroadcastServiceImpl::BroadcastServiceImpl(
     std::shared_ptr<application::usecase::LeaveChannel> leave_channel,
     std::shared_ptr<application::usecase::SendMessage> send_message,
     std::shared_ptr<application::usecase::ListChannels> list_channels,
+    std::shared_ptr<application::usecase::CreateChannel> create_channel,
     std::shared_ptr<application::usecase::GetRecentMessages> get_recent,
     std::shared_ptr<application::usecase::SubscribeToChannel> subscribe,
     std::shared_ptr<GrpcClientPublisher> publisher,
@@ -39,6 +42,7 @@ BroadcastServiceImpl::BroadcastServiceImpl(
       leave_channel_(std::move(leave_channel)),
       send_message_(std::move(send_message)),
       list_channels_(std::move(list_channels)),
+      create_channel_(std::move(create_channel)),
       get_recent_(std::move(get_recent)),
       subscribe_(std::move(subscribe)),
       publisher_(std::move(publisher)),
@@ -47,7 +51,7 @@ BroadcastServiceImpl::BroadcastServiceImpl(
 ::grpc::Status BroadcastServiceImpl::Connect(::grpc::ServerContext* /*context*/,
                                              const bcmd::v1::ConnectRequest* request,
                                              bcmd::v1::ConnectResponse* response) {
-    const auto USERNAME = domain::Username::create(request->username());
+    const auto USERNAME = domain::Username::create(bcmd::trim(request->username()));
     if (!USERNAME.has_value()) {
         return error_to_status(bcmd::Error::InvalidUsername);
     }
@@ -63,7 +67,7 @@ BroadcastServiceImpl::BroadcastServiceImpl(
 ::grpc::Status BroadcastServiceImpl::Disconnect(::grpc::ServerContext* /*context*/,
                                                 const bcmd::v1::DisconnectRequest* request,
                                                 bcmd::v1::DisconnectResponse* /*response*/) {
-    const auto CLIENT_ID = bcmd::ClientId::parse(request->client_id());
+    const auto CLIENT_ID = bcmd::ClientId::parse(bcmd::trim(request->client_id()));
     if (!CLIENT_ID.has_value()) {
         return error_to_status(bcmd::Error::ClientNotFound);
     }
@@ -87,29 +91,47 @@ BroadcastServiceImpl::BroadcastServiceImpl(
     return ::grpc::Status::OK;
 }
 
-::grpc::Status BroadcastServiceImpl::JoinChannel(::grpc::ServerContext* /*context*/,
-                                                 const bcmd::v1::JoinChannelRequest* request,
-                                                 bcmd::v1::JoinChannelResponse* /*response*/) {
-    const auto CLIENT_ID = bcmd::ClientId::parse(request->client_id());
+::grpc::Status BroadcastServiceImpl::CreateChannel(::grpc::ServerContext* /*context*/,
+                                                   const bcmd::v1::CreateChannelRequest* request,
+                                                   bcmd::v1::CreateChannelResponse* response) {
+    const auto CLIENT_ID = bcmd::ClientId::parse(bcmd::trim(request->client_id()));
     if (!CLIENT_ID.has_value()) {
         return error_to_status(bcmd::Error::ClientNotFound);
     }
 
-    if (const auto CHANNEL_ID = bcmd::ChannelId::parse(request->channel_id());
-        CHANNEL_ID.has_value()) {
+    const auto trimmed_name = bcmd::trim(request->channel_name());
+    auto created = create_channel_->execute(*CLIENT_ID, trimmed_name);
+    if (!created.has_value()) {
+        return error_to_status(created.error());
+    }
+    response->set_channel_id(created->value());
+    response->set_channel_name(std::string{trimmed_name});
+    return ::grpc::Status::OK;
+}
+
+::grpc::Status BroadcastServiceImpl::JoinChannel(::grpc::ServerContext* /*context*/,
+                                                 const bcmd::v1::JoinChannelRequest* request,
+                                                 bcmd::v1::JoinChannelResponse* /*response*/) {
+    const auto CLIENT_ID = bcmd::ClientId::parse(bcmd::trim(request->client_id()));
+    if (!CLIENT_ID.has_value()) {
+        return error_to_status(bcmd::Error::ClientNotFound);
+    }
+
+    const auto trimmed_channel = bcmd::trim(request->channel_id());
+    if (const auto CHANNEL_ID = bcmd::ChannelId::parse(trimmed_channel); CHANNEL_ID.has_value()) {
         const auto JOINED = join_channel_->execute(*CLIENT_ID, *CHANNEL_ID);
         return JOINED.has_value() ? ::grpc::Status::OK : error_to_status(JOINED.error());
     }
 
-    auto joined = join_channel_->executeByName(*CLIENT_ID, request->channel_id());
+    auto joined = join_channel_->executeByName(*CLIENT_ID, trimmed_channel);
     return joined.has_value() ? ::grpc::Status::OK : error_to_status(joined.error());
 }
 
 ::grpc::Status BroadcastServiceImpl::LeaveChannel(::grpc::ServerContext* /*context*/,
                                                   const bcmd::v1::LeaveChannelRequest* request,
                                                   bcmd::v1::LeaveChannelResponse* /*response*/) {
-    const auto CLIENT_ID = bcmd::ClientId::parse(request->client_id());
-    const auto CHANNEL_ID = bcmd::ChannelId::parse(request->channel_id());
+    const auto CLIENT_ID = bcmd::ClientId::parse(bcmd::trim(request->client_id()));
+    const auto CHANNEL_ID = bcmd::ChannelId::parse(bcmd::trim(request->channel_id()));
     if (!CLIENT_ID.has_value()) {
         return error_to_status(bcmd::Error::ClientNotFound);
     }
@@ -124,8 +146,8 @@ BroadcastServiceImpl::BroadcastServiceImpl(
 ::grpc::Status BroadcastServiceImpl::SendMessage(::grpc::ServerContext* /*context*/,
                                                  const bcmd::v1::SendMessageRequest* request,
                                                  bcmd::v1::SendMessageResponse* response) {
-    const auto CLIENT_ID = bcmd::ClientId::parse(request->client_id());
-    const auto CHANNEL_ID = bcmd::ChannelId::parse(request->channel_id());
+    const auto CLIENT_ID = bcmd::ClientId::parse(bcmd::trim(request->client_id()));
+    const auto CHANNEL_ID = bcmd::ChannelId::parse(bcmd::trim(request->channel_id()));
     if (!CLIENT_ID.has_value()) {
         return error_to_status(bcmd::Error::ClientNotFound);
     }
@@ -133,7 +155,8 @@ BroadcastServiceImpl::BroadcastServiceImpl(
         return error_to_status(bcmd::Error::ChannelNotFound);
     }
 
-    auto message_id = send_message_->execute(*CLIENT_ID, *CHANNEL_ID, request->content());
+    const auto trimmed_content = bcmd::trim(request->content());
+    auto message_id = send_message_->execute(*CLIENT_ID, *CHANNEL_ID, trimmed_content);
     if (!message_id.has_value()) {
         return error_to_status(message_id.error());
     }
@@ -145,8 +168,8 @@ BroadcastServiceImpl::BroadcastServiceImpl(
 ::grpc::Status BroadcastServiceImpl::SubscribeToChannel(
     ::grpc::ServerContext* context, const bcmd::v1::SubscribeRequest* request,
     ::grpc::ServerWriter<bcmd::v1::ChannelEvent>* writer) {
-    const auto CLIENT_ID = bcmd::ClientId::parse(request->client_id());
-    const auto CHANNEL_ID = bcmd::ChannelId::parse(request->channel_id());
+    const auto CLIENT_ID = bcmd::ClientId::parse(bcmd::trim(request->client_id()));
+    const auto CHANNEL_ID = bcmd::ChannelId::parse(bcmd::trim(request->channel_id()));
     if (!CLIENT_ID.has_value()) {
         return error_to_status(bcmd::Error::ClientNotFound);
     }

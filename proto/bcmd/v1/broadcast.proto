@@ -12,6 +12,7 @@ service BroadcastService {
   rpc Disconnect(DisconnectRequest) returns (DisconnectResponse);
 
   rpc ListChannels(ListChannelsRequest) returns (ListChannelsResponse);
+  rpc CreateChannel(CreateChannelRequest) returns (CreateChannelResponse);
   rpc JoinChannel(JoinChannelRequest) returns (JoinChannelResponse);
   rpc LeaveChannel(LeaveChannelRequest) returns (LeaveChannelResponse);
   rpc SendMessage(SendMessageRequest) returns (SendMessageResponse);
@@ -33,6 +34,10 @@ message ListChannelsRequest {}
 message ListChannelsResponse { repeated ChannelSummary channels = 1; }
 
 message ChannelSummary { string id = 1; string name = 2; int32 member_count = 3; }
+
+message CreateChannelRequest  { string client_id = 1; string channel_name = 2; }
+
+message CreateChannelResponse { string channel_id = 1; string channel_name = 2; }
 
 message JoinChannelRequest  { string client_id = 1; string channel_id = 2; }
 

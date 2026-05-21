@@ -17,8 +17,8 @@ public:
 
     bcmd::VoidResult execute(const bcmd::ClientId& client_id, const bcmd::ChannelId& channel_id);
 
-    // Joins by channel name, creating the channel if it does not yet exist.
-    // Returns the resolved id (existing or freshly created).
+    // Joins an existing channel by name. Returns Error::ChannelNotFound when the
+    // channel does not exist; use CreateChannel to create one first.
     bcmd::Result<bcmd::ChannelId> executeByName(const bcmd::ClientId& client_id,
                                                 std::string_view channel_name);
 
