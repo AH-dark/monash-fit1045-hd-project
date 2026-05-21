@@ -1,17 +1,17 @@
 #include "bcmd/client/adapter/grpc/grpc_server_gateway.hpp"
 
+#include "bcmd/client/domain/inbox_message.hpp"
+#include "bcmd/shared/result.hpp"
+#include "bcmd/v1/broadcast.grpc.pb.h"
+
+#include <grpcpp/grpcpp.h>
+
 #include <expected>
 #include <memory>
 #include <string>
 #include <string_view>
 #include <utility>
 #include <vector>
-
-#include <grpcpp/grpcpp.h>
-
-#include "bcmd/client/domain/inbox_message.hpp"
-#include "bcmd/shared/result.hpp"
-#include "bcmd/v1/broadcast.grpc.pb.h"
 
 namespace bcmd::client::adapter::grpc {
 
@@ -57,9 +57,8 @@ bcmd::Result<std::vector<application::port::ChannelInfo>> GrpcServerGateway::lis
     std::vector<application::port::ChannelInfo> channels;
     channels.reserve(static_cast<std::size_t>(response.channels_size()));
     for (const auto& channel : response.channels()) {
-        channels.push_back(application::port::ChannelInfo{.id = channel.id(),
-                                                          .name = channel.name(),
-                                                          .member_count = channel.member_count()});
+        channels.push_back(application::port::ChannelInfo{
+            .id = channel.id(), .name = channel.name(), .member_count = channel.member_count()});
     }
     return channels;
 }
@@ -173,13 +172,17 @@ bcmd::VoidResult GrpcServerGateway::subscribeToChannel(std::string_view client_i
 
 bcmd::Error GrpcServerGateway::grpc_status_to_error(const ::grpc::Status& status) {
     switch (status.error_code()) {
-        case ::grpc::StatusCode::NOT_FOUND:       return bcmd::Error::ChannelNotFound;
-        case ::grpc::StatusCode::ALREADY_EXISTS:  return bcmd::Error::AlreadyMember;
-        case ::grpc::StatusCode::INVALID_ARGUMENT:return bcmd::Error::InvalidChannelName;
+        case ::grpc::StatusCode::NOT_FOUND:
+            return bcmd::Error::ChannelNotFound;
+        case ::grpc::StatusCode::ALREADY_EXISTS:
+            return bcmd::Error::AlreadyMember;
+        case ::grpc::StatusCode::INVALID_ARGUMENT:
+            return bcmd::Error::InvalidChannelName;
         case ::grpc::StatusCode::UNAVAILABLE:
         case ::grpc::StatusCode::UNKNOWN:
         case ::grpc::StatusCode::INTERNAL:
-        default:                                  return bcmd::Error::NetworkError;
+        default:
+            return bcmd::Error::NetworkError;
     }
 }
 

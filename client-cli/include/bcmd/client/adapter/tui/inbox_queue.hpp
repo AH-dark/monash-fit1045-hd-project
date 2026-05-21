@@ -1,11 +1,11 @@
 #pragma once
 
+#include "bcmd/client/domain/inbox_message.hpp"
+
 #include <cstddef>
 #include <mutex>
 #include <queue>
 #include <vector>
-
-#include "bcmd/client/domain/inbox_message.hpp"
 
 namespace bcmd::client::adapter::tui {
 

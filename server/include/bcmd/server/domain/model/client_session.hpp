@@ -1,10 +1,10 @@
 #pragma once
 
-#include <chrono>
-#include <unordered_set>
-
 #include "bcmd/server/domain/model/username.hpp"
 #include "bcmd/shared/ids.hpp"
+
+#include <chrono>
+#include <unordered_set>
 
 namespace bcmd::server::domain {
 

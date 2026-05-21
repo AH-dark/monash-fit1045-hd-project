@@ -1,15 +1,15 @@
 #include "bcmd/server/application/usecase/leave_channel.hpp"
 
-#include <expected>
-#include <memory>
-#include <utility>
-
 #include "bcmd/server/application/port/i_channel_repository.hpp"
 #include "bcmd/server/application/port/i_client_registry.hpp"
 #include "bcmd/server/domain/model/channel.hpp"
 #include "bcmd/server/domain/model/client_session.hpp"
 #include "bcmd/shared/ids.hpp"
 #include "bcmd/shared/result.hpp"
+
+#include <expected>
+#include <memory>
+#include <utility>
 
 namespace bcmd::server::application::usecase {
 

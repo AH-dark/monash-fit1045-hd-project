@@ -1,12 +1,12 @@
 #pragma once
 
-#include <chrono>
-#include <cstddef>
-#include <unordered_set>
-
 #include "bcmd/server/domain/model/channel_name.hpp"
 #include "bcmd/shared/ids.hpp"
 #include "bcmd/shared/result.hpp"
+
+#include <chrono>
+#include <cstddef>
+#include <unordered_set>
 
 namespace bcmd::server::domain {
 

@@ -1,13 +1,13 @@
 #pragma once
 
+#include <grpcpp/grpcpp.h>
+
 #include <chrono>
 #include <condition_variable>
 #include <memory>
 #include <mutex>
 #include <string>
 #include <vector>
-
-#include <grpcpp/grpcpp.h>
 
 namespace bcmd::server::adapter::grpc {
 

@@ -1,10 +1,5 @@
 #include "bcmd/server/application/usecase/send_message.hpp"
 
-#include <expected>
-#include <memory>
-#include <string_view>
-#include <utility>
-
 #include "bcmd/server/application/port/i_channel_repository.hpp"
 #include "bcmd/server/application/port/i_client_registry.hpp"
 #include "bcmd/server/application/port/i_message_publisher.hpp"
@@ -15,6 +10,11 @@
 #include "bcmd/server/domain/service/message_router.hpp"
 #include "bcmd/shared/ids.hpp"
 #include "bcmd/shared/result.hpp"
+
+#include <expected>
+#include <memory>
+#include <string_view>
+#include <utility>
 
 namespace bcmd::server::application::usecase {
 
@@ -28,9 +28,9 @@ SendMessage::SendMessage(std::shared_ptr<port::IChannelRepository> channels,
       publisher_(std::move(publisher)) {}
 
 bcmd::Result<bcmd::MessageId> SendMessage::execute(const bcmd::ClientId& sender_id,
-                                                    const bcmd::ChannelId& channel_id,
-                                                    std::string_view content,
-                                                    domain::EchoPolicy echo_policy) {
+                                                   const bcmd::ChannelId& channel_id,
+                                                   std::string_view content,
+                                                   domain::EchoPolicy echo_policy) {
     auto sender = clients_->findById(sender_id);
     if (!sender.has_value()) {
         return std::unexpected(sender.error());
@@ -45,21 +45,19 @@ bcmd::Result<bcmd::MessageId> SendMessage::execute(const bcmd::ClientId& sender_
 
     auto validated_content = domain::MessageContent::create(content);
     if (!validated_content.has_value()) {
-        return std::unexpected(content.find_first_not_of(" \t\n\r\f\v") ==
-                                       std::string_view::npos
+        return std::unexpected(content.find_first_not_of(" \t\n\r\f\v") == std::string_view::npos
                                    ? bcmd::Error::MessageEmpty
                                    : bcmd::Error::MessageTooLong);
     }
 
-    domain::Message message{bcmd::MessageId::generate(), sender_id, channel_id,
-                            *validated_content};
+    domain::Message message{bcmd::MessageId::generate(), sender_id, channel_id, *validated_content};
 
     if (auto saved = messages_->save(message); !saved.has_value()) {
         return std::unexpected(saved.error());
     }
 
-    for (const auto& recipient : domain::MessageRouter::recipientsFor(*channel, message,
-                                                                       echo_policy)) {
+    for (const auto& recipient :
+         domain::MessageRouter::recipientsFor(*channel, message, echo_policy)) {
         publisher_->publish(recipient, message, /*from_replay=*/false);
     }
 

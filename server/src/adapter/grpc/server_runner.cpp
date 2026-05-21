@@ -1,21 +1,19 @@
 #include "bcmd/server/adapter/grpc/server_runner.hpp"
 
+#include <spdlog/spdlog.h>
+
 #include <chrono>
 #include <memory>
 #include <mutex>
 #include <string>
 #include <utility>
 
-#include <spdlog/spdlog.h>
-
 namespace bcmd::server::adapter::grpc {
 
 GrpcServerRunner::GrpcServerRunner(std::string bind_address)
     : bind_address_(std::move(bind_address)) {}
 
-void GrpcServerRunner::add_service(::grpc::Service& service) {
-    services_.push_back(&service);
-}
+void GrpcServerRunner::add_service(::grpc::Service& service) { services_.push_back(&service); }
 
 void GrpcServerRunner::set_ssl_credentials(const std::string& cert_pem,
                                            const std::string& key_pem) {

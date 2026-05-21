@@ -1,12 +1,12 @@
 #pragma once
 
-#include <cstdint>
-#include <memory>
-#include <vector>
-
 #include "bcmd/server/application/port/i_message_repository.hpp"
 #include "bcmd/server/domain/model/message.hpp"
 #include "bcmd/shared/ids.hpp"
+
+#include <cstdint>
+#include <memory>
+#include <vector>
 
 namespace bcmd::server::application::usecase {
 
@@ -18,8 +18,7 @@ public:
 
     explicit GetRecentMessages(std::shared_ptr<port::IMessageRepository> messages);
 
-    std::vector<domain::Message> execute(const bcmd::ChannelId& channel_id,
-                                         std::uint32_t count);
+    std::vector<domain::Message> execute(const bcmd::ChannelId& channel_id, std::uint32_t count);
 
 private:
     std::shared_ptr<port::IMessageRepository> messages_;

@@ -1,4 +1,16 @@
+#include "bcmd/client/adapter/grpc/grpc_server_gateway.hpp"
+#include "bcmd/client/adapter/tui/ftxui_presenter.hpp"
+#include "bcmd/client/adapter/tui/inbox_queue.hpp"
+#include "bcmd/client/application/usecase/connect_to_server.hpp"
+#include "bcmd/client/application/usecase/join_channel_command.hpp"
+#include "bcmd/client/application/usecase/send_message_command.hpp"
+#include "bcmd/client/application/usecase/subscribe_command.hpp"
+#include "bcmd/shared/logging.hpp"
+#include "bcmd/shared/result.hpp"
+
 #include <CLI/CLI.hpp>
+#include <grpcpp/grpcpp.h>
+#include <spdlog/spdlog.h>
 
 #include <cstdint>
 #include <fstream>
@@ -9,19 +21,6 @@
 #include <thread>
 #include <utility>
 #include <vector>
-
-#include <grpcpp/grpcpp.h>
-#include <spdlog/spdlog.h>
-
-#include "bcmd/client/adapter/grpc/grpc_server_gateway.hpp"
-#include "bcmd/client/adapter/tui/ftxui_presenter.hpp"
-#include "bcmd/client/adapter/tui/inbox_queue.hpp"
-#include "bcmd/client/application/usecase/connect_to_server.hpp"
-#include "bcmd/client/application/usecase/join_channel_command.hpp"
-#include "bcmd/client/application/usecase/send_message_command.hpp"
-#include "bcmd/client/application/usecase/subscribe_command.hpp"
-#include "bcmd/shared/logging.hpp"
-#include "bcmd/shared/result.hpp"
 
 namespace {
 
@@ -55,8 +54,7 @@ int main(int argc, char** argv) {
     bool verbose{false};
     bool quiet{false};
 
-    app.add_option("--server,-s", server_address, "Server address")
-        ->default_val("localhost:50051");
+    app.add_option("--server,-s", server_address, "Server address")->default_val("localhost:50051");
     app.add_option("--username,-u", username, "Username")->required();
     app.add_option("--ca", ca_cert_path, "Path to CA certificate (PEM)");
     app.add_flag("--insecure", insecure, "Disable TLS (for local testing only)");
@@ -111,69 +109,73 @@ int main(int argc, char** argv) {
     std::string active_channel_id;
 
     presenter->setActions(tui_adapter::FtxuiPresenter::Actions{
-        .send_message = [send_uc, presenter, client_id, &channel_mutex, &active_channel_id](
-                            std::string content) {
-            std::string channel_id;
-            {
-                std::lock_guard<std::mutex> lock{channel_mutex};
-                channel_id = active_channel_id;
-            }
-            if (channel_id.empty()) {
-                presenter->showError("join a channel before sending");
-                return;
-            }
-            const auto sent = send_uc->execute(client_id, channel_id, content);
-            if (!sent.has_value()) {
-                presenter->showError(bcmd::error_message(sent.error()));
-            }
-        },
-        .join_channel = [join_uc, subscribe_uc, presenter, client_id, replay_count, &channel_mutex,
-                         &active_channel_id](std::string channel_name) {
-            if (channel_name.empty()) {
-                presenter->showError("usage: /join <channel>");
-                return;
-            }
-            auto joined = join_uc->execute(client_id, channel_name);
-            if (!joined.has_value()) {
-                presenter->showError(bcmd::error_message(joined.error()));
-                return;
-            }
-            {
-                std::lock_guard<std::mutex> lock{channel_mutex};
-                active_channel_id = *joined;
-            }
-            std::thread([subscribe_uc, client_id, channel_id = *joined, replay_count] {
-                (void)subscribe_uc->execute(client_id, channel_id, replay_count);
-            }).detach();
-        },
-        .leave_channel = [gateway, presenter, client_id, &channel_mutex, &active_channel_id] {
-            std::string channel_id;
-            {
-                std::lock_guard<std::mutex> lock{channel_mutex};
-                channel_id = std::exchange(active_channel_id, {});
-            }
-            if (channel_id.empty()) {
-                presenter->showError("no active channel");
-                return;
-            }
-            const auto left = gateway->leaveChannel(client_id, channel_id);
-            if (!left.has_value()) {
-                presenter->showError(bcmd::error_message(left.error()));
-            }
-        },
-        .list_channels = [gateway, presenter] {
-            auto channels = gateway->listChannels();
-            if (!channels.has_value()) {
-                presenter->showError(bcmd::error_message(channels.error()));
-                return;
-            }
-            std::vector<std::string> names;
-            names.reserve(channels->size());
-            for (const auto& channel_info : *channels) {
-                names.push_back(channel_info.name);
-            }
-            presenter->showChannelList(std::move(names));
-        },
+        .send_message =
+            [send_uc, presenter, client_id, &channel_mutex,
+             &active_channel_id](std::string content) {
+                std::string channel_id;
+                {
+                    std::lock_guard<std::mutex> lock{channel_mutex};
+                    channel_id = active_channel_id;
+                }
+                if (channel_id.empty()) {
+                    presenter->showError("join a channel before sending");
+                    return;
+                }
+                const auto sent = send_uc->execute(client_id, channel_id, content);
+                if (!sent.has_value()) {
+                    presenter->showError(bcmd::error_message(sent.error()));
+                }
+            },
+        .join_channel =
+            [join_uc, subscribe_uc, presenter, client_id, replay_count, &channel_mutex,
+             &active_channel_id](std::string channel_name) {
+                if (channel_name.empty()) {
+                    presenter->showError("usage: /join <channel>");
+                    return;
+                }
+                auto joined = join_uc->execute(client_id, channel_name);
+                if (!joined.has_value()) {
+                    presenter->showError(bcmd::error_message(joined.error()));
+                    return;
+                }
+                {
+                    std::lock_guard<std::mutex> lock{channel_mutex};
+                    active_channel_id = *joined;
+                }
+                std::thread([subscribe_uc, client_id, channel_id = *joined, replay_count] {
+                    (void)subscribe_uc->execute(client_id, channel_id, replay_count);
+                }).detach();
+            },
+        .leave_channel =
+            [gateway, presenter, client_id, &channel_mutex, &active_channel_id] {
+                std::string channel_id;
+                {
+                    std::lock_guard<std::mutex> lock{channel_mutex};
+                    channel_id = std::exchange(active_channel_id, {});
+                }
+                if (channel_id.empty()) {
+                    presenter->showError("no active channel");
+                    return;
+                }
+                const auto left = gateway->leaveChannel(client_id, channel_id);
+                if (!left.has_value()) {
+                    presenter->showError(bcmd::error_message(left.error()));
+                }
+            },
+        .list_channels =
+            [gateway, presenter] {
+                auto channels = gateway->listChannels();
+                if (!channels.has_value()) {
+                    presenter->showError(bcmd::error_message(channels.error()));
+                    return;
+                }
+                std::vector<std::string> names;
+                names.reserve(channels->size());
+                for (const auto& channel_info : *channels) {
+                    names.push_back(channel_info.name);
+                }
+                presenter->showChannelList(std::move(names));
+            },
     });
 
     const auto channels = gateway->listChannels();

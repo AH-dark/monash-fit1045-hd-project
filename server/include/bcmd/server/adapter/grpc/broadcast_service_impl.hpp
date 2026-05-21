@@ -1,9 +1,5 @@
 #pragma once
 
-#include <memory>
-
-#include <grpcpp/grpcpp.h>
-
 #include "bcmd/server/adapter/grpc/client_publisher.hpp"
 #include "bcmd/server/application/port/i_client_registry.hpp"
 #include "bcmd/server/application/usecase/get_recent_messages.hpp"
@@ -14,22 +10,24 @@
 #include "bcmd/server/application/usecase/subscribe_to_channel.hpp"
 #include "bcmd/v1/broadcast.grpc.pb.h"
 
+#include <grpcpp/grpcpp.h>
+
+#include <memory>
+
 namespace bcmd::server::adapter::grpc {
 
 class BroadcastServiceImpl final : public bcmd::v1::BroadcastService::Service {
 public:
-    BroadcastServiceImpl(
-        std::shared_ptr<application::usecase::JoinChannel> join_channel,
-        std::shared_ptr<application::usecase::LeaveChannel> leave_channel,
-        std::shared_ptr<application::usecase::SendMessage> send_message,
-        std::shared_ptr<application::usecase::ListChannels> list_channels,
-        std::shared_ptr<application::usecase::GetRecentMessages> get_recent,
-        std::shared_ptr<application::usecase::SubscribeToChannel> subscribe,
-        std::shared_ptr<GrpcClientPublisher> publisher,
-        std::shared_ptr<application::port::IClientRegistry> client_registry);
+    BroadcastServiceImpl(std::shared_ptr<application::usecase::JoinChannel> join_channel,
+                         std::shared_ptr<application::usecase::LeaveChannel> leave_channel,
+                         std::shared_ptr<application::usecase::SendMessage> send_message,
+                         std::shared_ptr<application::usecase::ListChannels> list_channels,
+                         std::shared_ptr<application::usecase::GetRecentMessages> get_recent,
+                         std::shared_ptr<application::usecase::SubscribeToChannel> subscribe,
+                         std::shared_ptr<GrpcClientPublisher> publisher,
+                         std::shared_ptr<application::port::IClientRegistry> client_registry);
 
-    ::grpc::Status Connect(::grpc::ServerContext* context,
-                           const bcmd::v1::ConnectRequest* request,
+    ::grpc::Status Connect(::grpc::ServerContext* context, const bcmd::v1::ConnectRequest* request,
                            bcmd::v1::ConnectResponse* response) override;
     ::grpc::Status Disconnect(::grpc::ServerContext* context,
                               const bcmd::v1::DisconnectRequest* request,
@@ -47,8 +45,7 @@ public:
                                const bcmd::v1::SendMessageRequest* request,
                                bcmd::v1::SendMessageResponse* response) override;
     ::grpc::Status SubscribeToChannel(
-        ::grpc::ServerContext* context,
-        const bcmd::v1::SubscribeRequest* request,
+        ::grpc::ServerContext* context, const bcmd::v1::SubscribeRequest* request,
         ::grpc::ServerWriter<bcmd::v1::ChannelEvent>* writer) override;
 
 private:

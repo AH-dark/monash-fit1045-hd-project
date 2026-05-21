@@ -1,11 +1,11 @@
 #pragma once
 
-#include <cstdint>
-#include <vector>
-
 #include "bcmd/server/domain/model/message.hpp"
 #include "bcmd/shared/ids.hpp"
 #include "bcmd/shared/result.hpp"
+
+#include <cstdint>
+#include <vector>
 
 namespace bcmd::server::application::port {
 

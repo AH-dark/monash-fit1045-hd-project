@@ -1,10 +1,10 @@
 #pragma once
 
-#include <memory>
-#include <vector>
-
 #include "bcmd/server/application/port/i_channel_repository.hpp"
 #include "bcmd/server/domain/model/channel.hpp"
+
+#include <memory>
+#include <vector>
 
 namespace bcmd::server::application::usecase {
 

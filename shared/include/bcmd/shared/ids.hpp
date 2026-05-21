@@ -9,7 +9,6 @@
 #include <string>
 #include <string_view>
 #include <utility>
-
 #include <uuid.h>
 
 namespace bcmd {
@@ -49,9 +48,7 @@ public:
     std::string to_string() const { return value_; }
 
     bool operator==(const StrongId&) const = default;
-    bool operator<(const StrongId& other) const noexcept {
-        return value_ < other.value_;
-    }
+    bool operator<(const StrongId& other) const noexcept { return value_ < other.value_; }
 
 private:
     explicit StrongId(std::string raw) : value_(std::move(raw)) {}
@@ -66,7 +63,7 @@ struct ClientIdTag {};
 struct MessageIdTag {};
 
 using ChannelId = StrongId<ChannelIdTag>;
-using ClientId  = StrongId<ClientIdTag>;
+using ClientId = StrongId<ClientIdTag>;
 using MessageId = StrongId<MessageIdTag>;
 
 }  // namespace bcmd

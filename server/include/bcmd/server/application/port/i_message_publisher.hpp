@@ -12,8 +12,7 @@ class IMessagePublisher {
 public:
     virtual ~IMessagePublisher() = default;
 
-    virtual void publish(const bcmd::ClientId& recipient_id,
-                         const domain::Message& message,
+    virtual void publish(const bcmd::ClientId& recipient_id, const domain::Message& message,
                          bool from_replay = false) = 0;
 
     // Emitted after replay finishes so subscribers can switch from

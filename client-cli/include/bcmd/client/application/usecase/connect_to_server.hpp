@@ -1,11 +1,11 @@
 #pragma once
 
+#include "bcmd/client/application/port/i_server_gateway.hpp"
+#include "bcmd/shared/result.hpp"
+
 #include <memory>
 #include <string>
 #include <string_view>
-
-#include "bcmd/client/application/port/i_server_gateway.hpp"
-#include "bcmd/shared/result.hpp"
 
 namespace bcmd::client::application::usecase {
 

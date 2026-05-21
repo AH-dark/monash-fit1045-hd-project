@@ -1,11 +1,11 @@
 #pragma once
 
-#include <cstdint>
-#include <vector>
-
 #include "bcmd/server/domain/model/channel.hpp"
 #include "bcmd/server/domain/model/message.hpp"
 #include "bcmd/shared/ids.hpp"
+
+#include <cstdint>
+#include <vector>
 
 namespace bcmd::server::domain {
 
@@ -20,8 +20,7 @@ enum class EchoPolicy : std::uint8_t {
 class MessageRouter {
 public:
     static std::vector<bcmd::ClientId> recipientsFor(
-        const Channel& channel,
-        const Message& message,
+        const Channel& channel, const Message& message,
         EchoPolicy echo_policy = EchoPolicy::ExcludeSender);
 };
 

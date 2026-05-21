@@ -1,11 +1,11 @@
 #include "bcmd/server/adapter/persistence/in_memory_client_registry.hpp"
 
+#include "bcmd/shared/result.hpp"
+
 #include <expected>
 #include <mutex>
 #include <shared_mutex>
 #include <utility>
-
-#include "bcmd/shared/result.hpp"
 
 namespace bcmd::server::adapter::persistence {
 

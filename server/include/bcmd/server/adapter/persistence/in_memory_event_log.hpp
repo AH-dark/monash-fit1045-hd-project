@@ -1,12 +1,12 @@
 #pragma once
 
+#include "bcmd/server/application/port/i_event_log.hpp"
+
 #include <shared_mutex>
 #include <string>
 #include <string_view>
 #include <utility>
 #include <vector>
-
-#include "bcmd/server/application/port/i_event_log.hpp"
 
 namespace bcmd::server::adapter::persistence {
 

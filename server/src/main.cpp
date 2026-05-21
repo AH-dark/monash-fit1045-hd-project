@@ -1,11 +1,3 @@
-#include <CLI/CLI.hpp>
-
-#include <cstdint>
-#include <memory>
-#include <string>
-
-#include <spdlog/spdlog.h>
-
 #include "bcmd/server/adapter/grpc/broadcast_service_impl.hpp"
 #include "bcmd/server/adapter/grpc/client_publisher.hpp"
 #include "bcmd/server/adapter/grpc/server_runner.hpp"
@@ -21,6 +13,13 @@
 #include "bcmd/server/application/usecase/send_message.hpp"
 #include "bcmd/server/application/usecase/subscribe_to_channel.hpp"
 #include "bcmd/shared/logging.hpp"
+
+#include <CLI/CLI.hpp>
+#include <spdlog/spdlog.h>
+
+#include <cstdint>
+#include <memory>
+#include <string>
 
 int main(int argc, char** argv) {
     CLI::App app{"bcmd - broadcast messaging server"};
@@ -72,16 +71,16 @@ int main(int argc, char** argv) {
 
     auto join_channel = std::make_shared<usecase::JoinChannel>(channel_repo, client_registry);
     auto leave_channel = std::make_shared<usecase::LeaveChannel>(channel_repo, client_registry);
-    auto send_message =
-        std::make_shared<usecase::SendMessage>(channel_repo, client_registry, message_repo, publisher);
+    auto send_message = std::make_shared<usecase::SendMessage>(channel_repo, client_registry,
+                                                               message_repo, publisher);
     auto list_channels = std::make_shared<usecase::ListChannels>(channel_repo);
     auto get_recent = std::make_shared<usecase::GetRecentMessages>(message_repo);
     auto subscribe =
         std::make_shared<usecase::SubscribeToChannel>(channel_repo, message_repo, publisher);
 
-    grpc_adapter::BroadcastServiceImpl service{join_channel, leave_channel, send_message,
-                                               list_channels, get_recent, subscribe,
-                                               publisher, client_registry};
+    grpc_adapter::BroadcastServiceImpl service{join_channel,  leave_channel,  send_message,
+                                               list_channels, get_recent,     subscribe,
+                                               publisher,     client_registry};
 
     grpc_adapter::GrpcServerRunner runner{bind_address};
     runner.add_service(service);

@@ -1,13 +1,13 @@
 #pragma once
 
+#include "bcmd/client/domain/inbox_message.hpp"
+#include "bcmd/shared/result.hpp"
+
 #include <cstdint>
 #include <functional>
 #include <string>
 #include <string_view>
 #include <vector>
-
-#include "bcmd/client/domain/inbox_message.hpp"
-#include "bcmd/shared/result.hpp"
 
 namespace bcmd::client::application::port {
 

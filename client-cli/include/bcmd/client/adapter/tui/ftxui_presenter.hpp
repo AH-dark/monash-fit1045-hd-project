@@ -1,19 +1,19 @@
 #pragma once
 
+#include "bcmd/client/adapter/tui/inbox_queue.hpp"
+#include "bcmd/client/application/port/i_presenter.hpp"
+#include "bcmd/client/domain/inbox_message.hpp"
+
+#include <ftxui/component/component.hpp>
+#include <ftxui/component/screen_interactive.hpp>
+#include <ftxui/dom/elements.hpp>
+
 #include <functional>
 #include <memory>
 #include <mutex>
 #include <string>
 #include <string_view>
 #include <vector>
-
-#include <ftxui/component/component.hpp>
-#include <ftxui/component/screen_interactive.hpp>
-#include <ftxui/dom/elements.hpp>
-
-#include "bcmd/client/adapter/tui/inbox_queue.hpp"
-#include "bcmd/client/application/port/i_presenter.hpp"
-#include "bcmd/client/domain/inbox_message.hpp"
 
 namespace bcmd::client::adapter::tui {
 

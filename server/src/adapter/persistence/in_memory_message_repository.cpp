@@ -20,9 +20,8 @@ bcmd::VoidResult InMemoryMessageRepository::save(const domain::Message& message)
     return {};
 }
 
-std::vector<domain::Message> InMemoryMessageRepository::recent(
-    const bcmd::ChannelId& channel_id,
-    std::uint32_t count) {
+std::vector<domain::Message> InMemoryMessageRepository::recent(const bcmd::ChannelId& channel_id,
+                                                               std::uint32_t count) {
     const std::shared_lock lock(mutex_);
     const auto found = buffers_.find(channel_id.value());
     if (found == buffers_.end() || count == 0) {
