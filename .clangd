@@ -1,0 +1,37 @@
+CompileFlags:
+  CompilationDatabase: build/debug
+  Add:
+    - -std=c++23
+    - -Wall
+    - -Wextra
+    - -Wpedantic
+  Remove:
+    - -Werror
+    - -W*
+
+Diagnostics:
+  ClangTidy:
+    Add:
+      - bugprone-*
+      - modernize-*
+      - readability-*
+      - performance-*
+      - cppcoreguidelines-*
+      - concurrency-*
+    Remove:
+      - modernize-use-trailing-return-type
+      - readability-magic-numbers
+      - cppcoreguidelines-avoid-magic-numbers
+    CheckOptions:
+      readability-identifier-length.MinimumVariableNameLength: 2
+  UnusedIncludes: Strict
+  MissingIncludes: Strict
+
+Index:
+  Background: Build
+  StandardLibrary: Yes
+
+InlayHints:
+  Enabled: Yes
+  ParameterNames: Yes
+  DeducedTypes: Yes
