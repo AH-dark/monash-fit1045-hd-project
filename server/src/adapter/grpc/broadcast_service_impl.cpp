@@ -155,23 +155,18 @@ BroadcastServiceImpl::BroadcastServiceImpl(
 }
 
 ::grpc::Status BroadcastServiceImpl::error_to_status(bcmd::Error error) {
-    switch (error) {
-        case bcmd::Error::ChannelNotFound:
-        case bcmd::Error::ClientNotFound:
-        case bcmd::Error::NotAMember:
-            return {::grpc::StatusCode::NOT_FOUND, std::string(bcmd::error_message(error))};
-        case bcmd::Error::AlreadyMember:
-        case bcmd::Error::ChannelAlreadyExists:
-        case bcmd::Error::ClientAlreadyExists:
-            return {::grpc::StatusCode::ALREADY_EXISTS, std::string(bcmd::error_message(error))};
-        case bcmd::Error::InvalidUsername:
-        case bcmd::Error::InvalidChannelName:
-        case bcmd::Error::MessageEmpty:
-        case bcmd::Error::MessageTooLong:
-            return {::grpc::StatusCode::INVALID_ARGUMENT, std::string(bcmd::error_message(error))};
-        default:
-            return {::grpc::StatusCode::INTERNAL, std::string(bcmd::error_message(error))};
+    ::grpc::StatusCode code{::grpc::StatusCode::INTERNAL};
+    if (error == bcmd::Error::ChannelNotFound || error == bcmd::Error::ClientNotFound ||
+        error == bcmd::Error::NotAMember) {
+        code = ::grpc::StatusCode::NOT_FOUND;
+    } else if (error == bcmd::Error::AlreadyMember || error == bcmd::Error::ChannelAlreadyExists ||
+               error == bcmd::Error::ClientAlreadyExists) {
+        code = ::grpc::StatusCode::ALREADY_EXISTS;
+    } else if (error == bcmd::Error::InvalidUsername || error == bcmd::Error::InvalidChannelName ||
+               error == bcmd::Error::MessageEmpty || error == bcmd::Error::MessageTooLong) {
+        code = ::grpc::StatusCode::INVALID_ARGUMENT;
     }
+    return {code, std::string(bcmd::error_message(error))};
 }
 
 }  // namespace bcmd::server::adapter::grpc

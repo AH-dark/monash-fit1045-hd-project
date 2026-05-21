@@ -17,6 +17,7 @@ void InboxQueue::push(domain::InboxMessage message) {
 bool InboxQueue::tryPop(domain::InboxMessage& out) {
     std::scoped_lock lock{mutex_};
     if (messages_.empty()) {
+        // NOLINTNEXTLINE(readability-simplify-boolean-expr)
         return false;
     }
     out = std::move(messages_.front());

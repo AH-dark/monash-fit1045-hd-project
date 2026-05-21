@@ -20,8 +20,8 @@ public:
     void set_insecure();
     int run_and_block();
     void shutdown();
-    std::string bound_address() const;
-    bool wait_until_started(std::chrono::milliseconds timeout);
+    [[nodiscard]] std::string bound_address() const;
+    [[nodiscard]] bool wait_until_started(std::chrono::milliseconds timeout);
 
 private:
     std::string bind_address_{};
