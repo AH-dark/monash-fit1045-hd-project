@@ -22,6 +22,10 @@ Diagnostics:
       - modernize-use-trailing-return-type
       - readability-magic-numbers
       - cppcoreguidelines-avoid-magic-numbers
+      - readability-convert-member-functions-to-static
+      - bugprone-easily-swappable-parameters
+      - performance-enum-size
+      - cppcoreguidelines-avoid-non-const-global-variables
       - readability-identifier-naming
       - readability-identifier-length
   UnusedIncludes: Strict
