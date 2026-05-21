@@ -114,7 +114,7 @@ int main(int argc, char** argv) {
              &active_channel_id](std::string content) {
                 std::string channel_id;
                 {
-                    std::lock_guard<std::mutex> lock{channel_mutex};
+                    std::scoped_lock lock{channel_mutex};
                     channel_id = active_channel_id;
                 }
                 if (channel_id.empty()) {
@@ -139,7 +139,7 @@ int main(int argc, char** argv) {
                     return;
                 }
                 {
-                    std::lock_guard<std::mutex> lock{channel_mutex};
+                    std::scoped_lock lock{channel_mutex};
                     active_channel_id = *joined;
                 }
                 std::thread([subscribe_uc, client_id, channel_id = *joined, replay_count] {
@@ -150,7 +150,7 @@ int main(int argc, char** argv) {
             [gateway, presenter, client_id, &channel_mutex, &active_channel_id] {
                 std::string channel_id;
                 {
-                    std::lock_guard<std::mutex> lock{channel_mutex};
+                    std::scoped_lock lock{channel_mutex};
                     channel_id = std::exchange(active_channel_id, {});
                 }
                 if (channel_id.empty()) {

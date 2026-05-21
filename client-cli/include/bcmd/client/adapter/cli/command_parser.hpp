@@ -22,13 +22,13 @@ inline ParsedCommand parseCommand(std::string_view input) {
                              .arg = std::string{input.substr(join_prefix.size())}};
     }
     if (input == "/leave") {
-        return ParsedCommand{.type = CommandType::Leave};
+        return ParsedCommand{.type = CommandType::Leave, .arg = {}};
     }
     if (input == "/list") {
-        return ParsedCommand{.type = CommandType::List};
+        return ParsedCommand{.type = CommandType::List, .arg = {}};
     }
     if (input == "/quit") {
-        return ParsedCommand{.type = CommandType::Quit};
+        return ParsedCommand{.type = CommandType::Quit, .arg = {}};
     }
     return ParsedCommand{};
 }
