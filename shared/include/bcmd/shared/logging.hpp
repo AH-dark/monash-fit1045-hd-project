@@ -1,10 +1,10 @@
 #pragma once
 
+#include <spdlog/spdlog.h>
+
 #include <cstdint>
 #include <memory>
 #include <string_view>
-
-#include <spdlog/spdlog.h>
 
 namespace bcmd {
 

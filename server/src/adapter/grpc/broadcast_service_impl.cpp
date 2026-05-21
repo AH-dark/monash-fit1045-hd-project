@@ -1,14 +1,14 @@
 #include "bcmd/server/adapter/grpc/broadcast_service_impl.hpp"
 
+#include "bcmd/server/domain/model/message_content.hpp"
+#include "bcmd/server/domain/model/username.hpp"
+#include "bcmd/shared/result.hpp"
+
 #include <expected>
 #include <memory>
 #include <string>
 #include <thread>
 #include <utility>
-
-#include "bcmd/server/domain/model/message_content.hpp"
-#include "bcmd/server/domain/model/username.hpp"
-#include "bcmd/shared/result.hpp"
 
 namespace bcmd::server::adapter::grpc {
 
@@ -81,7 +81,8 @@ BroadcastServiceImpl::BroadcastServiceImpl(
         return error_to_status(bcmd::Error::ClientNotFound);
     }
 
-    if (const auto CHANNEL_ID = bcmd::ChannelId::parse(request->channel_id()); CHANNEL_ID.has_value()) {
+    if (const auto CHANNEL_ID = bcmd::ChannelId::parse(request->channel_id());
+        CHANNEL_ID.has_value()) {
         const auto JOINED = join_channel_->execute(*CLIENT_ID, *CHANNEL_ID);
         return JOINED.has_value() ? ::grpc::Status::OK : error_to_status(JOINED.error());
     }
@@ -128,8 +129,7 @@ BroadcastServiceImpl::BroadcastServiceImpl(
 }
 
 ::grpc::Status BroadcastServiceImpl::SubscribeToChannel(
-    ::grpc::ServerContext* context,
-    const bcmd::v1::SubscribeRequest* request,
+    ::grpc::ServerContext* context, const bcmd::v1::SubscribeRequest* request,
     ::grpc::ServerWriter<bcmd::v1::ChannelEvent>* writer) {
     const auto CLIENT_ID = bcmd::ClientId::parse(request->client_id());
     const auto CHANNEL_ID = bcmd::ChannelId::parse(request->channel_id());

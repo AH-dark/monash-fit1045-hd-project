@@ -1,10 +1,10 @@
 #pragma once
 
+#include "bcmd/server/application/port/i_channel_repository.hpp"
+
 #include <cstdint>
 #include <stdexcept>
 #include <vector>
-
-#include "bcmd/server/application/port/i_channel_repository.hpp"
 
 namespace bcmd::server::adapter::persistence {
 

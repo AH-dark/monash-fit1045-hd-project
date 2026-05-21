@@ -1,11 +1,5 @@
 #include "bcmd/server/application/usecase/subscribe_to_channel.hpp"
 
-#include <algorithm>
-#include <cstdint>
-#include <expected>
-#include <memory>
-#include <utility>
-
 #include "bcmd/server/application/port/i_channel_repository.hpp"
 #include "bcmd/server/application/port/i_message_publisher.hpp"
 #include "bcmd/server/application/port/i_message_repository.hpp"
@@ -13,6 +7,12 @@
 #include "bcmd/server/domain/model/message.hpp"
 #include "bcmd/shared/ids.hpp"
 #include "bcmd/shared/result.hpp"
+
+#include <algorithm>
+#include <cstdint>
+#include <expected>
+#include <memory>
+#include <utility>
 
 namespace bcmd::server::application::usecase {
 
@@ -24,8 +24,8 @@ SubscribeToChannel::SubscribeToChannel(std::shared_ptr<port::IChannelRepository>
       publisher_(std::move(publisher)) {}
 
 bcmd::VoidResult SubscribeToChannel::execute(const bcmd::ClientId& client_id,
-                                              const bcmd::ChannelId& channel_id,
-                                              std::uint32_t replay_count) {
+                                             const bcmd::ChannelId& channel_id,
+                                             std::uint32_t replay_count) {
     auto channel = channels_->findById(channel_id);
     if (!channel.has_value()) {
         return std::unexpected(channel.error());

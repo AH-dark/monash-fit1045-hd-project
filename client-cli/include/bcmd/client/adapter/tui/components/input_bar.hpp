@@ -1,10 +1,10 @@
 #pragma once
 
-#include <functional>
-#include <string>
-
 #include <ftxui/component/component.hpp>
 #include <ftxui/component/component_options.hpp>
+
+#include <functional>
+#include <string>
 
 namespace bcmd::client::adapter::tui {
 

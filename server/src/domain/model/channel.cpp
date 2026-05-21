@@ -1,17 +1,15 @@
 #include "bcmd/server/domain/model/channel.hpp"
 
+#include "bcmd/shared/result.hpp"
+
 #include <chrono>
 #include <expected>
 #include <utility>
 
-#include "bcmd/shared/result.hpp"
-
 namespace bcmd::server::domain {
 
 Channel::Channel(bcmd::ChannelId id, ChannelName name)
-    : id_(std::move(id)),
-      name_(std::move(name)),
-      created_at_(std::chrono::system_clock::now()) {}
+    : id_(std::move(id)), name_(std::move(name)), created_at_(std::chrono::system_clock::now()) {}
 
 bcmd::VoidResult Channel::addMember(const bcmd::ClientId& client_id) {
     const auto [_, inserted] = members_.insert(client_id);

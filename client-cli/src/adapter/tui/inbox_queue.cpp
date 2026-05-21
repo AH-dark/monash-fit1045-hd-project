@@ -1,11 +1,11 @@
 #include "bcmd/client/adapter/tui/inbox_queue.hpp"
 
+#include "bcmd/client/domain/inbox_message.hpp"
+
 #include <cstddef>
 #include <mutex>
 #include <utility>
 #include <vector>
-
-#include "bcmd/client/domain/inbox_message.hpp"
 
 namespace bcmd::client::adapter::tui {
 

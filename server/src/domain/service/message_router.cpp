@@ -4,10 +4,9 @@
 
 namespace bcmd::server::domain {
 
-std::vector<bcmd::ClientId> MessageRouter::recipientsFor(
-    const Channel& channel,
-    const Message& message,
-    EchoPolicy echo_policy) {
+std::vector<bcmd::ClientId> MessageRouter::recipientsFor(const Channel& channel,
+                                                         const Message& message,
+                                                         EchoPolicy echo_policy) {
     const auto& members = channel.members();
 
     std::vector<bcmd::ClientId> recipients;

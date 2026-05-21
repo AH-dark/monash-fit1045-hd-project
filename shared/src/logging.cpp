@@ -1,12 +1,12 @@
 #include "bcmd/shared/logging.hpp"
 
-#include <memory>
-#include <string>
-#include <string_view>
-
 #include <spdlog/sinks/stdout_color_sinks.h>
 #include <spdlog/sinks/stdout_sinks.h>
 #include <spdlog/spdlog.h>
+
+#include <memory>
+#include <string>
+#include <string_view>
 
 namespace bcmd {
 
@@ -14,13 +14,20 @@ namespace {
 
 spdlog::level::level_enum to_spdlog_level(LogLevel level) noexcept {
     switch (level) {
-        case LogLevel::Trace:    return spdlog::level::trace;
-        case LogLevel::Debug:    return spdlog::level::debug;
-        case LogLevel::Info:     return spdlog::level::info;
-        case LogLevel::Warn:     return spdlog::level::warn;
-        case LogLevel::Error:    return spdlog::level::err;
-        case LogLevel::Critical: return spdlog::level::critical;
-        case LogLevel::Off:      return spdlog::level::off;
+        case LogLevel::Trace:
+            return spdlog::level::trace;
+        case LogLevel::Debug:
+            return spdlog::level::debug;
+        case LogLevel::Info:
+            return spdlog::level::info;
+        case LogLevel::Warn:
+            return spdlog::level::warn;
+        case LogLevel::Error:
+            return spdlog::level::err;
+        case LogLevel::Critical:
+            return spdlog::level::critical;
+        case LogLevel::Off:
+            return spdlog::level::off;
     }
     return spdlog::level::info;
 }

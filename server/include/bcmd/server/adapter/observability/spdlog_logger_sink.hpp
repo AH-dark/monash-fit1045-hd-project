@@ -1,10 +1,10 @@
 #pragma once
 
-#include <string_view>
+#include "bcmd/server/application/port/i_event_log.hpp"
 
 #include <spdlog/spdlog.h>
 
-#include "bcmd/server/application/port/i_event_log.hpp"
+#include <string_view>
 
 namespace bcmd::server::adapter::observability {
 

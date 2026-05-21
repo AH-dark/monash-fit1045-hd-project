@@ -1,8 +1,8 @@
 #pragma once
 
-#include <string>
-
 #include "bcmd/shared/result.hpp"
+
+#include <string>
 
 namespace bcmd::server::adapter::grpc {
 

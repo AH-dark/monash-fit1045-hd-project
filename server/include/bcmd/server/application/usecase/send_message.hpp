@@ -1,8 +1,5 @@
 #pragma once
 
-#include <memory>
-#include <string_view>
-
 #include "bcmd/server/application/port/i_channel_repository.hpp"
 #include "bcmd/server/application/port/i_client_registry.hpp"
 #include "bcmd/server/application/port/i_message_publisher.hpp"
@@ -10,6 +7,9 @@
 #include "bcmd/server/domain/service/message_router.hpp"
 #include "bcmd/shared/ids.hpp"
 #include "bcmd/shared/result.hpp"
+
+#include <memory>
+#include <string_view>
 
 namespace bcmd::server::application::usecase {
 
@@ -22,8 +22,7 @@ public:
 
     // `echo_policy` follows MessageRouter semantics; ExcludeSender by default.
     bcmd::Result<bcmd::MessageId> execute(
-        const bcmd::ClientId& sender_id,
-        const bcmd::ChannelId& channel_id,
+        const bcmd::ClientId& sender_id, const bcmd::ChannelId& channel_id,
         std::string_view content,
         domain::EchoPolicy echo_policy = domain::EchoPolicy::ExcludeSender);
 

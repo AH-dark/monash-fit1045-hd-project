@@ -1,11 +1,11 @@
 #include "bcmd/client/application/usecase/connect_to_server.hpp"
 
+#include "bcmd/client/application/port/i_server_gateway.hpp"
+
 #include <memory>
 #include <string>
 #include <string_view>
 #include <utility>
-
-#include "bcmd/client/application/port/i_server_gateway.hpp"
 
 namespace bcmd::client::application::usecase {
 

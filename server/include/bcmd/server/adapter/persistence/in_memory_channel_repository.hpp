@@ -1,11 +1,11 @@
 #pragma once
 
+#include "bcmd/server/application/port/i_channel_repository.hpp"
+
 #include <shared_mutex>
 #include <string>
 #include <unordered_map>
 #include <vector>
-
-#include "bcmd/server/application/port/i_channel_repository.hpp"
 
 namespace bcmd::server::adapter::persistence {
 

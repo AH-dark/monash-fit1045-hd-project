@@ -1,5 +1,15 @@
 #include "bcmd/client/adapter/tui/ftxui_presenter.hpp"
 
+#include "bcmd/client/adapter/cli/command_parser.hpp"
+#include "bcmd/client/adapter/tui/components/channel_list.hpp"
+#include "bcmd/client/adapter/tui/components/input_bar.hpp"
+#include "bcmd/client/adapter/tui/components/message_view.hpp"
+#include "bcmd/client/domain/inbox_message.hpp"
+
+#include <ftxui/component/component.hpp>
+#include <ftxui/component/event.hpp>
+#include <ftxui/dom/elements.hpp>
+
 #include <algorithm>
 #include <functional>
 #include <memory>
@@ -8,16 +18,6 @@
 #include <string_view>
 #include <utility>
 #include <vector>
-
-#include <ftxui/component/component.hpp>
-#include <ftxui/component/event.hpp>
-#include <ftxui/dom/elements.hpp>
-
-#include "bcmd/client/adapter/cli/command_parser.hpp"
-#include "bcmd/client/adapter/tui/components/channel_list.hpp"
-#include "bcmd/client/adapter/tui/components/input_bar.hpp"
-#include "bcmd/client/adapter/tui/components/message_view.hpp"
-#include "bcmd/client/domain/inbox_message.hpp"
 
 namespace bcmd::client::adapter::tui {
 
@@ -42,9 +42,7 @@ void FtxuiPresenter::showError(std::string_view error_text) {
     screen_.PostEvent(ftxui::Event::Custom);
 }
 
-void FtxuiPresenter::updateConnectionStatus(bool connected,
-                                            bool tls,
-                                            std::string_view username) {
+void FtxuiPresenter::updateConnectionStatus(bool connected, bool tls, std::string_view username) {
     {
         std::lock_guard<std::mutex> lock{ui_mutex_};
         connected_ = connected;
@@ -58,9 +56,8 @@ void FtxuiPresenter::showChannelList(std::vector<std::string> channel_names) {
     {
         std::lock_guard<std::mutex> lock{ui_mutex_};
         channel_names_ = std::move(channel_names);
-        selected_channel_idx_ = std::clamp(selected_channel_idx_, 0,
-                                           std::max(0,
-                                                    static_cast<int>(channel_names_.size()) - 1));
+        selected_channel_idx_ = std::clamp(
+            selected_channel_idx_, 0, std::max(0, static_cast<int>(channel_names_.size()) - 1));
     }
     screen_.PostEvent(ftxui::Event::Custom);
 }
@@ -74,7 +71,8 @@ int FtxuiPresenter::run(std::function<void()> on_quit) {
     auto channels = ChannelList(&channel_names_, &selected_channel_idx_);
     auto input = InputBar(&input_text_, [this, on_quit] { handleSubmit(on_quit); });
     auto layout = ftxui::Container::Vertical({channels, input});
-    auto renderer = ftxui::Renderer(layout, [this, channels, input] { return render(channels, input); });
+    auto renderer =
+        ftxui::Renderer(layout, [this, channels, input] { return render(channels, input); });
     auto component = ftxui::CatchEvent(renderer, [this, on_quit](const ftxui::Event& event) {
         if (event == ftxui::Event::Escape) {
             on_quit();
@@ -138,9 +136,8 @@ ftxui::Element FtxuiPresenter::render(const ftxui::Component& channels,
                                       const ftxui::Component& input) {
     std::lock_guard<std::mutex> lock{ui_mutex_};
     inbox_->drainTo(messages_);
-    history_count_ = static_cast<int>(std::ranges::count_if(messages_, [](const auto& message) {
-        return message.is_history;
-    }));
+    history_count_ = static_cast<int>(
+        std::ranges::count_if(messages_, [](const auto& message) { return message.is_history; }));
 
     const std::string connection = connected_ ? "connected" : "disconnected";
     const std::string tls_status = tls_ ? "TLS" : "insecure";
@@ -148,21 +145,21 @@ ftxui::Element FtxuiPresenter::render(const ftxui::Component& channels,
     const std::string error = error_toast_.empty() ? "" : " | Error: " + error_toast_;
     const std::string hint = show_help_ ? "" : " | press ? for help";
 
-    auto main_view = ftxui::vbox({
-                         ftxui::hbox({
-                             ftxui::vbox({ftxui::text("Channels") | ftxui::bold,
-                                          channels->Render()})
-                                 | ftxui::size(ftxui::WIDTH, ftxui::EQUAL, 24) | ftxui::border,
-                             ftxui::vbox({ftxui::text("Messages") | ftxui::bold,
-                                          RenderMessageView(messages_, history_count_)
-                                              | ftxui::vscroll_indicator | ftxui::frame})
-                                 | ftxui::flex | ftxui::border,
-                         }) | ftxui::flex,
-                         ftxui::separator(),
-                         input->Render() | ftxui::border,
-                         ftxui::text(status + error + hint) | ftxui::dim,
-                     })
-                     | ftxui::border;
+    auto main_view =
+        ftxui::vbox({
+            ftxui::hbox({
+                ftxui::vbox({ftxui::text("Channels") | ftxui::bold, channels->Render()}) |
+                    ftxui::size(ftxui::WIDTH, ftxui::EQUAL, 24) | ftxui::border,
+                ftxui::vbox({ftxui::text("Messages") | ftxui::bold,
+                             RenderMessageView(messages_, history_count_) |
+                                 ftxui::vscroll_indicator | ftxui::frame}) |
+                    ftxui::flex | ftxui::border,
+            }) | ftxui::flex,
+            ftxui::separator(),
+            input->Render() | ftxui::border,
+            ftxui::text(status + error + hint) | ftxui::dim,
+        }) |
+        ftxui::border;
 
     if (!show_help_) {
         return main_view;
@@ -178,9 +175,9 @@ ftxui::Element FtxuiPresenter::render(const ftxui::Component& channels,
                           ftxui::text("  /quit            disconnect and exit"),
                           ftxui::text("  Esc              disconnect and exit"),
                           ftxui::text("  ?                toggle this help"),
-                      })
-                      | ftxui::border | ftxui::bgcolor(ftxui::Color::Black)
-                      | ftxui::clear_under | ftxui::center;
+                      }) |
+                      ftxui::border | ftxui::bgcolor(ftxui::Color::Black) | ftxui::clear_under |
+                      ftxui::center;
 
     return ftxui::dbox({main_view, help_panel});
 }

@@ -1,10 +1,10 @@
 #pragma once
 
+#include "bcmd/server/application/port/i_client_registry.hpp"
+
 #include <shared_mutex>
 #include <string>
 #include <unordered_map>
-
-#include "bcmd/server/application/port/i_client_registry.hpp"
 
 namespace bcmd::server::adapter::persistence {
 

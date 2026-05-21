@@ -1,10 +1,10 @@
 #pragma once
 
-#include <chrono>
-#include <utility>
-
 #include "bcmd/server/domain/model/message_content.hpp"
 #include "bcmd/shared/ids.hpp"
+
+#include <chrono>
+#include <utility>
 
 namespace bcmd::server::domain {
 
@@ -12,9 +12,7 @@ namespace bcmd::server::domain {
 // type exposes only const accessors.
 class Message {
 public:
-    Message(bcmd::MessageId id,
-            bcmd::ClientId sender_id,
-            bcmd::ChannelId channel_id,
+    Message(bcmd::MessageId id, bcmd::ClientId sender_id, bcmd::ChannelId channel_id,
             MessageContent content,
             std::chrono::system_clock::time_point sent_at = std::chrono::system_clock::now())
         : id_(std::move(id)),

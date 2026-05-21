@@ -10,16 +10,14 @@ namespace bcmd::server::adapter::grpc {
 namespace {
 
 std::int64_t to_epoch_ms(std::chrono::system_clock::time_point time_point) {
-    return std::chrono::duration_cast<std::chrono::milliseconds>(
-               time_point.time_since_epoch())
+    return std::chrono::duration_cast<std::chrono::milliseconds>(time_point.time_since_epoch())
         .count();
 }
 
 }  // namespace
 
-void GrpcClientPublisher::registerSubscriber(
-    const bcmd::ClientId& id,
-    ::grpc::ServerWriter<bcmd::v1::ChannelEvent>* writer) {
+void GrpcClientPublisher::registerSubscriber(const bcmd::ClientId& id,
+                                             ::grpc::ServerWriter<bcmd::v1::ChannelEvent>* writer) {
     const std::unique_lock lock(mutex_);
     writers_.insert_or_assign(id.value(), writer);
 }
@@ -30,8 +28,7 @@ void GrpcClientPublisher::unregisterSubscriber(const bcmd::ClientId& id) {
 }
 
 void GrpcClientPublisher::publish(const bcmd::ClientId& recipient_id,
-                                  const domain::Message& message,
-                                  bool from_replay) {
+                                  const domain::Message& message, bool from_replay) {
     const std::shared_lock lock(mutex_);
     const auto found = writers_.find(recipient_id.value());
     if (found != writers_.end() && found->second != nullptr) {
