@@ -36,15 +36,15 @@ int GrpcServerRunner::run_and_block() {
         spdlog::warn("Starting gRPC server with insecure credentials");
         credentials = ::grpc::InsecureServerCredentials();
     } else {
-        ::grpc::SslServerCredentialsOptions::PemKeyCertPair key_cert_pair{.private_key = key_pem_,
-                                                                          .cert_chain = cert_pem_};
+        ::grpc::SslServerCredentialsOptions::PemKeyCertPair keyCertPair{.private_key = key_pem_,
+                                                                        .cert_chain = cert_pem_};
         ::grpc::SslServerCredentialsOptions options;
-        options.pem_key_cert_pairs.push_back(key_cert_pair);
+        options.pem_key_cert_pairs.push_back(keyCertPair);
         credentials = ::grpc::SslServerCredentials(options);
     }
 
-    int selected_port{0};
-    builder.AddListeningPort(bind_address_, credentials, &selected_port);
+    int selectedPort{0};
+    builder.AddListeningPort(bind_address_, credentials, &selectedPort);
     for (auto* service : services_) {
         builder.RegisterService(service);
     }
@@ -53,7 +53,7 @@ int GrpcServerRunner::run_and_block() {
     if (!server) {
         spdlog::error("Failed to start gRPC server on {}", bind_address_);
         {
-            std::lock_guard lock(mutex_);
+            std::scoped_lock lock(mutex_);
             started_ = false;
         }
         started_cv_.notify_all();
@@ -61,11 +61,11 @@ int GrpcServerRunner::run_and_block() {
     }
 
     {
-        std::lock_guard lock(mutex_);
+        std::scoped_lock lock(mutex_);
         server_ = std::move(server);
         auto colon = bind_address_.rfind(':');
         auto host = colon == std::string::npos ? bind_address_ : bind_address_.substr(0, colon);
-        bound_address_ = std::move(host) + ":" + std::to_string(selected_port);
+        bound_address_ = std::move(host) + ":" + std::to_string(selectedPort);
         started_ = true;
     }
     started_cv_.notify_all();
@@ -73,7 +73,7 @@ int GrpcServerRunner::run_and_block() {
     spdlog::info("gRPC server listening on {}", bound_address());
     server_->Wait();
     {
-        std::lock_guard lock(mutex_);
+        std::scoped_lock lock(mutex_);
         server_.reset();
         started_ = false;
     }
@@ -90,7 +90,7 @@ void GrpcServerRunner::shutdown() {
 }
 
 std::string GrpcServerRunner::bound_address() const {
-    std::lock_guard lock(mutex_);
+    std::scoped_lock lock(mutex_);
     return bound_address_;
 }
 

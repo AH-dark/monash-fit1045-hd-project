@@ -36,7 +36,7 @@ void FtxuiPresenter::showReplayComplete(std::string_view /*channel_id*/) {
 
 void FtxuiPresenter::showError(std::string_view error_text) {
     {
-        std::lock_guard<std::mutex> lock{ui_mutex_};
+        std::scoped_lock lock{ui_mutex_};
         error_toast_ = std::string{error_text};
     }
     screen_.PostEvent(ftxui::Event::Custom);
@@ -44,7 +44,7 @@ void FtxuiPresenter::showError(std::string_view error_text) {
 
 void FtxuiPresenter::updateConnectionStatus(bool connected, bool tls, std::string_view username) {
     {
-        std::lock_guard<std::mutex> lock{ui_mutex_};
+        std::scoped_lock lock{ui_mutex_};
         connected_ = connected;
         tls_ = tls;
         username_ = std::string{username};
@@ -54,7 +54,7 @@ void FtxuiPresenter::updateConnectionStatus(bool connected, bool tls, std::strin
 
 void FtxuiPresenter::showChannelList(std::vector<std::string> channel_names) {
     {
-        std::lock_guard<std::mutex> lock{ui_mutex_};
+        std::scoped_lock lock{ui_mutex_};
         channel_names_ = std::move(channel_names);
         selected_channel_idx_ = std::clamp(
             selected_channel_idx_, 0, std::max(0, static_cast<int>(channel_names_.size()) - 1));
@@ -63,25 +63,26 @@ void FtxuiPresenter::showChannelList(std::vector<std::string> channel_names) {
 }
 
 void FtxuiPresenter::setActions(Actions actions) {
-    std::lock_guard<std::mutex> lock{ui_mutex_};
+    std::scoped_lock lock{ui_mutex_};
     actions_ = std::move(actions);
 }
 
 int FtxuiPresenter::run(std::function<void()> on_quit) {
+    const auto onQuit = std::make_shared<std::function<void()>>(std::move(on_quit));
     auto channels = ChannelList(&channel_names_, &selected_channel_idx_);
-    auto input = InputBar(&input_text_, [this, on_quit] { handleSubmit(on_quit); });
+    auto input = InputBar(&input_text_, [this, onQuit] { handleSubmit(*onQuit); });
     auto layout = ftxui::Container::Vertical({channels, input});
     auto renderer =
         ftxui::Renderer(layout, [this, channels, input] { return render(channels, input); });
-    auto component = ftxui::CatchEvent(renderer, [this, on_quit](const ftxui::Event& event) {
+    auto component = ftxui::CatchEvent(renderer, [this, onQuit](const ftxui::Event& event) {
         if (event == ftxui::Event::Escape) {
-            on_quit();
+            (*onQuit)();
             screen_.ExitLoopClosure()();
             return true;
         }
         if (event == ftxui::Event::Character('?')) {
             {
-                std::lock_guard<std::mutex> lock{ui_mutex_};
+                std::scoped_lock lock{ui_mutex_};
                 show_help_ = !show_help_;
             }
             screen_.PostEvent(ftxui::Event::Custom);
@@ -98,7 +99,7 @@ void FtxuiPresenter::handleSubmit(const std::function<void()>& on_quit) {
     std::string input;
     Actions actions;
     {
-        std::lock_guard<std::mutex> lock{ui_mutex_};
+        std::scoped_lock lock{ui_mutex_};
         input = std::exchange(input_text_, {});
         actions = actions_;
     }
@@ -134,7 +135,7 @@ void FtxuiPresenter::handleSubmit(const std::function<void()>& on_quit) {
 
 ftxui::Element FtxuiPresenter::render(const ftxui::Component& channels,
                                       const ftxui::Component& input) {
-    std::lock_guard<std::mutex> lock{ui_mutex_};
+    std::scoped_lock lock{ui_mutex_};
     inbox_->drainTo(messages_);
     history_count_ = static_cast<int>(
         std::ranges::count_if(messages_, [](const auto& message) { return message.is_history; }));
