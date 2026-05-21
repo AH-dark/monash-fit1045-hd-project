@@ -12,6 +12,7 @@ add_library(bcli_lib STATIC
     src/adapter/tui/ftxui_presenter.cpp
     src/adapter/tui/inbox_queue.cpp
     src/application/usecase/connect_to_server.cpp
+    src/application/usecase/create_channel_command.cpp
     src/application/usecase/join_channel_command.cpp
     src/application/usecase/send_message_command.cpp
     src/application/usecase/subscribe_command.cpp

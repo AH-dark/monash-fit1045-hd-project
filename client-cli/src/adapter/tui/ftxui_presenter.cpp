@@ -6,6 +6,7 @@
 #include "bcmd/client/adapter/tui/components/message_view.hpp"
 #include "bcmd/client/adapter/tui/inbox_queue.hpp"
 #include "bcmd/client/domain/inbox_message.hpp"
+#include "bcmd/shared/string_utils.hpp"
 
 #include <ftxui/component/component.hpp>
 #include <ftxui/component/component_base.hpp>
@@ -103,7 +104,7 @@ void FtxuiPresenter::handleSubmit(const std::function<void()>& on_quit) {
     Actions actions;
     {
         std::scoped_lock lock{ui_mutex_};
-        input = std::exchange(input_text_, {});
+        input = bcmd::trim_copy(std::exchange(input_text_, {}));
         actions = actions_;
     }
 
@@ -121,6 +122,11 @@ void FtxuiPresenter::handleSubmit(const std::function<void()>& on_quit) {
         case cli::CommandType::Join:
             if (actions.join_channel) {
                 actions.join_channel(parsed.arg);
+            }
+            break;
+        case cli::CommandType::Create:
+            if (actions.create_channel) {
+                actions.create_channel(parsed.arg);
             }
             break;
         case cli::CommandType::Quit:
@@ -175,13 +181,16 @@ ftxui::Element FtxuiPresenter::render(const ftxui::Component& channels,
     auto help_panel = ftxui::vbox({
                           ftxui::text("Keyboard Shortcuts") | ftxui::bold | ftxui::center,
                           ftxui::separator(),
-                          ftxui::text("  Enter            send message"),
-                          ftxui::text("  /join <channel>  join channel"),
-                          ftxui::text("  /leave           leave current channel"),
-                          ftxui::text("  /list            list channels"),
-                          ftxui::text("  /quit            disconnect and exit"),
-                          ftxui::text("  Esc              disconnect and exit"),
-                          ftxui::text("  ?                toggle this help"),
+                          ftxui::text("  Enter             send message to current channel"),
+                          ftxui::text("  /create <name>    create a new channel"),
+                          ftxui::text("  /join <name>      join an existing channel"),
+                          ftxui::text("  /leave            leave the current channel"),
+                          ftxui::text("  /list             list all channels"),
+                          ftxui::text("  /quit             disconnect and exit"),
+                          ftxui::text("  Esc               disconnect and exit"),
+                          ftxui::text("  ?                 toggle this help"),
+                          ftxui::separator(),
+                          ftxui::text("Channel names: 1-64 chars of [a-zA-Z0-9-]") | ftxui::dim,
                       }) |
                       ftxui::border | ftxui::bgcolor(ftxui::Color::Black) | ftxui::clear_under |
                       ftxui::center;

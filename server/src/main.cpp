@@ -6,12 +6,14 @@
 #include "bcmd/server/adapter/persistence/in_memory_client_registry.hpp"
 #include "bcmd/server/adapter/persistence/in_memory_event_log.hpp"
 #include "bcmd/server/adapter/persistence/in_memory_message_repository.hpp"
+#include "bcmd/server/application/usecase/create_channel.hpp"
 #include "bcmd/server/application/usecase/get_recent_messages.hpp"
 #include "bcmd/server/application/usecase/join_channel.hpp"
 #include "bcmd/server/application/usecase/leave_channel.hpp"
 #include "bcmd/server/application/usecase/list_channels.hpp"
 #include "bcmd/server/application/usecase/send_message.hpp"
 #include "bcmd/server/application/usecase/subscribe_to_channel.hpp"
+#include "bcmd/server/domain/model/channel_name.hpp"
 #include "bcmd/shared/logging.hpp"
 
 #include <CLI/CLI.hpp>
@@ -73,18 +75,27 @@ int run(int argc, char** argv) {
     auto publisher = std::make_shared<grpc_adapter::GrpcClientPublisher>();
     (void)event_log;
 
+    if (const auto DEFAULT_NAME = bcmd::server::domain::ChannelName::create("general");
+        DEFAULT_NAME.has_value()) {
+        if (auto seeded = channel_repo->create(*DEFAULT_NAME); seeded.has_value()) {
+            spdlog::info("Seeded default channel: {} ({})", seeded->name().value(),
+                         seeded->id().value());
+        }
+    }
+
     auto join_channel = std::make_shared<usecase::JoinChannel>(channel_repo, client_registry);
     auto leave_channel = std::make_shared<usecase::LeaveChannel>(channel_repo, client_registry);
     auto send_message = std::make_shared<usecase::SendMessage>(channel_repo, client_registry,
                                                                message_repo, publisher);
     auto list_channels = std::make_shared<usecase::ListChannels>(channel_repo);
+    auto create_channel = std::make_shared<usecase::CreateChannel>(channel_repo, client_registry);
     auto get_recent = std::make_shared<usecase::GetRecentMessages>(message_repo);
     auto subscribe =
         std::make_shared<usecase::SubscribeToChannel>(channel_repo, message_repo, publisher);
 
     grpc_adapter::BroadcastServiceImpl service{join_channel,  leave_channel,  send_message,
-                                               list_channels, get_recent,     subscribe,
-                                               publisher,     client_registry};
+                                               list_channels, create_channel, get_recent,
+                                               subscribe,     publisher,      client_registry};
 
     grpc_adapter::GrpcServerRunner runner{bind_address};
     runner.add_service(service);

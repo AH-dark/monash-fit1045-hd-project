@@ -6,6 +6,7 @@
 #include "bcmd/server/adapter/persistence/in_memory_channel_repository.hpp"
 #include "bcmd/server/adapter/persistence/in_memory_client_registry.hpp"
 #include "bcmd/server/adapter/persistence/in_memory_message_repository.hpp"
+#include "bcmd/server/application/usecase/create_channel.hpp"
 #include "bcmd/server/application/usecase/get_recent_messages.hpp"
 #include "bcmd/server/application/usecase/join_channel.hpp"
 #include "bcmd/server/application/usecase/leave_channel.hpp"
@@ -86,13 +87,15 @@ public:
         auto send_message = std::make_shared<usecase::SendMessage>(channel_repo, client_registry,
                                                                    message_repo, publisher);
         auto list_channels = std::make_shared<usecase::ListChannels>(channel_repo);
+        auto create_channel =
+            std::make_shared<usecase::CreateChannel>(channel_repo, client_registry);
         auto get_recent = std::make_shared<usecase::GetRecentMessages>(message_repo);
         auto subscribe =
             std::make_shared<usecase::SubscribeToChannel>(channel_repo, message_repo, publisher);
 
         service_ = std::make_unique<grpc_adapter::BroadcastServiceImpl>(
-            join_channel, leave_channel, send_message, list_channels, get_recent, subscribe,
-            publisher, client_registry);
+            join_channel, leave_channel, send_message, list_channels, create_channel, get_recent,
+            subscribe, publisher, client_registry);
         runner_ = std::make_unique<grpc_adapter::GrpcServerRunner>("127.0.0.1:0");
         runner_->add_service(*service_);
 

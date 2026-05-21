@@ -26,6 +26,8 @@ public:
     virtual bcmd::Result<std::string> connect(std::string_view username) = 0;
     virtual bcmd::VoidResult disconnect(std::string_view client_id) = 0;
     virtual bcmd::Result<std::vector<ChannelInfo>> listChannels() = 0;
+    virtual bcmd::Result<std::string> createChannel(std::string_view client_id,
+                                                    std::string_view channel_name) = 0;
     virtual bcmd::VoidResult joinChannel(std::string_view client_id,
                                          std::string_view channel_id) = 0;
     virtual bcmd::Result<std::string> joinChannelByName(std::string_view client_id,

@@ -3,11 +3,13 @@
 #include "bcmd/client/adapter/tui/inbox_queue.hpp"
 #include "bcmd/client/application/port/i_server_gateway.hpp"
 #include "bcmd/client/application/usecase/connect_to_server.hpp"
+#include "bcmd/client/application/usecase/create_channel_command.hpp"
 #include "bcmd/client/application/usecase/join_channel_command.hpp"
 #include "bcmd/client/application/usecase/send_message_command.hpp"
 #include "bcmd/client/application/usecase/subscribe_command.hpp"
 #include "bcmd/shared/logging.hpp"
 #include "bcmd/shared/result.hpp"
+#include "bcmd/shared/string_utils.hpp"
 
 #include <CLI/CLI.hpp>
 #include <grpcpp/grpcpp.h>
@@ -56,12 +58,14 @@ bcmd::LogLevel select_log_level(bool quiet, bool verbose) noexcept {
 class ClientSession : public std::enable_shared_from_this<ClientSession> {
 public:
     ClientSession(std::shared_ptr<usecase::JoinChannelCommand> join_uc,
+                  std::shared_ptr<usecase::CreateChannelCommand> create_uc,
                   std::shared_ptr<usecase::SendMessageCommand> send_uc,
                   std::shared_ptr<usecase::SubscribeCommand> subscribe_uc,
                   std::shared_ptr<port::IServerGateway> gateway,
                   std::shared_ptr<tui_adapter::FtxuiPresenter> presenter, std::string client_id,
                   std::uint32_t replay_count)
         : join_uc_{std::move(join_uc)},
+          create_uc_{std::move(create_uc)},
           send_uc_{std::move(send_uc)},
           subscribe_uc_{std::move(subscribe_uc)},
           gateway_{std::move(gateway)},
@@ -86,11 +90,12 @@ public:
     }
 
     void joinChannel(const std::string& channel_name) {
-        if (channel_name.empty()) {
+        const auto trimmed = bcmd::trim(channel_name);
+        if (trimmed.empty()) {
             presenter_->showError("usage: /join <channel>");
             return;
         }
-        auto joined = join_uc_->execute(client_id_, channel_name);
+        auto joined = join_uc_->execute(client_id_, trimmed);
         if (!joined.has_value()) {
             presenter_->showError(bcmd::error_message(joined.error()));
             return;
@@ -101,6 +106,21 @@ public:
         }
         std::thread{&ClientSession::runSubscription, shared_from_this(), std::move(*joined)}
             .detach();
+    }
+
+    void createChannel(const std::string& channel_name) {
+        const auto trimmed = bcmd::trim(channel_name);
+        if (trimmed.empty()) {
+            presenter_->showError("usage: /create <channel>");
+            return;
+        }
+        auto created = create_uc_->execute(client_id_, trimmed);
+        if (!created.has_value()) {
+            presenter_->showError(bcmd::error_message(created.error()));
+            return;
+        }
+        gateway_->listChannels();
+        presenter_->showError("channel created: " + std::string{trimmed} + " (use /join to enter)");
     }
 
     void leaveChannel() {
@@ -149,6 +169,7 @@ private:
     }
 
     std::shared_ptr<usecase::JoinChannelCommand> join_uc_;
+    std::shared_ptr<usecase::CreateChannelCommand> create_uc_;
     std::shared_ptr<usecase::SendMessageCommand> send_uc_;
     std::shared_ptr<usecase::SubscribeCommand> subscribe_uc_;
     std::shared_ptr<port::IServerGateway> gateway_;
@@ -199,6 +220,10 @@ int run(int argc, char** argv) {
 
     CLI11_PARSE(app, argc, argv);
 
+    server_address = bcmd::trim_copy(server_address);
+    username = bcmd::trim_copy(username);
+    ca_cert_path = bcmd::trim_copy(ca_cert_path);
+
     bcmd::init_logging({.level = select_log_level(quiet, verbose)});
 
     auto credentials = build_credentials(insecure, ca_cert_path);
@@ -213,6 +238,7 @@ int run(int argc, char** argv) {
 
     auto connect_uc = std::make_shared<usecase::ConnectToServer>(gateway);
     auto join_uc = std::make_shared<usecase::JoinChannelCommand>(gateway);
+    auto create_uc = std::make_shared<usecase::CreateChannelCommand>(gateway);
     auto send_uc = std::make_shared<usecase::SendMessageCommand>(gateway);
     auto subscribe_uc = std::make_shared<usecase::SubscribeCommand>(gateway, presenter);
 
@@ -224,12 +250,13 @@ int run(int argc, char** argv) {
     const std::string& client_id = *client_id_result;
     presenter->updateConnectionStatus(true, !insecure, username);
 
-    auto session = std::make_shared<ClientSession>(join_uc, send_uc, subscribe_uc, gateway,
-                                                   presenter, client_id, replay_count);
+    auto session = std::make_shared<ClientSession>(join_uc, create_uc, send_uc, subscribe_uc,
+                                                   gateway, presenter, client_id, replay_count);
 
     presenter->setActions(tui_adapter::FtxuiPresenter::Actions{
         .send_message = [session](const std::string& content) { session->sendMessage(content); },
         .join_channel = [session](const std::string& name) { session->joinChannel(name); },
+        .create_channel = [session](const std::string& name) { session->createChannel(name); },
         .leave_channel = [session] { session->leaveChannel(); },
         .list_channels = [session] { session->listChannels(); },
     });

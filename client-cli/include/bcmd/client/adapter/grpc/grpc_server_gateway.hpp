@@ -22,6 +22,8 @@ public:
     bcmd::Result<std::string> connect(std::string_view username) override;
     bcmd::VoidResult disconnect(std::string_view client_id) override;
     bcmd::Result<std::vector<application::port::ChannelInfo>> listChannels() override;
+    bcmd::Result<std::string> createChannel(std::string_view client_id,
+                                            std::string_view channel_name) override;
     bcmd::VoidResult joinChannel(std::string_view client_id, std::string_view channel_id) override;
     bcmd::Result<std::string> joinChannelByName(std::string_view client_id,
                                                 std::string_view channel_name) override;
