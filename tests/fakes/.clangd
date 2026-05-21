@@ -1,0 +1,8 @@
+CompileFlags:
+  Add:
+    - -std=c++23
+    - -I../
+    - -I../../client-cli/include
+    - -I../../server/include
+    - -I../../shared/include
+    - -I../../build/debug/proto
