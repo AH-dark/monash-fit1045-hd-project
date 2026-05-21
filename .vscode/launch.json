@@ -3,42 +3,48 @@
   "configurations": [
     {
       "name": "Debug bcmd (server, insecure)",
-      "type": "lldb",
+      "type": "lldb-dap",
       "request": "launch",
-      "program": "${workspaceFolder}/build/debug/bcmd",
+      "program": "${workspaceFolder}/build/debug/server/bcmd",
       "args": ["--insecure", "--bind", "127.0.0.1:50051"],
       "cwd": "${workspaceFolder}",
       "preLaunchTask": "build:debug"
     },
     {
       "name": "Debug bcmd (server, TLS)",
-      "type": "lldb",
+      "type": "lldb-dap",
       "request": "launch",
-      "program": "${workspaceFolder}/build/debug/bcmd",
+      "program": "${workspaceFolder}/build/debug/server/bcmd",
       "args": [
-        "--bind", "127.0.0.1:50051",
-        "--cert", "${workspaceFolder}/certs/dev/server.pem",
-        "--key", "${workspaceFolder}/certs/dev/server.key"
+        "--bind",
+        "127.0.0.1:50051",
+        "--cert",
+        "${workspaceFolder}/certs/dev/server.pem",
+        "--key",
+        "${workspaceFolder}/certs/dev/server.key"
       ],
       "cwd": "${workspaceFolder}",
       "preLaunchTask": "build:debug"
     },
     {
       "name": "Debug bcli (client)",
-      "type": "lldb",
+      "type": "lldb-dap",
       "request": "launch",
-      "program": "${workspaceFolder}/build/debug/bcli",
+      "program": "${workspaceFolder}/build/debug/client-cli/bcli",
       "args": [
-        "--server", "127.0.0.1:50051",
-        "--ca", "${workspaceFolder}/certs/dev/ca.pem",
-        "--username", "dev"
+        "--server",
+        "127.0.0.1:50051",
+        "--ca",
+        "${workspaceFolder}/certs/dev/ca.pem",
+        "--username",
+        "dev"
       ],
       "cwd": "${workspaceFolder}",
       "preLaunchTask": "build:debug"
     },
     {
       "name": "Debug Catch2 test (by --test-spec)",
-      "type": "lldb",
+      "type": "lldb-dap",
       "request": "launch",
       "program": "${workspaceFolder}/build/debug/${input:testBinary}",
       "args": ["--test-spec", "${input:testFilter}", "--break"],
