@@ -1,4 +1,3 @@
-// AI Generated.
 #pragma once
 
 #include <cstdint>
