@@ -1,11 +1,16 @@
 #include "bcmd/client/adapter/grpc/grpc_server_gateway.hpp"
 
+#include "bcmd/client/application/port/i_server_gateway.hpp"
 #include "bcmd/client/domain/inbox_message.hpp"
 #include "bcmd/shared/result.hpp"
 #include "bcmd/v1/broadcast.grpc.pb.h"
+#include "bcmd/v1/broadcast.pb.h"
 
 #include <grpcpp/grpcpp.h>
+#include <grpcpp/support/status.h>
 
+#include <cstddef>
+#include <cstdint>
 #include <expected>
 #include <memory>
 #include <string>

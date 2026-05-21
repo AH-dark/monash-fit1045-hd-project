@@ -2,8 +2,10 @@
 
 #include "bcmd/client/application/port/i_presenter.hpp"
 #include "bcmd/client/application/port/i_server_gateway.hpp"
+#include "bcmd/client/domain/inbox_message.hpp"
 #include "bcmd/shared/result.hpp"
 
+#include <cstdint>
 #include <memory>
 #include <string_view>
 #include <utility>

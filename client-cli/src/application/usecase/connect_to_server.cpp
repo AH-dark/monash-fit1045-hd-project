@@ -1,6 +1,7 @@
 #include "bcmd/client/application/usecase/connect_to_server.hpp"
 
 #include "bcmd/client/application/port/i_server_gateway.hpp"
+#include "bcmd/shared/result.hpp"
 
 #include <memory>
 #include <string>

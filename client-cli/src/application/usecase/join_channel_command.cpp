@@ -1,6 +1,7 @@
 #include "bcmd/client/application/usecase/join_channel_command.hpp"
 
 #include "bcmd/client/application/port/i_server_gateway.hpp"
+#include "bcmd/shared/result.hpp"
 
 #include <memory>
 #include <string>
