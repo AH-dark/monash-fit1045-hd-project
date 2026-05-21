@@ -5,6 +5,7 @@
 #include "bcmd/v1/broadcast.grpc.pb.h"
 
 #include <grpcpp/grpcpp.h>
+#include <grpcpp/support/status.h>
 
 #include <cstdint>
 #include <memory>

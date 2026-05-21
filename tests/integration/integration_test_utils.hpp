@@ -108,6 +108,8 @@ public:
         REQUIRE(runner_->wait_until_started(std::chrono::seconds{3}));
     }
 
+    TestServer(TestServer&&) = delete;
+    TestServer& operator=(TestServer&&) = delete;
     ~TestServer() {
         if (runner_ != nullptr) {
             runner_->shutdown();
@@ -205,6 +207,8 @@ public:
 
     Subscription(const Subscription&) = delete;
     Subscription& operator=(const Subscription&) = delete;
+    Subscription(Subscription&&) = delete;
+    Subscription& operator=(Subscription&&) = delete;
 
     void stop() {
         context_.TryCancel();

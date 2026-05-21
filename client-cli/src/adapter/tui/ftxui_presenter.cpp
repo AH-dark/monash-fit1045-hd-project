@@ -4,11 +4,14 @@
 #include "bcmd/client/adapter/tui/components/channel_list.hpp"
 #include "bcmd/client/adapter/tui/components/input_bar.hpp"
 #include "bcmd/client/adapter/tui/components/message_view.hpp"
+#include "bcmd/client/adapter/tui/inbox_queue.hpp"
 #include "bcmd/client/domain/inbox_message.hpp"
 
 #include <ftxui/component/component.hpp>
+#include <ftxui/component/component_base.hpp>
 #include <ftxui/component/event.hpp>
 #include <ftxui/dom/elements.hpp>
+#include <ftxui/screen/color.hpp>
 
 #include <algorithm>
 #include <functional>

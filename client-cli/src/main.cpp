@@ -11,6 +11,7 @@
 
 #include <CLI/CLI.hpp>
 #include <grpcpp/grpcpp.h>
+#include <grpcpp/security/credentials.h>
 #include <spdlog/spdlog.h>
 
 #include <cstdint>
