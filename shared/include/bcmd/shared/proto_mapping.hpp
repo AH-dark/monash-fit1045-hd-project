@@ -1,3 +1,4 @@
+// AI Generated.
 #pragma once
 
 // Forward declarations of domain <-> proto translators.
