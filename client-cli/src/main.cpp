@@ -127,6 +127,7 @@ public:
             listChannels();
             return;
         }
+        presenter_->clearMessages();
         std::thread{&ClientSession::runSubscription, shared_from_this(), resolved_channel_id}
             .detach();
         listChannels();

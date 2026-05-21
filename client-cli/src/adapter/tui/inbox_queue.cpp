@@ -33,4 +33,10 @@ void InboxQueue::drainTo(std::vector<domain::InboxMessage>& out, std::size_t max
     }
 }
 
+void InboxQueue::clear() {
+    std::scoped_lock lock{mutex_};
+    std::queue<domain::InboxMessage> empty;
+    std::swap(messages_, empty);
+}
+
 }  // namespace bcmd::client::adapter::tui

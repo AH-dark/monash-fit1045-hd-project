@@ -1,5 +1,6 @@
 #include "bcmd/server/adapter/grpc/client_publisher.hpp"
 
+#include "bcmd/server/application/port/i_client_registry.hpp"
 #include "bcmd/server/domain/model/message.hpp"
 #include "bcmd/shared/ids.hpp"
 #include "bcmd/v1/broadcast.pb.h"
@@ -8,8 +9,10 @@
 
 #include <chrono>
 #include <cstdint>
+#include <memory>
 #include <mutex>
 #include <shared_mutex>
+#include <utility>
 
 namespace bcmd::server::adapter::grpc {
 
@@ -21,6 +24,10 @@ std::int64_t to_epoch_ms(std::chrono::system_clock::time_point time_point) {
 }
 
 }  // namespace
+
+GrpcClientPublisher::GrpcClientPublisher(
+    std::shared_ptr<application::port::IClientRegistry> client_registry)
+    : client_registry_(std::move(client_registry)) {}
 
 void GrpcClientPublisher::registerSubscriber(const bcmd::ClientId& id,
                                              ::grpc::ServerWriter<bcmd::v1::ChannelEvent>* writer) {
@@ -68,7 +75,7 @@ void GrpcClientPublisher::broadcastEvent(const bcmd::ChannelId& /*channel_id*/,
 }
 
 bcmd::v1::ChannelEvent GrpcClientPublisher::message_to_event(const domain::Message& message,
-                                                             bool from_replay) {
+                                                             bool from_replay) const {
     bcmd::v1::ChannelEvent event;
     auto* message_event = event.mutable_message();
     message_event->set_message_id(message.id().value());
@@ -77,6 +84,13 @@ bcmd::v1::ChannelEvent GrpcClientPublisher::message_to_event(const domain::Messa
     message_event->set_content(message.content().value());
     message_event->set_sent_at_ms(to_epoch_ms(message.sentAt()));
     message_event->set_from_replay(from_replay);
+
+    if (client_registry_) {
+        if (auto session = client_registry_->findById(message.senderId()); session.has_value()) {
+            message_event->set_sender_name(session->username().value());
+        }
+    }
+
     return event;
 }
 

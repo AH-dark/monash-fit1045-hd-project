@@ -18,6 +18,7 @@ public:
     virtual void showInfo(std::string_view info_text) = 0;
     virtual void updateConnectionStatus(bool connected, bool tls, std::string_view username) = 0;
     virtual void showChannelList(std::vector<std::string> channel_names) = 0;
+    virtual void clearMessages() = 0;
 
 protected:
     IPresenter() = default;

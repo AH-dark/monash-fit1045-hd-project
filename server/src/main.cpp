@@ -72,7 +72,7 @@ int run(int argc, char** argv) {
     auto client_registry = std::make_shared<persistence::InMemoryClientRegistry>();
     auto message_repo = std::make_shared<persistence::InMemoryMessageRepository>(history_cap);
     auto event_log = std::make_shared<persistence::InMemoryEventLog>();
-    auto publisher = std::make_shared<grpc_adapter::GrpcClientPublisher>();
+    auto publisher = std::make_shared<grpc_adapter::GrpcClientPublisher>(client_registry);
     (void)event_log;
 
     if (const auto DEFAULT_NAME = bcmd::server::domain::ChannelName::create("general");

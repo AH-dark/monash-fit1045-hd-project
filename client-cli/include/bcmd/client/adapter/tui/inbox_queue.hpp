@@ -14,6 +14,7 @@ public:
     void push(domain::InboxMessage message);
     bool tryPop(domain::InboxMessage& out);
     void drainTo(std::vector<domain::InboxMessage>& out, std::size_t max_count = 50);
+    void clear();
 
 private:
     std::mutex mutex_{};
