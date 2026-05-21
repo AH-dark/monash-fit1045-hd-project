@@ -344,3 +344,4 @@ certs/dev/*
 compile_commands.json
 *.pyc
 .sisyphus/
+*.md
