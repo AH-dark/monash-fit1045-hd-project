@@ -12,18 +12,18 @@ class ClientSession {
 public:
     ClientSession(bcmd::ClientId id, Username username);
 
-    const bcmd::ClientId& id() const noexcept { return id_; }
-    const Username& username() const noexcept { return username_; }
-    const std::unordered_set<bcmd::ChannelId>& joinedChannels() const noexcept {
+    [[nodiscard]] const bcmd::ClientId& id() const noexcept { return id_; }
+    [[nodiscard]] const Username& username() const noexcept { return username_; }
+    [[nodiscard]] const std::unordered_set<bcmd::ChannelId>& joinedChannels() const noexcept {
         return joined_channels_;
     }
-    std::chrono::system_clock::time_point connectedSince() const noexcept {
+    [[nodiscard]] std::chrono::system_clock::time_point connectedSince() const noexcept {
         return connected_since_;
     }
 
     void joinChannel(const bcmd::ChannelId& channel_id);
     void leaveChannel(const bcmd::ChannelId& channel_id);
-    bool isInChannel(const bcmd::ChannelId& channel_id) const noexcept;
+    [[nodiscard]] bool isInChannel(const bcmd::ChannelId& channel_id) const noexcept;
 
 private:
     bcmd::ClientId id_;

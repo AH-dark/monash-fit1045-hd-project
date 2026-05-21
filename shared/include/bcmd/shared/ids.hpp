@@ -44,8 +44,8 @@ public:
         return StrongId{uuids::to_string(*parsed_uuid)};
     }
 
-    const std::string& value() const noexcept { return value_; }
-    std::string to_string() const { return value_; }
+    [[nodiscard]] const std::string& value() const noexcept { return value_; }
+    [[nodiscard]] std::string to_string() const { return value_; }
 
     bool operator==(const StrongId&) const = default;
     bool operator<(const StrongId& other) const noexcept { return value_ < other.value_; }

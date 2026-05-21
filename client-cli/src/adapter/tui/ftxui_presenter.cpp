@@ -105,20 +105,19 @@ void FtxuiPresenter::handleSubmit(const std::function<void()>& on_quit) {
     }
 
     const auto parsed = cli::parseCommand(input);
+    if (parsed.type == cli::CommandType::Leave || parsed.type == cli::CommandType::List) {
+        const auto& action =
+            parsed.type == cli::CommandType::Leave ? actions.leave_channel : actions.list_channels;
+        if (action) {
+            action();
+        }
+        return;
+    }
+
     switch (parsed.type) {
         case cli::CommandType::Join:
             if (actions.join_channel) {
                 actions.join_channel(parsed.arg);
-            }
-            break;
-        case cli::CommandType::Leave:
-            if (actions.leave_channel) {
-                actions.leave_channel();
-            }
-            break;
-        case cli::CommandType::List:
-            if (actions.list_channels) {
-                actions.list_channels();
             }
             break;
         case cli::CommandType::Quit:
@@ -130,9 +129,13 @@ void FtxuiPresenter::handleSubmit(const std::function<void()>& on_quit) {
                 actions.send_message(input);
             }
             break;
+        case cli::CommandType::Leave:
+        case cli::CommandType::List:
+            break;
     }
 }
 
+// NOLINTNEXTLINE(readability-make-member-function-const)
 ftxui::Element FtxuiPresenter::render(const ftxui::Component& channels,
                                       const ftxui::Component& input) {
     std::scoped_lock lock{ui_mutex_};

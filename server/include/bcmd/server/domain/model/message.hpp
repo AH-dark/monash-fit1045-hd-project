@@ -21,11 +21,11 @@ public:
           content_(std::move(content)),
           sent_at_(sent_at) {}
 
-    const bcmd::MessageId& id() const noexcept { return id_; }
-    const bcmd::ClientId& senderId() const noexcept { return sender_id_; }
-    const bcmd::ChannelId& channelId() const noexcept { return channel_id_; }
-    const MessageContent& content() const noexcept { return content_; }
-    std::chrono::system_clock::time_point sentAt() const noexcept { return sent_at_; }
+    [[nodiscard]] const bcmd::MessageId& id() const noexcept { return id_; }
+    [[nodiscard]] const bcmd::ClientId& senderId() const noexcept { return sender_id_; }
+    [[nodiscard]] const bcmd::ChannelId& channelId() const noexcept { return channel_id_; }
+    [[nodiscard]] const MessageContent& content() const noexcept { return content_; }
+    [[nodiscard]] std::chrono::system_clock::time_point sentAt() const noexcept { return sent_at_; }
 
 private:
     bcmd::MessageId id_;

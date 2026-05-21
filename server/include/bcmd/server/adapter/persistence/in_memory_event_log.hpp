@@ -15,7 +15,7 @@ public:
     using Entry = std::pair<std::string, std::string>;
 
     void log(std::string_view event_type, std::string_view details) override;
-    std::vector<Entry> entries() const;
+    [[nodiscard]] std::vector<Entry> entries() const;
 
 private:
     mutable std::shared_mutex mutex_;

@@ -16,7 +16,7 @@ public:
 
     static std::optional<ChannelName> create(std::string_view raw);
 
-    const std::string& value() const noexcept { return value_; }
+    [[nodiscard]] const std::string& value() const noexcept { return value_; }
 
     bool operator==(const ChannelName&) const = default;
 
@@ -28,9 +28,11 @@ private:
 
 }  // namespace bcmd::server::domain
 
+// NOLINTBEGIN(bugprone-std-namespace-modification)
 template <>
 struct std::hash<bcmd::server::domain::ChannelName> {
     std::size_t operator()(const bcmd::server::domain::ChannelName& name) const noexcept {
         return std::hash<std::string>{}(name.value());
     }
 };
+// NOLINTEND(bugprone-std-namespace-modification)

@@ -16,17 +16,21 @@ class Channel {
 public:
     Channel(bcmd::ChannelId id, ChannelName name);
 
-    const bcmd::ChannelId& id() const noexcept { return id_; }
-    const ChannelName& name() const noexcept { return name_; }
-    std::size_t memberCount() const noexcept { return members_.size(); }
-    const std::unordered_set<bcmd::ClientId>& members() const noexcept { return members_; }
-    std::chrono::system_clock::time_point createdAt() const noexcept { return created_at_; }
+    [[nodiscard]] const bcmd::ChannelId& id() const noexcept { return id_; }
+    [[nodiscard]] const ChannelName& name() const noexcept { return name_; }
+    [[nodiscard]] std::size_t memberCount() const noexcept { return members_.size(); }
+    [[nodiscard]] const std::unordered_set<bcmd::ClientId>& members() const noexcept {
+        return members_;
+    }
+    [[nodiscard]] std::chrono::system_clock::time_point createdAt() const noexcept {
+        return created_at_;
+    }
 
     // Idempotent on the caller's side: returns `Error::AlreadyMember` when the
     // client is already in the channel so the caller can choose to ignore.
     bcmd::VoidResult addMember(const bcmd::ClientId& client_id);
     bcmd::VoidResult removeMember(const bcmd::ClientId& client_id);
-    bool hasMember(const bcmd::ClientId& client_id) const noexcept;
+    [[nodiscard]] bool hasMember(const bcmd::ClientId& client_id) const noexcept;
 
 private:
     bcmd::ChannelId id_;

@@ -17,7 +17,7 @@ public:
 
     static std::optional<Username> create(std::string_view raw);
 
-    const std::string& value() const noexcept { return value_; }
+    [[nodiscard]] const std::string& value() const noexcept { return value_; }
 
     bool operator==(const Username&) const = default;
 
@@ -30,7 +30,7 @@ private:
 }  // namespace bcmd::server::domain
 
 template <>
-struct std::hash<bcmd::server::domain::Username> {
+struct std::hash<bcmd::server::domain::Username> {  // NOLINT(bugprone-std-namespace-modification)
     std::size_t operator()(const bcmd::server::domain::Username& name) const noexcept {
         return std::hash<std::string>{}(name.value());
     }

@@ -18,7 +18,7 @@ public:
 
     static std::optional<MessageContent> create(std::string_view raw);
 
-    const std::string& value() const noexcept { return value_; }
+    [[nodiscard]] const std::string& value() const noexcept { return value_; }
 
     bool operator==(const MessageContent&) const = default;
 
@@ -30,9 +30,11 @@ private:
 
 }  // namespace bcmd::server::domain
 
+// NOLINTBEGIN(bugprone-std-namespace-modification)
 template <>
 struct std::hash<bcmd::server::domain::MessageContent> {
     std::size_t operator()(const bcmd::server::domain::MessageContent& content) const noexcept {
         return std::hash<std::string>{}(content.value());
     }
 };
+// NOLINTEND(bugprone-std-namespace-modification)
