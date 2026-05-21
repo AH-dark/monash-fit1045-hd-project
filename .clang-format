@@ -1,0 +1,15 @@
+---
+BasedOnStyle: Google
+ColumnLimit: 100
+IndentWidth: 4
+AccessModifierOffset: -4
+ContinuationIndentWidth: 4
+SortIncludes: CaseSensitive
+IncludeBlocks: Regroup
+IncludeCategories:
+  - Regex: '^"(bcmd|shared)/'
+    Priority: 1
+  - Regex: '^<grpc|^<google|^<ftxui|^<spdlog|^<catch2|^<CLI'
+    Priority: 2
+  - Regex: '^<'
+    Priority: 3

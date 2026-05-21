@@ -1,0 +1,47 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build-and-test:
+    strategy:
+      matrix:
+        os: [ubuntu-24.04, macos-14]
+        build_type: [debug, release]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: conan-io/setup-conan@v1
+        with:
+          conan_version: "2.*"
+      - name: Cache Conan packages
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.conan2/p/
+            ~/.conan2/b/
+          key: conan-${{ matrix.os }}-${{ hashFiles('conanfile.py', 'conan.lock') }}
+          restore-keys: conan-${{ matrix.os }}-
+      - name: Conan profile detect
+        run: conan profile detect --force
+      - name: Install dependencies
+        run: |
+          PROFILE="conan_profiles/dev-linux"
+          if [[ "$RUNNER_OS" == "macOS" ]]; then PROFILE="conan_profiles/dev-macos"; fi
+          conan install . --profile="$PROFILE" --build=missing -of=build/${{ matrix.build_type }}
+      - name: Configure CMake
+        run: cmake --preset ${{ matrix.build_type }}
+      - name: Build
+        run: cmake --build --preset ${{ matrix.build_type }}
+      - name: Test
+        run: ctest --preset ${{ matrix.build_type }} --output-on-failure
+      - name: Format check
+        run: |
+          find server client-cli shared -name "*.hpp" -o -name "*.cpp" 2>/dev/null | \
+            xargs -r clang-format --dry-run --Werror || true
