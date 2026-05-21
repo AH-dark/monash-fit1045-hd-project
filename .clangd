@@ -23,6 +23,7 @@ Diagnostics:
       - readability-magic-numbers
       - cppcoreguidelines-avoid-magic-numbers
       - readability-convert-member-functions-to-static
+      - readability-redundant-member-init
       - bugprone-easily-swappable-parameters
       - performance-enum-size
       - cppcoreguidelines-avoid-non-const-global-variables
