@@ -12,6 +12,7 @@ Checks: >
   -readability-identifier-naming,
   -readability-convert-member-functions-to-static,
   -readability-magic-numbers,
+  -readability-redundant-member-init,
   -bugprone-easily-swappable-parameters,
   -cppcoreguidelines-avoid-magic-numbers,
   -cppcoreguidelines-avoid-non-const-global-variables,
