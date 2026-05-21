@@ -42,6 +42,16 @@ void FtxuiPresenter::showError(std::string_view error_text) {
     {
         std::scoped_lock lock{ui_mutex_};
         error_toast_ = std::string{error_text};
+        info_toast_.clear();
+    }
+    screen_.PostEvent(ftxui::Event::Custom);
+}
+
+void FtxuiPresenter::showInfo(std::string_view info_text) {
+    {
+        std::scoped_lock lock{ui_mutex_};
+        info_toast_ = std::string{info_text};
+        error_toast_.clear();
     }
     screen_.PostEvent(ftxui::Event::Custom);
 }
@@ -156,6 +166,7 @@ ftxui::Element FtxuiPresenter::render(const ftxui::Component& channels,
     const std::string tls_status = tls_ ? "TLS" : "insecure";
     const std::string status = "Status: " + connection + " (" + tls_status + ") as " + username_;
     const std::string error = error_toast_.empty() ? "" : " | Error: " + error_toast_;
+    const std::string info = info_toast_.empty() ? "" : " | " + info_toast_;
     const std::string hint = show_help_ ? "" : " | press ? for help";
 
     auto main_view =
@@ -170,7 +181,7 @@ ftxui::Element FtxuiPresenter::render(const ftxui::Component& channels,
             }) | ftxui::flex,
             ftxui::separator(),
             input->Render() | ftxui::border,
-            ftxui::text(status + error + hint) | ftxui::dim,
+            ftxui::text(status + error + info + hint) | ftxui::dim,
         }) |
         ftxui::border;
 

@@ -32,6 +32,7 @@ public:
     void showMessage(domain::InboxMessage message) override;
     void showReplayComplete(std::string_view channel_id) override;
     void showError(std::string_view error_text) override;
+    void showInfo(std::string_view info_text) override;
     void updateConnectionStatus(bool connected, bool tls, std::string_view username) override;
     void showChannelList(std::vector<std::string> channel_names) override;
 
@@ -57,6 +58,7 @@ private:
     bool show_help_{false};
     std::string username_{};
     std::string error_toast_{};
+    std::string info_toast_{};
     std::string input_text_{};
     Actions actions_{};
 };

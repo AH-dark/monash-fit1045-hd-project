@@ -16,14 +16,19 @@
 #include <grpcpp/security/credentials.h>
 #include <spdlog/spdlog.h>
 
+#include <atomic>
+#include <chrono>
+#include <condition_variable>
 #include <cstdint>
 #include <cstdio>
 #include <exception>
+#include <expected>
 #include <fstream>
 #include <memory>
 #include <mutex>
 #include <sstream>
 #include <string>
+#include <string_view>
 #include <thread>
 #include <utility>
 #include <vector>
@@ -96,16 +101,35 @@ public:
             return;
         }
         auto joined = join_uc_->execute(client_id_, trimmed);
-        if (!joined.has_value()) {
+        std::string resolved_channel_id;
+        if (joined.has_value()) {
+            resolved_channel_id = *joined;
+            presenter_->showInfo("joined channel: " + std::string{trimmed});
+        } else if (joined.error() == bcmd::Error::AlreadyMember) {
+            const auto resolved = resolveChannelIdByName(trimmed);
+            if (!resolved.has_value()) {
+                presenter_->showError(bcmd::error_message(resolved.error()));
+                return;
+            }
+            resolved_channel_id = *resolved;
+            presenter_->showInfo("already in channel: " + std::string{trimmed});
+        } else {
             presenter_->showError(bcmd::error_message(joined.error()));
             return;
         }
+
+        std::string previous;
         {
             std::scoped_lock lock{channel_mutex_};
-            active_channel_id_ = *joined;
+            previous = std::exchange(active_channel_id_, resolved_channel_id);
         }
-        std::thread{&ClientSession::runSubscription, shared_from_this(), std::move(*joined)}
+        if (previous == resolved_channel_id) {
+            listChannels();
+            return;
+        }
+        std::thread{&ClientSession::runSubscription, shared_from_this(), resolved_channel_id}
             .detach();
+        listChannels();
     }
 
     void createChannel(const std::string& channel_name) {
@@ -119,8 +143,8 @@ public:
             presenter_->showError(bcmd::error_message(created.error()));
             return;
         }
-        gateway_->listChannels();
-        presenter_->showError("channel created: " + std::string{trimmed} + " (use /join to enter)");
+        listChannels();
+        presenter_->showInfo("channel created: " + std::string{trimmed} + " (use /join to enter)");
     }
 
     void leaveChannel() {
@@ -153,7 +177,28 @@ public:
         presenter_->showChannelList(std::move(names));
     }
 
+    void startChannelListPolling(std::chrono::seconds interval) {
+        polling_stop_.store(false);
+        polling_thread_ = std::thread([self = shared_from_this(), interval] {
+            while (!self->polling_stop_.load()) {
+                std::unique_lock lock{self->polling_mutex_};
+                self->polling_cv_.wait_for(lock, interval,
+                                           [&self] { return self->polling_stop_.load(); });
+                if (self->polling_stop_.load()) {
+                    return;
+                }
+                lock.unlock();
+                self->listChannels();
+            }
+        });
+    }
+
     void disconnect() {
+        polling_stop_.store(true);
+        polling_cv_.notify_all();
+        if (polling_thread_.joinable()) {
+            polling_thread_.join();
+        }
         const auto result = gateway_->disconnect(client_id_);
         if (!result.has_value()) {
             spdlog::error("disconnect failed: {}", bcmd::error_message(result.error()));
@@ -168,6 +213,20 @@ private:
         }
     }
 
+    bcmd::Result<std::string> resolveChannelIdByName(std::string_view channel_name) {
+        const auto trimmed = bcmd::trim(channel_name);
+        auto channels = gateway_->listChannels();
+        if (!channels.has_value()) {
+            return std::unexpected(channels.error());
+        }
+        for (const auto& channel : *channels) {
+            if (channel.name == trimmed) {
+                return channel.id;
+            }
+        }
+        return std::unexpected(bcmd::Error::ChannelNotFound);
+    }
+
     std::shared_ptr<usecase::JoinChannelCommand> join_uc_;
     std::shared_ptr<usecase::CreateChannelCommand> create_uc_;
     std::shared_ptr<usecase::SendMessageCommand> send_uc_;
@@ -179,6 +238,11 @@ private:
 
     std::mutex channel_mutex_;
     std::string active_channel_id_;
+
+    std::atomic<bool> polling_stop_{false};
+    std::mutex polling_mutex_;
+    std::condition_variable polling_cv_;
+    std::thread polling_thread_;
 };
 
 std::shared_ptr<::grpc::ChannelCredentials> build_credentials(bool insecure,
@@ -262,6 +326,7 @@ int run(int argc, char** argv) {
     });
 
     session->listChannels();
+    session->startChannelListPolling(std::chrono::seconds{5});
 
     return presenter->run([session] { session->disconnect(); });
 }
