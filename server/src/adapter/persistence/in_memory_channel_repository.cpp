@@ -1,11 +1,15 @@
 #include "bcmd/server/adapter/persistence/in_memory_channel_repository.hpp"
 
+#include "bcmd/server/domain/model/channel.hpp"
+#include "bcmd/server/domain/model/channel_name.hpp"
+#include "bcmd/shared/ids.hpp"
 #include "bcmd/shared/result.hpp"
 
 #include <expected>
 #include <mutex>
 #include <shared_mutex>
 #include <utility>
+#include <vector>
 
 namespace bcmd::server::adapter::persistence {
 

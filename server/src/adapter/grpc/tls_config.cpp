@@ -1,8 +1,11 @@
 #include "bcmd/server/adapter/grpc/tls_config.hpp"
 
+#include "bcmd/shared/result.hpp"
+
 #include <expected>
 #include <fstream>
 #include <sstream>
+#include <string>
 
 namespace bcmd::server::adapter::grpc {
 

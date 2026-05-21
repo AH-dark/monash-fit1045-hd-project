@@ -1,9 +1,15 @@
 #include "bcmd/server/adapter/persistence/in_memory_message_repository.hpp"
 
+#include "bcmd/server/domain/model/message.hpp"
+#include "bcmd/shared/ids.hpp"
+#include "bcmd/shared/result.hpp"
+
 #include <algorithm>
 #include <cstddef>
+#include <cstdint>
 #include <mutex>
 #include <shared_mutex>
+#include <vector>
 
 namespace bcmd::server::adapter::persistence {
 

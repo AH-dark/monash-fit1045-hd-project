@@ -1,6 +1,9 @@
 #pragma once
 
 #include "bcmd/server/application/port/i_message_repository.hpp"
+#include "bcmd/server/domain/model/message.hpp"
+#include "bcmd/shared/ids.hpp"
+#include "bcmd/shared/result.hpp"
 
 #include <cstdint>
 #include <deque>

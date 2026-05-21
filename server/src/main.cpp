@@ -18,10 +18,14 @@
 #include <spdlog/spdlog.h>
 
 #include <cstdint>
+#include <cstdio>
+#include <exception>
 #include <memory>
 #include <string>
 
-int main(int argc, char** argv) {
+namespace {
+
+int run(int argc, char** argv) {
     CLI::App app{"bcmd - broadcast messaging server"};
 
     std::string bind_address{"0.0.0.0:50051"};
@@ -100,4 +104,20 @@ int main(int argc, char** argv) {
 
     spdlog::info("Starting bcmd on {}", bind_address);
     return runner.run_and_block();
+}
+
+}  // namespace
+
+int main(int argc, char** argv) {
+    try {
+        return run(argc, argv);
+    } catch (const std::exception& ex) {
+        std::fputs("Fatal: ", stderr);
+        std::fputs(ex.what(), stderr);
+        std::fputs("\n", stderr);
+        return 1;
+    } catch (...) {
+        std::fputs("Fatal: unknown exception\n", stderr);
+        return 1;
+    }
 }

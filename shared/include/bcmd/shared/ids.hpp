@@ -26,7 +26,7 @@ public:
         static thread_local std::mt19937 engine = [] {
             std::random_device random_dev;
             std::array<int, std::mt19937::state_size> seed_data{};
-            std::generate(seed_data.begin(), seed_data.end(), std::ref(random_dev));
+            std::ranges::generate(seed_data, std::ref(random_dev));
             std::seed_seq seq(seed_data.begin(), seed_data.end());
             return std::mt19937(seq);
         }();

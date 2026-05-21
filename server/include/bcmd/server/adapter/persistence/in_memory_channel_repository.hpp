@@ -1,6 +1,10 @@
 #pragma once
 
 #include "bcmd/server/application/port/i_channel_repository.hpp"
+#include "bcmd/server/domain/model/channel.hpp"
+#include "bcmd/server/domain/model/channel_name.hpp"
+#include "bcmd/shared/ids.hpp"
+#include "bcmd/shared/result.hpp"
 
 #include <shared_mutex>
 #include <string>

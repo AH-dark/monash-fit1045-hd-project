@@ -1,5 +1,9 @@
 #include "bcmd/server/domain/service/message_router.hpp"
 
+#include "bcmd/server/domain/model/channel.hpp"
+#include "bcmd/server/domain/model/message.hpp"
+#include "bcmd/shared/ids.hpp"
+
 #include <vector>
 
 namespace bcmd::server::domain {

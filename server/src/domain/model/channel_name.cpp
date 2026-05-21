@@ -1,6 +1,7 @@
 #include "bcmd/server/domain/model/channel_name.hpp"
 
 #include <cctype>
+#include <optional>
 #include <string>
 #include <string_view>
 

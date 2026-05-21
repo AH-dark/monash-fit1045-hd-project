@@ -1,5 +1,8 @@
 #include "bcmd/server/adapter/persistence/in_memory_client_registry.hpp"
 
+#include "bcmd/server/domain/model/client_session.hpp"
+#include "bcmd/server/domain/model/username.hpp"
+#include "bcmd/shared/ids.hpp"
 #include "bcmd/shared/result.hpp"
 
 #include <expected>

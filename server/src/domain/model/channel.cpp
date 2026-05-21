@@ -1,5 +1,7 @@
 #include "bcmd/server/domain/model/channel.hpp"
 
+#include "bcmd/server/domain/model/channel_name.hpp"
+#include "bcmd/shared/ids.hpp"
 #include "bcmd/shared/result.hpp"
 
 #include <chrono>
