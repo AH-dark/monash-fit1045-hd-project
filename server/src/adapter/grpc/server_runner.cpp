@@ -1,6 +1,8 @@
 #include "bcmd/server/adapter/grpc/server_runner.hpp"
 
+#include <chrono>
 #include <memory>
+#include <mutex>
 #include <string>
 #include <utility>
 
@@ -36,13 +38,15 @@ int GrpcServerRunner::run_and_block() {
         spdlog::warn("Starting gRPC server with insecure credentials");
         credentials = ::grpc::InsecureServerCredentials();
     } else {
-        ::grpc::SslServerCredentialsOptions::PemKeyCertPair key_cert_pair{key_pem_, cert_pem_};
+        ::grpc::SslServerCredentialsOptions::PemKeyCertPair key_cert_pair{.private_key = key_pem_,
+                                                                          .cert_chain = cert_pem_};
         ::grpc::SslServerCredentialsOptions options;
         options.pem_key_cert_pairs.push_back(key_cert_pair);
         credentials = ::grpc::SslServerCredentials(options);
     }
 
-    builder.AddListeningPort(bind_address_, credentials);
+    int selected_port{0};
+    builder.AddListeningPort(bind_address_, credentials, &selected_port);
     for (auto* service : services_) {
         builder.RegisterService(service);
     }
@@ -50,12 +54,51 @@ int GrpcServerRunner::run_and_block() {
     auto server = builder.BuildAndStart();
     if (!server) {
         spdlog::error("Failed to start gRPC server on {}", bind_address_);
+        {
+            std::lock_guard lock(mutex_);
+            started_ = false;
+        }
+        started_cv_.notify_all();
         return 1;
     }
 
-    spdlog::info("gRPC server listening on {}", bind_address_);
-    server->Wait();
+    {
+        std::lock_guard lock(mutex_);
+        server_ = std::move(server);
+        auto colon = bind_address_.rfind(':');
+        auto host = colon == std::string::npos ? bind_address_ : bind_address_.substr(0, colon);
+        bound_address_ = std::move(host) + ":" + std::to_string(selected_port);
+        started_ = true;
+    }
+    started_cv_.notify_all();
+
+    spdlog::info("gRPC server listening on {}", bound_address());
+    server_->Wait();
+    {
+        std::lock_guard lock(mutex_);
+        server_.reset();
+        started_ = false;
+    }
     return 0;
+}
+
+void GrpcServerRunner::shutdown() {
+    std::unique_lock lock(mutex_);
+    auto* server = server_.get();
+    lock.unlock();
+    if (server != nullptr) {
+        server->Shutdown();
+    }
+}
+
+std::string GrpcServerRunner::bound_address() const {
+    std::lock_guard lock(mutex_);
+    return bound_address_;
+}
+
+bool GrpcServerRunner::wait_until_started(std::chrono::milliseconds timeout) {
+    std::unique_lock lock(mutex_);
+    return started_cv_.wait_for(lock, timeout, [this] { return started_; });
 }
 
 }  // namespace bcmd::server::adapter::grpc
