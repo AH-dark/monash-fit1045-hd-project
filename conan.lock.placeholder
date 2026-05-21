@@ -1,3 +1,0 @@
-# Placeholder lockfile.
-# Conan was not available during Phase 0 scaffolding, so run this once Conan 2 is installed:
-#   conan lock create . --profile=conan_profiles/dev-macos --lockfile-out=conan.lock
