@@ -10,19 +10,19 @@ namespace bcmd::server::adapter::persistence {
 
 class PostgresChannelRepository final : public application::port::IChannelRepository {
 public:
-    bcmd::Result<domain::Channel> findById(const bcmd::ChannelId&) override {
+    bcmd::Result<domain::Channel> findById(const bcmd::ChannelId& /*id*/) override {
         throw std::runtime_error("not implemented: HD-1a");
     }
-    bcmd::Result<domain::Channel> findByName(const domain::ChannelName&) override {
+    bcmd::Result<domain::Channel> findByName(const domain::ChannelName& /*name*/) override {
         throw std::runtime_error("not implemented: HD-1a");
     }
     std::vector<domain::Channel> listAll() override {
         throw std::runtime_error("not implemented: HD-1a");
     }
-    bcmd::VoidResult save(const domain::Channel&) override {
+    bcmd::VoidResult save(const domain::Channel& /*channel*/) override {
         throw std::runtime_error("not implemented: HD-1a");
     }
-    bcmd::Result<domain::Channel> create(domain::ChannelName) override {
+    bcmd::Result<domain::Channel> create(domain::ChannelName /*name*/) override {
         throw std::runtime_error("not implemented: HD-1a");
     }
 };

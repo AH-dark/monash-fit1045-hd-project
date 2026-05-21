@@ -10,10 +10,11 @@ namespace bcmd::server::adapter::persistence {
 
 class PostgresMessageRepository final : public application::port::IMessageRepository {
 public:
-    bcmd::VoidResult save(const domain::Message&) override {
+    bcmd::VoidResult save(const domain::Message& /*message*/) override {
         throw std::runtime_error("not implemented: HD-1a");
     }
-    std::vector<domain::Message> recent(const bcmd::ChannelId&, std::uint32_t) override {
+    std::vector<domain::Message> recent(const bcmd::ChannelId& /*channel_id*/,
+                                        std::uint32_t /*limit*/) override {
         throw std::runtime_error("not implemented: HD-1a");
     }
 };
