@@ -9,9 +9,11 @@ dependencies, and Catch2-based tests.
 ## Quick Start
 
 ### Prerequisites
+
 Run `./scripts/bootstrap.sh` to install Conan 2, CMake, Ninja, clang-format, clang-tidy, and grpcurl.
 
 ### Build
+
 ```bash
 # Install dependencies (first run ~10 min for gRPC; cached thereafter)
 conan install . --profile=conan_profiles/dev-macos --build=missing -of=build/debug
@@ -25,6 +27,7 @@ ctest --preset debug --output-on-failure
 ```
 
 ### Run
+
 ```bash
 # Generate dev TLS certificates
 bash scripts/gen-dev-certs.sh
@@ -57,7 +60,7 @@ See [docs/tls-setup.md](docs/tls-setup.md) for TLS details and [docs/architectur
 The bootstrap script installs Conan 2, detects a default Conan profile, and installs common C++
 tooling such as CMake, Ninja, clang-format, clang-tidy, and grpcurl.
 
-## Build
+## Production Build
 
 Generate Conan toolchain files first, then use the `debug` or `release` CMake presets.
 
@@ -82,6 +85,6 @@ ctest --preset release --output-on-failure
 ./scripts/lint.sh
 ```
 
-## Remote
+## AI Disclosure
 
-TODO: Add the `origin` remote once the repository has been provisioned.
+All test code under `tests/` (unit tests, integration tests, and test fakes) is AI-generated.
