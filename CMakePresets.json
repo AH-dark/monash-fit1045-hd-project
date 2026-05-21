@@ -3,17 +3,32 @@
   "configurePresets": [
     {
       "name": "debug",
-      "inherits": "conan-debug",
-      "displayName": "Debug"
+      "displayName": "Debug",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/debug",
+      "toolchainFile": "${sourceDir}/build/debug/generators/conan_toolchain.cmake",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_POLICY_DEFAULT_CMP0091": "NEW"
+      }
     },
     {
       "name": "release",
-      "inherits": "conan-release",
-      "displayName": "Release"
+      "displayName": "Release",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/release",
+      "toolchainFile": "${sourceDir}/build/release/generators/conan_toolchain.cmake",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_POLICY_DEFAULT_CMP0091": "NEW"
+      }
     },
     {
       "name": "asan",
       "inherits": "debug",
+      "displayName": "Debug + ASan/UBSan",
+      "binaryDir": "${sourceDir}/build/asan",
+      "toolchainFile": "${sourceDir}/build/asan/generators/conan_toolchain.cmake",
       "cacheVariables": {
         "CMAKE_CXX_FLAGS": "-fsanitize=address,undefined"
       }
@@ -21,6 +36,9 @@
     {
       "name": "ubsan",
       "inherits": "debug",
+      "displayName": "Debug + UBSan",
+      "binaryDir": "${sourceDir}/build/ubsan",
+      "toolchainFile": "${sourceDir}/build/ubsan/generators/conan_toolchain.cmake",
       "cacheVariables": {
         "CMAKE_CXX_FLAGS": "-fsanitize=undefined"
       }
@@ -28,6 +46,9 @@
     {
       "name": "tsan",
       "inherits": "debug",
+      "displayName": "Debug + TSan",
+      "binaryDir": "${sourceDir}/build/tsan",
+      "toolchainFile": "${sourceDir}/build/tsan/generators/conan_toolchain.cmake",
       "cacheVariables": {
         "CMAKE_CXX_FLAGS": "-fsanitize=thread"
       }

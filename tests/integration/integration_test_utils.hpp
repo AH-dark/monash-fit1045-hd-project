@@ -176,6 +176,7 @@ inline std::string join_channel(BroadcastStub& stub, std::string_view client_id,
         }
     }
     FAIL("joined channel was not visible in ListChannels");
+    return {};
 }
 
 inline void send_message(BroadcastStub& stub, std::string_view client_id,

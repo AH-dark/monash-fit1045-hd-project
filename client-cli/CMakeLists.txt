@@ -5,7 +5,6 @@ find_package(CLI11 REQUIRED CONFIG)
 find_package(ftxui REQUIRED CONFIG)
 find_package(spdlog REQUIRED CONFIG)
 find_package(stduuid REQUIRED CONFIG)
-find_package(nlohmann_json REQUIRED CONFIG)
 find_package(Catch2 REQUIRED CONFIG)
 
 add_library(bcli_lib STATIC
@@ -42,8 +41,7 @@ target_link_libraries(bcli PRIVATE
     CLI11::CLI11
     ftxui::component
     spdlog::spdlog
-    stduuid
-    nlohmann_json::nlohmann_json
+    stduuid::stduuid
 )
 
 target_compile_features(bcli PRIVATE cxx_std_23)

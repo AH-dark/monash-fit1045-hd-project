@@ -14,7 +14,7 @@ target_include_directories(bcmd_shared PUBLIC
 
 target_link_libraries(bcmd_shared PUBLIC
     spdlog::spdlog
-    stduuid
+    stduuid::stduuid
     bcmd_proto
 )
 
