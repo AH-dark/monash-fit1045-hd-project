@@ -1,6 +1,10 @@
 #pragma once
 
 #include "bcmd/server/application/port/i_client_registry.hpp"
+#include "bcmd/server/domain/model/client_session.hpp"
+#include "bcmd/server/domain/model/username.hpp"
+#include "bcmd/shared/ids.hpp"
+#include "bcmd/shared/result.hpp"
 
 #include <shared_mutex>
 #include <string>

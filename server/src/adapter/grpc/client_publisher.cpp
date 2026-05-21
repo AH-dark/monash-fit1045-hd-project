@@ -1,5 +1,11 @@
 #include "bcmd/server/adapter/grpc/client_publisher.hpp"
 
+#include "bcmd/server/domain/model/message.hpp"
+#include "bcmd/shared/ids.hpp"
+#include "bcmd/v1/broadcast.pb.h"
+
+#include <grpcpp/support/sync_stream.h>
+
 #include <chrono>
 #include <cstdint>
 #include <mutex>

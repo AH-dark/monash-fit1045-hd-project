@@ -1,6 +1,7 @@
 #include "bcmd/client/adapter/grpc/grpc_server_gateway.hpp"
 #include "bcmd/client/adapter/tui/ftxui_presenter.hpp"
 #include "bcmd/client/adapter/tui/inbox_queue.hpp"
+#include "bcmd/client/application/port/i_server_gateway.hpp"
 #include "bcmd/client/application/usecase/connect_to_server.hpp"
 #include "bcmd/client/application/usecase/join_channel_command.hpp"
 #include "bcmd/client/application/usecase/send_message_command.hpp"
@@ -13,6 +14,8 @@
 #include <spdlog/spdlog.h>
 
 #include <cstdint>
+#include <cstdio>
+#include <exception>
 #include <fstream>
 #include <memory>
 #include <mutex>
@@ -23,6 +26,11 @@
 #include <vector>
 
 namespace {
+
+namespace grpc_adapter = bcmd::client::adapter::grpc;
+namespace tui_adapter = bcmd::client::adapter::tui;
+namespace port = bcmd::client::application::port;
+namespace usecase = bcmd::client::application::usecase;
 
 std::string read_file(const std::string& path) {
     std::ifstream file{path};
@@ -41,9 +49,134 @@ bcmd::LogLevel select_log_level(bool quiet, bool verbose) noexcept {
     return bcmd::LogLevel::Info;
 }
 
-}  // namespace
+// Owns mutable per-connection state and routes user actions to use cases.
+// Held via shared_ptr so callback lambdas can capture it without storing
+// throwable string copies in their closure types.
+class ClientSession : public std::enable_shared_from_this<ClientSession> {
+public:
+    ClientSession(std::shared_ptr<usecase::JoinChannelCommand> join_uc,
+                  std::shared_ptr<usecase::SendMessageCommand> send_uc,
+                  std::shared_ptr<usecase::SubscribeCommand> subscribe_uc,
+                  std::shared_ptr<port::IServerGateway> gateway,
+                  std::shared_ptr<tui_adapter::FtxuiPresenter> presenter, std::string client_id,
+                  std::uint32_t replay_count)
+        : join_uc_{std::move(join_uc)},
+          send_uc_{std::move(send_uc)},
+          subscribe_uc_{std::move(subscribe_uc)},
+          gateway_{std::move(gateway)},
+          presenter_{std::move(presenter)},
+          client_id_{std::move(client_id)},
+          replay_count_{replay_count} {}
 
-int main(int argc, char** argv) {
+    void sendMessage(const std::string& content) {
+        std::string channel_id;
+        {
+            std::scoped_lock lock{channel_mutex_};
+            channel_id = active_channel_id_;
+        }
+        if (channel_id.empty()) {
+            presenter_->showError("join a channel before sending");
+            return;
+        }
+        const auto sent = send_uc_->execute(client_id_, channel_id, content);
+        if (!sent.has_value()) {
+            presenter_->showError(bcmd::error_message(sent.error()));
+        }
+    }
+
+    void joinChannel(const std::string& channel_name) {
+        if (channel_name.empty()) {
+            presenter_->showError("usage: /join <channel>");
+            return;
+        }
+        auto joined = join_uc_->execute(client_id_, channel_name);
+        if (!joined.has_value()) {
+            presenter_->showError(bcmd::error_message(joined.error()));
+            return;
+        }
+        {
+            std::scoped_lock lock{channel_mutex_};
+            active_channel_id_ = *joined;
+        }
+        std::thread{&ClientSession::runSubscription, shared_from_this(), std::move(*joined)}
+            .detach();
+    }
+
+    void leaveChannel() {
+        std::string channel_id;
+        {
+            std::scoped_lock lock{channel_mutex_};
+            channel_id = std::exchange(active_channel_id_, {});
+        }
+        if (channel_id.empty()) {
+            presenter_->showError("no active channel");
+            return;
+        }
+        const auto left = gateway_->leaveChannel(client_id_, channel_id);
+        if (!left.has_value()) {
+            presenter_->showError(bcmd::error_message(left.error()));
+        }
+    }
+
+    void listChannels() {
+        auto channels = gateway_->listChannels();
+        if (!channels.has_value()) {
+            presenter_->showError(bcmd::error_message(channels.error()));
+            return;
+        }
+        std::vector<std::string> names;
+        names.reserve(channels->size());
+        for (const auto& channel_info : *channels) {
+            names.push_back(channel_info.name);
+        }
+        presenter_->showChannelList(std::move(names));
+    }
+
+    void disconnect() {
+        const auto result = gateway_->disconnect(client_id_);
+        if (!result.has_value()) {
+            spdlog::error("disconnect failed: {}", bcmd::error_message(result.error()));
+        }
+    }
+
+private:
+    void runSubscription(const std::string& channel_id) {
+        const auto result = subscribe_uc_->execute(client_id_, channel_id, replay_count_);
+        if (!result.has_value()) {
+            spdlog::error("subscription ended: {}", bcmd::error_message(result.error()));
+        }
+    }
+
+    std::shared_ptr<usecase::JoinChannelCommand> join_uc_;
+    std::shared_ptr<usecase::SendMessageCommand> send_uc_;
+    std::shared_ptr<usecase::SubscribeCommand> subscribe_uc_;
+    std::shared_ptr<port::IServerGateway> gateway_;
+    std::shared_ptr<tui_adapter::FtxuiPresenter> presenter_;
+    std::string client_id_;
+    std::uint32_t replay_count_;
+
+    std::mutex channel_mutex_;
+    std::string active_channel_id_;
+};
+
+std::shared_ptr<::grpc::ChannelCredentials> build_credentials(bool insecure,
+                                                              const std::string& ca_cert_path) {
+    if (insecure) {
+        spdlog::warn("TLS disabled (--insecure)");
+        return ::grpc::InsecureChannelCredentials();
+    }
+    ::grpc::SslCredentialsOptions ssl_options;
+    if (!ca_cert_path.empty()) {
+        ssl_options.pem_root_certs = read_file(ca_cert_path);
+        if (ssl_options.pem_root_certs.empty()) {
+            spdlog::error("Failed to read CA certificate: {}", ca_cert_path);
+            return nullptr;
+        }
+    }
+    return ::grpc::SslCredentials(ssl_options);
+}
+
+int run(int argc, char** argv) {
     CLI::App app{"bcli - broadcast messaging client"};
 
     std::string server_address{"localhost:50051"};
@@ -67,25 +200,10 @@ int main(int argc, char** argv) {
 
     bcmd::init_logging({.level = select_log_level(quiet, verbose)});
 
-    std::shared_ptr<::grpc::ChannelCredentials> credentials;
-    if (insecure) {
-        spdlog::warn("TLS disabled (--insecure)");
-        credentials = ::grpc::InsecureChannelCredentials();
-    } else {
-        ::grpc::SslCredentialsOptions ssl_options;
-        if (!ca_cert_path.empty()) {
-            ssl_options.pem_root_certs = read_file(ca_cert_path);
-            if (ssl_options.pem_root_certs.empty()) {
-                spdlog::error("Failed to read CA certificate: {}", ca_cert_path);
-                return 1;
-            }
-        }
-        credentials = ::grpc::SslCredentials(ssl_options);
+    auto credentials = build_credentials(insecure, ca_cert_path);
+    if (!credentials) {
+        return 1;
     }
-
-    namespace grpc_adapter = bcmd::client::adapter::grpc;
-    namespace tui_adapter = bcmd::client::adapter::tui;
-    namespace usecase = bcmd::client::application::usecase;
 
     auto channel = ::grpc::CreateChannel(server_address, credentials);
     auto gateway = std::make_shared<grpc_adapter::GrpcServerGateway>(channel);
@@ -102,91 +220,36 @@ int main(int argc, char** argv) {
         spdlog::error("Failed to connect: {}", bcmd::error_message(client_id_result.error()));
         return 1;
     }
-    const std::string client_id = *client_id_result;
+    const std::string& client_id = *client_id_result;
     presenter->updateConnectionStatus(true, !insecure, username);
 
-    std::mutex channel_mutex;
-    std::string active_channel_id;
+    auto session = std::make_shared<ClientSession>(join_uc, send_uc, subscribe_uc, gateway,
+                                                   presenter, client_id, replay_count);
 
     presenter->setActions(tui_adapter::FtxuiPresenter::Actions{
-        .send_message =
-            [send_uc, presenter, client_id, &channel_mutex,
-             &active_channel_id](std::string content) {
-                std::string channel_id;
-                {
-                    std::scoped_lock lock{channel_mutex};
-                    channel_id = active_channel_id;
-                }
-                if (channel_id.empty()) {
-                    presenter->showError("join a channel before sending");
-                    return;
-                }
-                const auto sent = send_uc->execute(client_id, channel_id, content);
-                if (!sent.has_value()) {
-                    presenter->showError(bcmd::error_message(sent.error()));
-                }
-            },
-        .join_channel =
-            [join_uc, subscribe_uc, presenter, client_id, replay_count, &channel_mutex,
-             &active_channel_id](std::string channel_name) {
-                if (channel_name.empty()) {
-                    presenter->showError("usage: /join <channel>");
-                    return;
-                }
-                auto joined = join_uc->execute(client_id, channel_name);
-                if (!joined.has_value()) {
-                    presenter->showError(bcmd::error_message(joined.error()));
-                    return;
-                }
-                {
-                    std::scoped_lock lock{channel_mutex};
-                    active_channel_id = *joined;
-                }
-                std::thread([subscribe_uc, client_id, channel_id = *joined, replay_count] {
-                    (void)subscribe_uc->execute(client_id, channel_id, replay_count);
-                }).detach();
-            },
-        .leave_channel =
-            [gateway, presenter, client_id, &channel_mutex, &active_channel_id] {
-                std::string channel_id;
-                {
-                    std::scoped_lock lock{channel_mutex};
-                    channel_id = std::exchange(active_channel_id, {});
-                }
-                if (channel_id.empty()) {
-                    presenter->showError("no active channel");
-                    return;
-                }
-                const auto left = gateway->leaveChannel(client_id, channel_id);
-                if (!left.has_value()) {
-                    presenter->showError(bcmd::error_message(left.error()));
-                }
-            },
-        .list_channels =
-            [gateway, presenter] {
-                auto channels = gateway->listChannels();
-                if (!channels.has_value()) {
-                    presenter->showError(bcmd::error_message(channels.error()));
-                    return;
-                }
-                std::vector<std::string> names;
-                names.reserve(channels->size());
-                for (const auto& channel_info : *channels) {
-                    names.push_back(channel_info.name);
-                }
-                presenter->showChannelList(std::move(names));
-            },
+        .send_message = [session](const std::string& content) { session->sendMessage(content); },
+        .join_channel = [session](const std::string& name) { session->joinChannel(name); },
+        .leave_channel = [session] { session->leaveChannel(); },
+        .list_channels = [session] { session->listChannels(); },
     });
 
-    const auto channels = gateway->listChannels();
-    if (channels.has_value()) {
-        std::vector<std::string> names;
-        names.reserve(channels->size());
-        for (const auto& channel_info : *channels) {
-            names.push_back(channel_info.name);
-        }
-        presenter->showChannelList(std::move(names));
-    }
+    session->listChannels();
 
-    return presenter->run([gateway, client_id] { (void)gateway->disconnect(client_id); });
+    return presenter->run([session] { session->disconnect(); });
+}
+
+}  // namespace
+
+int main(int argc, char** argv) {
+    try {
+        return run(argc, argv);
+    } catch (const std::exception& ex) {
+        std::fputs("Fatal: ", stderr);
+        std::fputs(ex.what(), stderr);
+        std::fputs("\n", stderr);
+        return 1;
+    } catch (...) {
+        std::fputs("Fatal: unknown exception\n", stderr);
+        return 1;
+    }
 }

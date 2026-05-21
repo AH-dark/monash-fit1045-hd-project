@@ -1,5 +1,7 @@
 #include "bcmd/shared/result.hpp"
 
+#include <string_view>
+
 namespace bcmd {
 
 std::string_view error_message(Error error) noexcept {

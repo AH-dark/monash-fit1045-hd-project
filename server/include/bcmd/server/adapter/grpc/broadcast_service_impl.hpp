@@ -8,9 +8,12 @@
 #include "bcmd/server/application/usecase/list_channels.hpp"
 #include "bcmd/server/application/usecase/send_message.hpp"
 #include "bcmd/server/application/usecase/subscribe_to_channel.hpp"
+#include "bcmd/shared/result.hpp"
 #include "bcmd/v1/broadcast.grpc.pb.h"
+#include "bcmd/v1/broadcast.pb.h"
 
 #include <grpcpp/grpcpp.h>
+#include <grpcpp/support/status.h>
 
 #include <memory>
 

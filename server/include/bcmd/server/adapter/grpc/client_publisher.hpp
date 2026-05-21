@@ -3,7 +3,7 @@
 #include "bcmd/server/application/port/i_message_publisher.hpp"
 #include "bcmd/server/domain/model/message.hpp"
 #include "bcmd/shared/ids.hpp"
-#include "bcmd/v1/broadcast.grpc.pb.h"
+#include "bcmd/v1/broadcast.pb.h"
 
 #include <grpcpp/grpcpp.h>
 

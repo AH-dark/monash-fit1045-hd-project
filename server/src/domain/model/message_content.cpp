@@ -1,6 +1,7 @@
 #include "bcmd/server/domain/model/message_content.hpp"
 
 #include <cctype>
+#include <optional>
 #include <string>
 #include <string_view>
 
@@ -14,15 +15,13 @@ bool is_whitespace(char character) noexcept {
 }
 
 std::string_view trim(std::string_view raw) noexcept {
-    std::size_t start = 0;
-    while (start < raw.size() && is_whitespace(raw[start])) {
-        ++start;
+    while (!raw.empty() && is_whitespace(raw.front())) {
+        raw.remove_prefix(1);
     }
-    std::size_t end = raw.size();
-    while (end > start && is_whitespace(raw[end - 1])) {
-        --end;
+    while (!raw.empty() && is_whitespace(raw.back())) {
+        raw.remove_suffix(1);
     }
-    return raw.substr(start, end - start);
+    return raw;
 }
 
 }  // namespace

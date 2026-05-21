@@ -1,5 +1,8 @@
 #include "bcmd/server/domain/model/client_session.hpp"
 
+#include "bcmd/server/domain/model/username.hpp"
+#include "bcmd/shared/ids.hpp"
+
 #include <chrono>
 #include <utility>
 
