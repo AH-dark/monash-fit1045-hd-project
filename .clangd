@@ -22,8 +22,8 @@ Diagnostics:
       - modernize-use-trailing-return-type
       - readability-magic-numbers
       - cppcoreguidelines-avoid-magic-numbers
-    CheckOptions:
-      readability-identifier-length.MinimumVariableNameLength: 2
+      - readability-identifier-naming
+      - readability-identifier-length
   UnusedIncludes: Strict
   MissingIncludes: Strict
 
