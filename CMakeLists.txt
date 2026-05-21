@@ -17,6 +17,7 @@ endif()
 enable_testing()
 
 add_subdirectory(proto)
+add_subdirectory(shared)
 add_subdirectory(server)
 add_subdirectory(client-cli)
 add_subdirectory(tests)
