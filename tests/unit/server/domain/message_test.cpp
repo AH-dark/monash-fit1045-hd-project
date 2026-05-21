@@ -1,11 +1,12 @@
-#include <chrono>
-#include <type_traits>
+#include "bcmd/server/domain/model/message.hpp"
+
+#include "bcmd/server/domain/model/message_content.hpp"
+#include "bcmd/shared/ids.hpp"
 
 #include <catch2/catch_test_macros.hpp>
 
-#include "bcmd/server/domain/model/message.hpp"
-#include "bcmd/server/domain/model/message_content.hpp"
-#include "bcmd/shared/ids.hpp"
+#include <chrono>
+#include <type_traits>
 
 namespace {
 
@@ -32,8 +33,7 @@ TEST_CASE("Message preserves the ids and content it was constructed with",
     CHECK(message.content() == content);
 }
 
-TEST_CASE("Message::sentAt defaults to a time close to now",
-          "[domain][value-object][message]") {
+TEST_CASE("Message::sentAt defaults to a time close to now", "[domain][value-object][message]") {
     const auto before = std::chrono::system_clock::now();
     bcmd::server::domain::Message message{
         bcmd::MessageId::generate(),
@@ -47,8 +47,7 @@ TEST_CASE("Message::sentAt defaults to a time close to now",
     CHECK(message.sentAt() <= after);
 }
 
-TEST_CASE("Message accepts an explicit sentAt timestamp",
-          "[domain][value-object][message]") {
+TEST_CASE("Message accepts an explicit sentAt timestamp", "[domain][value-object][message]") {
     const auto fixed = std::chrono::system_clock::time_point{std::chrono::seconds{42}};
     bcmd::server::domain::Message message{
         bcmd::MessageId::generate(),

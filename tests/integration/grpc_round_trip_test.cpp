@@ -1,8 +1,7 @@
 #include <catch2/catch_test_macros.hpp>
 
-#include <chrono>
-
 #include "integration/integration_test_utils.hpp"
+#include <chrono>
 
 TEST_CASE("TLS gRPC server broadcasts a live message between two clients",
           "[integration][grpc][round-trip]") {

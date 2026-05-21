@@ -1,9 +1,10 @@
-#include <catch2/catch_test_macros.hpp>
-
 #include "bcmd/server/domain/model/channel.hpp"
+
 #include "bcmd/server/domain/model/channel_name.hpp"
 #include "bcmd/shared/ids.hpp"
 #include "bcmd/shared/result.hpp"
+
+#include <catch2/catch_test_macros.hpp>
 
 namespace {
 
@@ -21,8 +22,7 @@ TEST_CASE("New channel has no members", "[domain][entity][channel]") {
     CHECK(channel.members().empty());
 }
 
-TEST_CASE("Channel exposes the id and name it was constructed with",
-          "[domain][entity][channel]") {
+TEST_CASE("Channel exposes the id and name it was constructed with", "[domain][entity][channel]") {
     const auto channel_id = bcmd::ChannelId::generate();
     const auto channel_name = make_name("dev-team");
     bcmd::server::domain::Channel channel{channel_id, channel_name};
@@ -30,8 +30,7 @@ TEST_CASE("Channel exposes the id and name it was constructed with",
     CHECK(channel.name() == channel_name);
 }
 
-TEST_CASE("Channel::addMember inserts a brand-new client",
-          "[domain][entity][channel]") {
+TEST_CASE("Channel::addMember inserts a brand-new client", "[domain][entity][channel]") {
     bcmd::server::domain::Channel channel{bcmd::ChannelId::generate(), make_name("general")};
     const auto client_id = bcmd::ClientId::generate();
     const auto result = channel.addMember(client_id);
@@ -60,8 +59,7 @@ TEST_CASE("Channel::removeMember returns NotAMember when the client is absent",
     CHECK(result.error() == bcmd::Error::NotAMember);
 }
 
-TEST_CASE("Channel::removeMember removes an existing client",
-          "[domain][entity][channel]") {
+TEST_CASE("Channel::removeMember removes an existing client", "[domain][entity][channel]") {
     bcmd::server::domain::Channel channel{bcmd::ChannelId::generate(), make_name("general")};
     const auto client_id = bcmd::ClientId::generate();
     REQUIRE(channel.addMember(client_id).has_value());
@@ -72,8 +70,7 @@ TEST_CASE("Channel::removeMember removes an existing client",
     CHECK_FALSE(channel.hasMember(client_id));
 }
 
-TEST_CASE("Channel tracks multiple distinct members",
-          "[domain][entity][channel]") {
+TEST_CASE("Channel tracks multiple distinct members", "[domain][entity][channel]") {
     bcmd::server::domain::Channel channel{bcmd::ChannelId::generate(), make_name("general")};
     const auto first = bcmd::ClientId::generate();
     const auto second = bcmd::ClientId::generate();
@@ -87,8 +84,7 @@ TEST_CASE("Channel tracks multiple distinct members",
     CHECK(channel.hasMember(third));
 }
 
-TEST_CASE("Channel::hasMember returns false for unknown clients",
-          "[domain][entity][channel]") {
+TEST_CASE("Channel::hasMember returns false for unknown clients", "[domain][entity][channel]") {
     bcmd::server::domain::Channel channel{bcmd::ChannelId::generate(), make_name("general")};
     CHECK_FALSE(channel.hasMember(bcmd::ClientId::generate()));
 }

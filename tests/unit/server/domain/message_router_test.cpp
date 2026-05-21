@@ -1,14 +1,15 @@
-#include <algorithm>
-#include <vector>
-
-#include <catch2/catch_test_macros.hpp>
+#include "bcmd/server/domain/service/message_router.hpp"
 
 #include "bcmd/server/domain/model/channel.hpp"
 #include "bcmd/server/domain/model/channel_name.hpp"
 #include "bcmd/server/domain/model/message.hpp"
 #include "bcmd/server/domain/model/message_content.hpp"
-#include "bcmd/server/domain/service/message_router.hpp"
 #include "bcmd/shared/ids.hpp"
+
+#include <catch2/catch_test_macros.hpp>
+
+#include <algorithm>
+#include <vector>
 
 namespace {
 
@@ -63,8 +64,7 @@ TEST_CASE("MessageRouter with ExcludeSender returns all members except the sende
     CHECK_FALSE(contains(recipients, sender_id));
 }
 
-TEST_CASE("MessageRouter with IncludeSender returns every member",
-          "[domain][service][router]") {
+TEST_CASE("MessageRouter with IncludeSender returns every member", "[domain][service][router]") {
     Channel channel{bcmd::ChannelId::generate(), make_name("general")};
     const auto sender_id = bcmd::ClientId::generate();
     const auto other_a = bcmd::ClientId::generate();
@@ -111,8 +111,10 @@ TEST_CASE("MessageRouter returns all members when the sender is not in the chann
     CHECK(recipients.size() == 3);
 }
 
-TEST_CASE("MessageRouter on a single-member channel where sender is the only member returns no recipients",
-          "[domain][service][router]") {
+TEST_CASE(
+    "MessageRouter on a single-member channel where sender is the only member returns no "
+    "recipients",
+    "[domain][service][router]") {
     Channel channel{bcmd::ChannelId::generate(), make_name("general")};
     const auto sender_id = bcmd::ClientId::generate();
     REQUIRE(channel.addMember(sender_id).has_value());
@@ -130,8 +132,7 @@ TEST_CASE("MessageRouter on a single-member channel where sender is the only mem
     CHECK(recipients.empty());
 }
 
-TEST_CASE("MessageRouter on an empty channel returns no recipients",
-          "[domain][service][router]") {
+TEST_CASE("MessageRouter on an empty channel returns no recipients", "[domain][service][router]") {
     Channel channel{bcmd::ChannelId::generate(), make_name("general")};
 
     const Message message{
@@ -141,17 +142,14 @@ TEST_CASE("MessageRouter on an empty channel returns no recipients",
         make_content("hello"),
     };
 
-    const auto excluded =
-        MessageRouter::recipientsFor(channel, message, EchoPolicy::ExcludeSender);
-    const auto included =
-        MessageRouter::recipientsFor(channel, message, EchoPolicy::IncludeSender);
+    const auto excluded = MessageRouter::recipientsFor(channel, message, EchoPolicy::ExcludeSender);
+    const auto included = MessageRouter::recipientsFor(channel, message, EchoPolicy::IncludeSender);
 
     CHECK(excluded.empty());
     CHECK(included.empty());
 }
 
-TEST_CASE("MessageRouter defaults to ExcludeSender",
-          "[domain][service][router]") {
+TEST_CASE("MessageRouter defaults to ExcludeSender", "[domain][service][router]") {
     Channel channel{bcmd::ChannelId::generate(), make_name("general")};
     const auto sender_id = bcmd::ClientId::generate();
     const auto other_id = bcmd::ClientId::generate();

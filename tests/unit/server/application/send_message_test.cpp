@@ -1,20 +1,21 @@
-#include <catch2/catch_test_macros.hpp>
-
-#include <memory>
-#include <string>
+#include "bcmd/server/application/usecase/send_message.hpp"
 
 #include "bcmd/server/application/usecase/join_channel.hpp"
-#include "bcmd/server/application/usecase/send_message.hpp"
 #include "bcmd/server/domain/model/channel_name.hpp"
 #include "bcmd/server/domain/model/message_content.hpp"
 #include "bcmd/server/domain/model/username.hpp"
 #include "bcmd/server/domain/service/message_router.hpp"
 #include "bcmd/shared/ids.hpp"
 #include "bcmd/shared/result.hpp"
+
+#include <catch2/catch_test_macros.hpp>
+
 #include "fakes/fake_channel_repository.hpp"
 #include "fakes/fake_client_registry.hpp"
 #include "fakes/fake_message_publisher.hpp"
 #include "fakes/fake_message_repository.hpp"
+#include <memory>
+#include <string>
 
 namespace {
 
@@ -37,7 +38,7 @@ struct Fixture {
     JoinChannel join_use_case{channels, clients};
     SendMessage use_case{channels, clients, messages, publisher};
 
-    bcmd::ClientId registerClient(const char* name) {
+    bcmd::ClientId registerClient(const char* name) const {
         auto username = Username::create(name);
         REQUIRE(username.has_value());
         auto session = clients->registerClient(*username);
@@ -45,7 +46,7 @@ struct Fixture {
         return session->id();
     }
 
-    bcmd::ChannelId createChannel(const char* name) {
+    bcmd::ChannelId createChannel(const char* name) const {
         auto channel_name = ChannelName::create(name);
         REQUIRE(channel_name.has_value());
         auto channel = channels->create(*channel_name);
@@ -126,8 +127,8 @@ TEST_CASE("SendMessage echoes the sender when policy is IncludeSender",
     REQUIRE(fixture.join_use_case.execute(alice, channel_id).has_value());
     REQUIRE(fixture.join_use_case.execute(bob, channel_id).has_value());
 
-    const auto result = fixture.use_case.execute(alice, channel_id, "echo",
-                                                  EchoPolicy::IncludeSender);
+    const auto result =
+        fixture.use_case.execute(alice, channel_id, "echo", EchoPolicy::IncludeSender);
 
     REQUIRE(result.has_value());
     CHECK(fixture.publisher->deliveries.size() == 2);

@@ -1,13 +1,14 @@
+#include "bcmd/client/application/usecase/send_message_command.hpp"
+
+#include "bcmd/client/application/usecase/connect_to_server.hpp"
+#include "bcmd/shared/result.hpp"
+
 #include <catch2/catch_test_macros.hpp>
 
+#include "fakes/fake_server_gateway.hpp"
 #include <expected>
 #include <memory>
 #include <string>
-
-#include "bcmd/client/application/usecase/connect_to_server.hpp"
-#include "bcmd/client/application/usecase/send_message_command.hpp"
-#include "bcmd/shared/result.hpp"
-#include "fakes/fake_server_gateway.hpp"
 
 namespace {
 

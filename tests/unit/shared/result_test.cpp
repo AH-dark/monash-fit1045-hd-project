@@ -1,9 +1,9 @@
-#include <expected>
-#include <string_view>
+#include "bcmd/shared/result.hpp"
 
 #include <catch2/catch_test_macros.hpp>
 
-#include "bcmd/shared/result.hpp"
+#include <expected>
+#include <string_view>
 
 TEST_CASE("error_message yields a non-empty description for every enum value", "[result][shared]") {
     CHECK_FALSE(bcmd::error_message(bcmd::Error::ChannelNotFound).empty());
@@ -22,7 +22,8 @@ TEST_CASE("error_message yields a non-empty description for every enum value", "
 }
 
 TEST_CASE("error_message returns stable text for ChannelNotFound", "[result][shared]") {
-    CHECK(bcmd::error_message(bcmd::Error::ChannelNotFound) == std::string_view{"channel not found"});
+    CHECK(bcmd::error_message(bcmd::Error::ChannelNotFound) ==
+          std::string_view{"channel not found"});
 }
 
 TEST_CASE("Result<int> carries a success value", "[result][shared]") {

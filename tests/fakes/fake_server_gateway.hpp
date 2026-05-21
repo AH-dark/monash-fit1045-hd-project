@@ -1,15 +1,12 @@
 #pragma once
 
-#include <cstdint>
-#include <expected>
-#include <string>
-#include <string_view>
-#include <utility>
-#include <vector>
-
 #include "bcmd/client/application/port/i_server_gateway.hpp"
 #include "bcmd/client/domain/inbox_message.hpp"
 #include "bcmd/shared/result.hpp"
+
+#include <cstdint>
+#include <string>
+#include <string_view>
 
 namespace bcmd::tests {
 
@@ -65,8 +62,7 @@ public:
         return list_channels_result;
     }
 
-    bcmd::VoidResult joinChannel(std::string_view client_id,
-                                 std::string_view channel_id) override {
+    bcmd::VoidResult joinChannel(std::string_view client_id, std::string_view channel_id) override {
         ++join_channel_calls;
         last_client_id = std::string{client_id};
         last_channel_id = std::string{channel_id};
@@ -89,8 +85,7 @@ public:
         return leave_channel_result;
     }
 
-    bcmd::Result<std::string> sendMessage(std::string_view client_id,
-                                          std::string_view channel_id,
+    bcmd::Result<std::string> sendMessage(std::string_view client_id, std::string_view channel_id,
                                           std::string_view content) override {
         ++send_message_calls;
         last_client_id = std::string{client_id};
@@ -99,8 +94,7 @@ public:
         return send_message_result;
     }
 
-    bcmd::VoidResult subscribeToChannel(std::string_view client_id,
-                                        std::string_view channel_id,
+    bcmd::VoidResult subscribeToChannel(std::string_view client_id, std::string_view channel_id,
                                         std::uint32_t replay_count,
                                         MessageCallback callback) override {
         ++subscribe_calls;

@@ -1,11 +1,10 @@
 #include <catch2/catch_test_macros.hpp>
 
+#include "integration/integration_test_utils.hpp"
 #include <chrono>
 #include <cstddef>
 #include <string>
 #include <vector>
-
-#include "integration/integration_test_utils.hpp"
 
 namespace {
 

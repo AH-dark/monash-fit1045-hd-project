@@ -1,8 +1,13 @@
-#include <catch2/catch_test_macros.hpp>
+#include "bcmd/v1/broadcast.pb.h"
 
-#include <chrono>
+#include <catch2/catch_test_macros.hpp>
+#include <grpcpp/client_context.h>
+#include <grpcpp/support/status.h>
 
 #include "integration/integration_test_utils.hpp"
+#include <chrono>
+#include <string>
+#include <string_view>
 
 namespace {
 
@@ -23,7 +28,8 @@ TEST_CASE("TLS server rejects insecure clients and accepts trusted TLS clients",
     namespace integration = bcmd::tests::integration;
 
     integration::TestServer tls_server;
-    auto insecure_stub = integration::make_stub(integration::make_insecure_channel(tls_server.address()));
+    auto insecure_stub =
+        integration::make_stub(integration::make_insecure_channel(tls_server.address()));
     auto tls_stub = integration::make_stub(integration::make_tls_channel(tls_server.address()));
 
     CHECK_FALSE(try_connect(*insecure_stub, "alice").ok());
@@ -34,7 +40,8 @@ TEST_CASE("insecure server mode allows insecure clients", "[integration][grpc][t
     namespace integration = bcmd::tests::integration;
 
     integration::TestServer insecure_server{/*insecure=*/true};
-    auto stub = integration::make_stub(integration::make_insecure_channel(insecure_server.address()));
+    auto stub =
+        integration::make_stub(integration::make_insecure_channel(insecure_server.address()));
 
     CHECK(try_connect(*stub, "local").ok());
 }

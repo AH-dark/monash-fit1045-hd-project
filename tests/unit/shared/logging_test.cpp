@@ -1,6 +1,6 @@
-#include <catch2/catch_test_macros.hpp>
-
 #include "bcmd/shared/logging.hpp"
+
+#include <catch2/catch_test_macros.hpp>
 
 TEST_CASE("init_logging completes without throwing", "[logging][shared]") {
     REQUIRE_NOTHROW(bcmd::init_logging());
@@ -20,7 +20,7 @@ TEST_CASE("get_logger returns the default logger for an empty name", "[logging][
 
 TEST_CASE("get_logger returns the same instance on repeated lookup", "[logging][shared]") {
     bcmd::init_logging();
-    auto first  = bcmd::get_logger("shared_test_logger");
+    auto first = bcmd::get_logger("shared_test_logger");
     auto second = bcmd::get_logger("shared_test_logger");
     REQUIRE(first != nullptr);
     REQUIRE(second != nullptr);

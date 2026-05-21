@@ -1,10 +1,8 @@
 #include <catch2/catch_test_macros.hpp>
-
-#include <chrono>
-
 #include <grpcpp/grpcpp.h>
 
 #include "integration/integration_test_utils.hpp"
+#include <chrono>
 
 TEST_CASE("channel lifecycle supports create join broadcast and leave",
           "[integration][grpc][channel-lifecycle]") {

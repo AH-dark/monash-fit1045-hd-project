@@ -1,11 +1,12 @@
+#include "bcmd/server/application/usecase/list_channels.hpp"
+
+#include "bcmd/server/domain/model/channel_name.hpp"
+
 #include <catch2/catch_test_macros.hpp>
 
+#include "fakes/fake_channel_repository.hpp"
 #include <algorithm>
 #include <memory>
-
-#include "bcmd/server/application/usecase/list_channels.hpp"
-#include "bcmd/server/domain/model/channel_name.hpp"
-#include "fakes/fake_channel_repository.hpp"
 
 namespace {
 
@@ -41,9 +42,8 @@ TEST_CASE("ListChannels returns every channel held by the repository",
 
     CHECK(listed.size() == 3);
     const auto has_name = [&](const char* needle) {
-        return std::ranges::any_of(listed, [&](const auto& channel) {
-            return channel.name().value() == needle;
-        });
+        return std::ranges::any_of(
+            listed, [&](const auto& channel) { return channel.name().value() == needle; });
     };
     CHECK(has_name("general"));
     CHECK(has_name("random"));

@@ -1,22 +1,5 @@
 #pragma once
 
-#include <chrono>
-#include <condition_variable>
-#include <cstdint>
-#include <filesystem>
-#include <fstream>
-#include <memory>
-#include <mutex>
-#include <optional>
-#include <string>
-#include <string_view>
-#include <thread>
-#include <utility>
-#include <vector>
-
-#include <catch2/catch_test_macros.hpp>
-#include <grpcpp/grpcpp.h>
-
 #include "bcmd/server/adapter/grpc/broadcast_service_impl.hpp"
 #include "bcmd/server/adapter/grpc/client_publisher.hpp"
 #include "bcmd/server/adapter/grpc/server_runner.hpp"
@@ -31,6 +14,28 @@
 #include "bcmd/server/application/usecase/subscribe_to_channel.hpp"
 #include "bcmd/shared/ids.hpp"
 #include "bcmd/v1/broadcast.grpc.pb.h"
+#include "bcmd/v1/broadcast.pb.h"
+
+#include <catch2/catch_test_macros.hpp>
+#include <grpcpp/grpcpp.h>
+#include <grpcpp/security/credentials.h>
+#include <grpcpp/support/status.h>
+
+#include <chrono>
+#include <condition_variable>
+#include <cstddef>
+#include <cstdint>
+#include <filesystem>
+#include <fstream>
+#include <iterator>
+#include <memory>
+#include <mutex>
+#include <optional>
+#include <string>
+#include <string_view>
+#include <thread>
+#include <utility>
+#include <vector>
 
 namespace bcmd::tests::integration {
 
@@ -82,8 +87,8 @@ public:
                                                                    message_repo, publisher);
         auto list_channels = std::make_shared<usecase::ListChannels>(channel_repo);
         auto get_recent = std::make_shared<usecase::GetRecentMessages>(message_repo);
-        auto subscribe = std::make_shared<usecase::SubscribeToChannel>(channel_repo, message_repo,
-                                                                       publisher);
+        auto subscribe =
+            std::make_shared<usecase::SubscribeToChannel>(channel_repo, message_repo, publisher);
 
         service_ = std::make_unique<grpc_adapter::BroadcastServiceImpl>(
             join_channel, leave_channel, send_message, list_channels, get_recent, subscribe,
@@ -144,8 +149,7 @@ inline std::string connect(BroadcastStub& stub, std::string_view username) {
     return response.client_id();
 }
 
-inline std::string join_channel(BroadcastStub& stub,
-                                std::string_view client_id,
+inline std::string join_channel(BroadcastStub& stub, std::string_view client_id,
                                 std::string_view channel) {
     ::grpc::ClientContext join_context;
     set_timeout(join_context, std::chrono::seconds{2});
@@ -172,10 +176,8 @@ inline std::string join_channel(BroadcastStub& stub,
     FAIL("joined channel was not visible in ListChannels");
 }
 
-inline void send_message(BroadcastStub& stub,
-                         std::string_view client_id,
-                         std::string_view channel_id,
-                         std::string_view content) {
+inline void send_message(BroadcastStub& stub, std::string_view client_id,
+                         std::string_view channel_id, std::string_view content) {
     ::grpc::ClientContext context;
     set_timeout(context, std::chrono::seconds{2});
     bcmd::v1::SendMessageRequest request;
@@ -189,9 +191,7 @@ inline void send_message(BroadcastStub& stub,
 
 class Subscription {
 public:
-    Subscription(BroadcastStub& stub,
-                 std::string client_id,
-                 std::string channel_id,
+    Subscription(BroadcastStub& stub, std::string client_id, std::string channel_id,
                  std::uint32_t replay_count) {
         bcmd::v1::SubscribeRequest request;
         request.set_client_id(std::move(client_id));
