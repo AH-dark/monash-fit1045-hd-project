@@ -1,15 +1,16 @@
-#include <catch2/catch_test_macros.hpp>
-
-#include <memory>
+#include "bcmd/server/application/usecase/leave_channel.hpp"
 
 #include "bcmd/server/application/usecase/join_channel.hpp"
-#include "bcmd/server/application/usecase/leave_channel.hpp"
 #include "bcmd/server/domain/model/channel_name.hpp"
 #include "bcmd/server/domain/model/username.hpp"
 #include "bcmd/shared/ids.hpp"
 #include "bcmd/shared/result.hpp"
+
+#include <catch2/catch_test_macros.hpp>
+
 #include "fakes/fake_channel_repository.hpp"
 #include "fakes/fake_client_registry.hpp"
+#include <memory>
 
 namespace {
 
@@ -26,7 +27,7 @@ struct Fixture {
     JoinChannel join_use_case{channels, clients};
     LeaveChannel use_case{channels, clients};
 
-    bcmd::ClientId registerClient(const char* name) {
+    bcmd::ClientId registerClient(const char* name) const {
         auto username = Username::create(name);
         REQUIRE(username.has_value());
         auto session = clients->registerClient(*username);
@@ -34,7 +35,7 @@ struct Fixture {
         return session->id();
     }
 
-    bcmd::ChannelId createChannel(const char* name) {
+    bcmd::ChannelId createChannel(const char* name) const {
         auto channel_name = ChannelName::create(name);
         REQUIRE(channel_name.has_value());
         auto channel = channels->create(*channel_name);

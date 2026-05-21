@@ -1,14 +1,15 @@
 #pragma once
 
-#include <algorithm>
-#include <cstdint>
-#include <unordered_map>
-#include <vector>
-
 #include "bcmd/server/application/port/i_message_repository.hpp"
 #include "bcmd/server/domain/model/message.hpp"
 #include "bcmd/shared/ids.hpp"
 #include "bcmd/shared/result.hpp"
+
+#include <algorithm>
+#include <cstddef>
+#include <cstdint>
+#include <unordered_map>
+#include <vector>
 
 namespace bcmd::tests {
 
@@ -30,7 +31,7 @@ public:
         return {stream.end() - static_cast<std::ptrdiff_t>(take), stream.end()};
     }
 
-    std::size_t totalFor(const bcmd::ChannelId& channel_id) const {
+    [[nodiscard]] std::size_t totalFor(const bcmd::ChannelId& channel_id) const {
         const auto iter = by_channel_.find(channel_id);
         return iter == by_channel_.end() ? 0 : iter->second.size();
     }

@@ -1,20 +1,22 @@
 #pragma once
 
-#include <unordered_map>
-#include <utility>
-#include <vector>
-
 #include "bcmd/server/application/port/i_channel_repository.hpp"
 #include "bcmd/server/domain/model/channel.hpp"
 #include "bcmd/server/domain/model/channel_name.hpp"
 #include "bcmd/shared/ids.hpp"
 #include "bcmd/shared/result.hpp"
 
+#include <expected>
+#include <unordered_map>
+#include <utility>
+#include <vector>
+
 namespace bcmd::tests {
 
 class FakeChannelRepository final : public bcmd::server::application::port::IChannelRepository {
 public:
-    bcmd::Result<bcmd::server::domain::Channel> findById(const bcmd::ChannelId& channel_id) override {
+    bcmd::Result<bcmd::server::domain::Channel> findById(
+        const bcmd::ChannelId& channel_id) override {
         const auto iter = by_id_.find(channel_id);
         if (iter == by_id_.end()) {
             return std::unexpected(bcmd::Error::ChannelNotFound);

@@ -1,8 +1,8 @@
+#include "bcmd/v1/broadcast.pb.h"
+
 #include <catch2/catch_test_macros.hpp>
 
 #include <string>
-
-#include "bcmd/v1/broadcast.pb.h"
 
 TEST_CASE("ConnectRequest serializes correctly", "[proto]") {
     bcmd::v1::ConnectRequest req;

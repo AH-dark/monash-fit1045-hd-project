@@ -1,10 +1,10 @@
-#include <string>
-
-#include <catch2/catch_test_macros.hpp>
-
 #include "bcmd/server/domain/model/channel_name.hpp"
 #include "bcmd/server/domain/model/message_content.hpp"
 #include "bcmd/server/domain/model/username.hpp"
+
+#include <catch2/catch_test_macros.hpp>
+
+#include <string>
 
 using bcmd::server::domain::ChannelName;
 using bcmd::server::domain::MessageContent;
@@ -41,16 +41,14 @@ TEST_CASE("Username::create accepts the boundary length of exactly 32 characters
     CHECK(name->value().size() == 32);
 }
 
-TEST_CASE("Username::create rejects disallowed punctuation",
-          "[domain][value-object][username]") {
+TEST_CASE("Username::create rejects disallowed punctuation", "[domain][value-object][username]") {
     CHECK_FALSE(Username::create("user!name").has_value());
     CHECK_FALSE(Username::create("user name").has_value());
     CHECK_FALSE(Username::create("user@name").has_value());
     CHECK_FALSE(Username::create("user.name").has_value());
 }
 
-TEST_CASE("Username equality compares underlying values",
-          "[domain][value-object][username]") {
+TEST_CASE("Username equality compares underlying values", "[domain][value-object][username]") {
     const auto first = Username::create("alice");
     const auto second = Username::create("alice");
     const auto other = Username::create("bob");
@@ -61,8 +59,7 @@ TEST_CASE("Username equality compares underlying values",
     CHECK_FALSE(*first == *other);
 }
 
-TEST_CASE("Username::create accepts a single character",
-          "[domain][value-object][username]") {
+TEST_CASE("Username::create accepts a single character", "[domain][value-object][username]") {
     const auto name = Username::create("a");
     REQUIRE(name.has_value());
     CHECK(name->value() == "a");

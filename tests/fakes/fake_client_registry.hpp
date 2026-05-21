@@ -1,19 +1,21 @@
 #pragma once
 
-#include <unordered_map>
-#include <utility>
-
 #include "bcmd/server/application/port/i_client_registry.hpp"
 #include "bcmd/server/domain/model/client_session.hpp"
 #include "bcmd/server/domain/model/username.hpp"
 #include "bcmd/shared/ids.hpp"
 #include "bcmd/shared/result.hpp"
 
+#include <expected>
+#include <unordered_map>
+#include <utility>
+
 namespace bcmd::tests {
 
 class FakeClientRegistry final : public bcmd::server::application::port::IClientRegistry {
 public:
-    bcmd::Result<bcmd::server::domain::ClientSession> findById(const bcmd::ClientId& client_id) override {
+    bcmd::Result<bcmd::server::domain::ClientSession> findById(
+        const bcmd::ClientId& client_id) override {
         const auto iter = by_id_.find(client_id);
         if (iter == by_id_.end()) {
             return std::unexpected(bcmd::Error::ClientNotFound);

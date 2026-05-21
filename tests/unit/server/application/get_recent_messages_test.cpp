@@ -1,13 +1,15 @@
-#include <catch2/catch_test_macros.hpp>
-
-#include <memory>
-#include <string>
-
 #include "bcmd/server/application/usecase/get_recent_messages.hpp"
+
 #include "bcmd/server/domain/model/message.hpp"
 #include "bcmd/server/domain/model/message_content.hpp"
 #include "bcmd/shared/ids.hpp"
+
+#include <catch2/catch_test_macros.hpp>
+
 #include "fakes/fake_message_repository.hpp"
+#include <cstddef>
+#include <memory>
+#include <string>
 
 namespace {
 
@@ -22,10 +24,8 @@ MessageContent make_content(const std::string& raw) {
     return *content;
 }
 
-void seed_messages(FakeMessageRepository& repo,
-                   const bcmd::ChannelId& channel_id,
-                   const bcmd::ClientId& sender_id,
-                   std::size_t count) {
+void seed_messages(FakeMessageRepository& repo, const bcmd::ChannelId& channel_id,
+                   const bcmd::ClientId& sender_id, std::size_t count) {
     for (std::size_t i = 0; i < count; ++i) {
         const Message message{bcmd::MessageId::generate(), sender_id, channel_id,
                               make_content("msg-" + std::to_string(i))};
@@ -55,12 +55,10 @@ TEST_CASE("GetRecentMessages caps at the server maximum",
     auto repo = std::make_shared<FakeMessageRepository>();
     const auto channel_id = bcmd::ChannelId::generate();
     const auto sender_id = bcmd::ClientId::generate();
-    seed_messages(*repo, channel_id, sender_id,
-                  GetRecentMessages::kServerMaxMessages + 50);
+    seed_messages(*repo, channel_id, sender_id, GetRecentMessages::kServerMaxMessages + 50);
     GetRecentMessages use_case{repo};
 
-    const auto recent = use_case.execute(channel_id,
-                                          GetRecentMessages::kServerMaxMessages + 1000);
+    const auto recent = use_case.execute(channel_id, GetRecentMessages::kServerMaxMessages + 1000);
 
     CHECK(recent.size() == GetRecentMessages::kServerMaxMessages);
 }

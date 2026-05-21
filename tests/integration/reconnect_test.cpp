@@ -1,19 +1,18 @@
+#include "bcmd/v1/broadcast.pb.h"
+
 #include <catch2/catch_test_macros.hpp>
 
+#include "integration/integration_test_utils.hpp"
+#include <__chrono/duration.h>
+#include <algorithm>
 #include <chrono>
 #include <vector>
-
-#include "integration/integration_test_utils.hpp"
 
 namespace {
 
 bool has_replay_complete(const std::vector<bcmd::v1::ChannelEvent>& events) {
-    for (const auto& event : events) {
-        if (event.has_replay_complete()) {
-            return true;
-        }
-    }
-    return false;
+    return std::ranges::any_of(events,
+                               [](const auto& event) { return event.has_replay_complete(); });
 }
 
 }  // namespace

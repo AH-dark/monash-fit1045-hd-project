@@ -1,11 +1,11 @@
 #pragma once
 
-#include <cstddef>
-#include <vector>
-
 #include "bcmd/server/application/port/i_message_publisher.hpp"
 #include "bcmd/server/domain/model/message.hpp"
 #include "bcmd/shared/ids.hpp"
+
+#include <cstddef>
+#include <vector>
 
 namespace bcmd::tests {
 
@@ -22,10 +22,10 @@ public:
         bcmd::ChannelId channel;
     };
 
-    void publish(const bcmd::ClientId& recipient_id,
-                 const bcmd::server::domain::Message& message,
+    void publish(const bcmd::ClientId& recipient_id, const bcmd::server::domain::Message& message,
                  bool from_replay = false) override {
-        deliveries.push_back(Delivery{recipient_id, message, from_replay});
+        deliveries.push_back(
+            Delivery{.recipient = recipient_id, .message = message, .from_replay = from_replay});
     }
 
     void publishReplayComplete(const bcmd::ClientId& recipient_id,

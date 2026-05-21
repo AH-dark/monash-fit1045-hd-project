@@ -1,9 +1,9 @@
-#include <string>
-#include <unordered_set>
+#include "bcmd/shared/ids.hpp"
 
 #include <catch2/catch_test_macros.hpp>
 
-#include "bcmd/shared/ids.hpp"
+#include <string>
+#include <unordered_set>
 
 TEST_CASE("ChannelId::generate produces distinct values", "[ids][shared]") {
     const auto first = bcmd::ChannelId::generate();
@@ -36,6 +36,6 @@ TEST_CASE("MessageId is usable as an unordered_set key", "[ids][shared]") {
 
 TEST_CASE("ClientId and ChannelId values do not collide trivially", "[ids][shared]") {
     const auto channel = bcmd::ChannelId::generate();
-    const auto client  = bcmd::ClientId::generate();
+    const auto client = bcmd::ClientId::generate();
     CHECK(channel.to_string() != client.to_string());
 }
