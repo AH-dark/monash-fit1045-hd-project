@@ -1,0 +1,5 @@
+syntax = "proto3";
+
+package bcmd.v1;
+
+option optimize_for = SPEED;

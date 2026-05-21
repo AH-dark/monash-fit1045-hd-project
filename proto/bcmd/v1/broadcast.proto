@@ -1,0 +1,75 @@
+syntax = "proto3";
+
+package bcmd.v1;
+
+import "bcmd/v1/common.proto";
+
+option optimize_for = SPEED;
+
+service BroadcastService {
+    // Discrete actions (unary) — browser-compatible via gRPC-Web
+    rpc Connect(ConnectRequest) returns (ConnectResponse);
+    rpc Disconnect(DisconnectRequest) returns (DisconnectResponse);
+
+    rpc ListChannels(ListChannelsRequest) returns (ListChannelsResponse);
+    rpc JoinChannel(JoinChannelRequest) returns (JoinChannelResponse);
+    rpc LeaveChannel(LeaveChannelRequest) returns (LeaveChannelResponse);
+    rpc SendMessage(SendMessageRequest) returns (SendMessageResponse);
+
+    // Event subscription (server-streaming) — browser-compatible
+    rpc SubscribeToChannel(SubscribeRequest) returns (stream ChannelEvent);
+}
+
+message ConnectRequest { string username = 1; }
+message ConnectResponse { string client_id = 1; }
+
+message DisconnectRequest { string client_id = 1; }
+message DisconnectResponse {}
+
+message ListChannelsRequest {}
+message ListChannelsResponse { repeated ChannelSummary channels = 1; }
+message ChannelSummary { string id = 1; string name = 2; int32 member_count = 3; }
+
+message JoinChannelRequest  { string client_id = 1; string channel_id = 2; }
+message JoinChannelResponse {}
+
+message LeaveChannelRequest  { string client_id = 1; string channel_id = 2; }
+message LeaveChannelResponse {}
+
+message SendMessageRequest {
+    string client_id  = 1;
+    string channel_id = 2;
+    string content    = 3;
+}
+message SendMessageResponse { string message_id = 1; }
+
+message SubscribeRequest {
+    string client_id    = 1;
+    string channel_id   = 2;
+    uint32 replay_count = 3;
+}
+
+message ChannelEvent {
+    oneof event {
+        MessageEvent        message         = 1;
+        MemberJoinedEvent   member_joined   = 2;
+        MemberLeftEvent     member_left     = 3;
+        ChannelClosedEvent  channel_closed  = 4;
+        ReplayCompleteEvent replay_complete = 5;
+    }
+}
+
+message MessageEvent {
+    string message_id  = 1;
+    string channel_id  = 2;
+    string sender_id   = 3;
+    string sender_name = 4;
+    string content     = 5;
+    int64  sent_at_ms  = 6;
+    bool   from_replay = 7;
+}
+
+message MemberJoinedEvent  { string channel_id = 1; string client_id = 2; string username = 3; }
+message MemberLeftEvent    { string channel_id = 1; string client_id = 2; string username = 3; }
+message ChannelClosedEvent { string channel_id = 1; string reason = 2; }
+message ReplayCompleteEvent { string channel_id = 1; uint32 replayed_count = 2; }
