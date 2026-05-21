@@ -32,6 +32,16 @@ std::string read_file(const std::string& path) {
     return buffer.str();
 }
 
+bcmd::LogLevel select_log_level(bool quiet, bool verbose) noexcept {
+    if (quiet) {
+        return bcmd::LogLevel::Warn;
+    }
+    if (verbose) {
+        return bcmd::LogLevel::Debug;
+    }
+    return bcmd::LogLevel::Info;
+}
+
 }  // namespace
 
 int main(int argc, char** argv) {
@@ -43,6 +53,7 @@ int main(int argc, char** argv) {
     bool insecure{false};
     std::uint32_t replay_count{10};
     bool verbose{false};
+    bool quiet{false};
 
     app.add_option("--server,-s", server_address, "Server address")
         ->default_val("localhost:50051");
@@ -52,10 +63,11 @@ int main(int argc, char** argv) {
     app.add_option("--replay,-r", replay_count, "Number of history messages to replay")
         ->default_val(10);
     app.add_flag("--verbose,-v", verbose, "Enable debug logging");
+    app.add_flag("--quiet,-q", quiet, "Raise log level to warn");
 
     CLI11_PARSE(app, argc, argv);
 
-    bcmd::init_logging({.level = verbose ? bcmd::LogLevel::Debug : bcmd::LogLevel::Info});
+    bcmd::init_logging({.level = select_log_level(quiet, verbose)});
 
     std::shared_ptr<::grpc::ChannelCredentials> credentials;
     if (insecure) {

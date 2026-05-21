@@ -30,18 +30,29 @@ int main(int argc, char** argv) {
     std::string key_path;
     bool insecure{false};
     std::uint32_t history_cap{200};
-    std::string log_level{"info"};
+    bool verbose{false};
+    bool quiet{false};
 
     app.add_option("--bind,-b", bind_address, "Bind address")->default_val("0.0.0.0:50051");
     app.add_option("--cert", cert_path, "TLS certificate PEM");
     app.add_option("--key", key_path, "TLS private key PEM");
     app.add_flag("--insecure", insecure, "Disable TLS");
     app.add_option("--history-cap", history_cap, "Max messages per channel")->default_val(200);
-    app.add_option("--log-level", log_level, "Log level")->default_val("info");
+    app.add_flag("--verbose,-v", verbose, "Enable debug logging");
+    app.add_flag("--quiet,-q", quiet, "Raise log level to warn");
 
     CLI11_PARSE(app, argc, argv);
 
-    bcmd::init_logging();
+    const auto LOG_LEVEL = [&] {
+        if (quiet) {
+            return bcmd::LogLevel::Warn;
+        }
+        if (verbose) {
+            return bcmd::LogLevel::Debug;
+        }
+        return bcmd::LogLevel::Info;
+    }();
+    bcmd::init_logging({.level = LOG_LEVEL});
 
     if (!insecure && (cert_path.empty() || key_path.empty())) {
         spdlog::error("--cert and --key required unless --insecure");

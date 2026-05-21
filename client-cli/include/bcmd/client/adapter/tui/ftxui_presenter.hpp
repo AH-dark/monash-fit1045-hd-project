@@ -53,6 +53,7 @@ private:
     int history_count_{0};
     bool connected_{false};
     bool tls_{false};
+    bool show_help_{false};
     std::string username_;
     std::string error_toast_;
     std::string input_text_;

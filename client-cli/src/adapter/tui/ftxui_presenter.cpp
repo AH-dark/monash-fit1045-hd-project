@@ -81,6 +81,14 @@ int FtxuiPresenter::run(std::function<void()> on_quit) {
             screen_.ExitLoopClosure()();
             return true;
         }
+        if (event == ftxui::Event::Character('?')) {
+            {
+                std::lock_guard<std::mutex> lock{ui_mutex_};
+                show_help_ = !show_help_;
+            }
+            screen_.PostEvent(ftxui::Event::Custom);
+            return true;
+        }
         return false;
     });
 
@@ -138,22 +146,43 @@ ftxui::Element FtxuiPresenter::render(const ftxui::Component& channels,
     const std::string tls_status = tls_ ? "TLS" : "insecure";
     const std::string status = "Status: " + connection + " (" + tls_status + ") as " + username_;
     const std::string error = error_toast_.empty() ? "" : " | Error: " + error_toast_;
+    const std::string hint = show_help_ ? "" : " | press ? for help";
 
-    return ftxui::vbox({
-               ftxui::hbox({
-                   ftxui::vbox({ftxui::text("Channels") | ftxui::bold,
-                                channels->Render()})
-                       | ftxui::size(ftxui::WIDTH, ftxui::EQUAL, 24) | ftxui::border,
-                   ftxui::vbox({ftxui::text("Messages") | ftxui::bold,
-                                RenderMessageView(messages_, history_count_) | ftxui::vscroll_indicator
-                                    | ftxui::frame})
-                       | ftxui::flex | ftxui::border,
-               }) | ftxui::flex,
-               ftxui::separator(),
-               input->Render() | ftxui::border,
-               ftxui::text(status + error) | ftxui::dim,
-           })
-           | ftxui::border;
+    auto main_view = ftxui::vbox({
+                         ftxui::hbox({
+                             ftxui::vbox({ftxui::text("Channels") | ftxui::bold,
+                                          channels->Render()})
+                                 | ftxui::size(ftxui::WIDTH, ftxui::EQUAL, 24) | ftxui::border,
+                             ftxui::vbox({ftxui::text("Messages") | ftxui::bold,
+                                          RenderMessageView(messages_, history_count_)
+                                              | ftxui::vscroll_indicator | ftxui::frame})
+                                 | ftxui::flex | ftxui::border,
+                         }) | ftxui::flex,
+                         ftxui::separator(),
+                         input->Render() | ftxui::border,
+                         ftxui::text(status + error + hint) | ftxui::dim,
+                     })
+                     | ftxui::border;
+
+    if (!show_help_) {
+        return main_view;
+    }
+
+    auto help_panel = ftxui::vbox({
+                          ftxui::text("Keyboard Shortcuts") | ftxui::bold | ftxui::center,
+                          ftxui::separator(),
+                          ftxui::text("  Enter            send message"),
+                          ftxui::text("  /join <channel>  join channel"),
+                          ftxui::text("  /leave           leave current channel"),
+                          ftxui::text("  /list            list channels"),
+                          ftxui::text("  /quit            disconnect and exit"),
+                          ftxui::text("  Esc              disconnect and exit"),
+                          ftxui::text("  ?                toggle this help"),
+                      })
+                      | ftxui::border | ftxui::bgcolor(ftxui::Color::Black)
+                      | ftxui::clear_under | ftxui::center;
+
+    return ftxui::dbox({main_view, help_panel});
 }
 
 }  // namespace bcmd::client::adapter::tui
