@@ -76,6 +76,16 @@ void FtxuiPresenter::showChannelList(std::vector<std::string> channel_names) {
     screen_.PostEvent(ftxui::Event::Custom);
 }
 
+void FtxuiPresenter::clearMessages() {
+    inbox_->clear();
+    {
+        std::scoped_lock lock{ui_mutex_};
+        messages_.clear();
+        history_count_ = 0;
+    }
+    screen_.PostEvent(ftxui::Event::Custom);
+}
+
 void FtxuiPresenter::setActions(Actions actions) {
     std::scoped_lock lock{ui_mutex_};
     actions_ = std::move(actions);
@@ -88,10 +98,19 @@ int FtxuiPresenter::run(std::function<void()> on_quit) {
     auto layout = ftxui::Container::Vertical({channels, input});
     auto renderer =
         ftxui::Renderer(layout, [this, channels, input] { return render(channels, input); });
-    auto component = ftxui::CatchEvent(renderer, [this, onQuit](const ftxui::Event& event) {
+    auto component = ftxui::CatchEvent(renderer, [this](const ftxui::Event& event) {
         if (event == ftxui::Event::Escape) {
-            (*onQuit)();
-            screen_.ExitLoopClosure()();
+            bool was_help_open{false};
+            {
+                std::scoped_lock lock{ui_mutex_};
+                if (show_help_) {
+                    show_help_ = false;
+                    was_help_open = true;
+                }
+            }
+            if (was_help_open) {
+                screen_.PostEvent(ftxui::Event::Custom);
+            }
             return true;
         }
         if (event == ftxui::Event::Character('?')) {
@@ -198,8 +217,8 @@ ftxui::Element FtxuiPresenter::render(const ftxui::Component& channels,
                           ftxui::text("  /leave            leave the current channel"),
                           ftxui::text("  /list             list all channels"),
                           ftxui::text("  /quit             disconnect and exit"),
-                          ftxui::text("  Esc               disconnect and exit"),
                           ftxui::text("  ?                 toggle this help"),
+                          ftxui::text("  Esc               close this help"),
                           ftxui::separator(),
                           ftxui::text("Channel names: 1-64 chars of [a-zA-Z0-9-]") | ftxui::dim,
                       }) |

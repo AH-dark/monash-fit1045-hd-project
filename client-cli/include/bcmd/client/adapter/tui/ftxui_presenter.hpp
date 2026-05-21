@@ -35,6 +35,7 @@ public:
     void showInfo(std::string_view info_text) override;
     void updateConnectionStatus(bool connected, bool tls, std::string_view username) override;
     void showChannelList(std::vector<std::string> channel_names) override;
+    void clearMessages() override;
 
     void setActions(Actions actions);
 

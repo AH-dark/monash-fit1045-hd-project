@@ -80,7 +80,7 @@ public:
         auto channel_repo = std::make_shared<persistence::InMemoryChannelRepository>();
         auto client_registry = std::make_shared<persistence::InMemoryClientRegistry>();
         auto message_repo = std::make_shared<persistence::InMemoryMessageRepository>();
-        auto publisher = std::make_shared<grpc_adapter::GrpcClientPublisher>();
+        auto publisher = std::make_shared<grpc_adapter::GrpcClientPublisher>(client_registry);
 
         auto join_channel = std::make_shared<usecase::JoinChannel>(channel_repo, client_registry);
         auto leave_channel = std::make_shared<usecase::LeaveChannel>(channel_repo, client_registry);

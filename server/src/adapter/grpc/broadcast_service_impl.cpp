@@ -10,6 +10,7 @@
 #include "bcmd/server/application/usecase/send_message.hpp"
 #include "bcmd/server/application/usecase/subscribe_to_channel.hpp"
 #include "bcmd/server/domain/model/username.hpp"
+#include "bcmd/server/domain/service/message_router.hpp"
 #include "bcmd/shared/ids.hpp"
 #include "bcmd/shared/result.hpp"
 #include "bcmd/shared/string_utils.hpp"
@@ -156,7 +157,8 @@ BroadcastServiceImpl::BroadcastServiceImpl(
     }
 
     const auto trimmed_content = bcmd::trim(request->content());
-    auto message_id = send_message_->execute(*CLIENT_ID, *CHANNEL_ID, trimmed_content);
+    auto message_id = send_message_->execute(*CLIENT_ID, *CHANNEL_ID, trimmed_content,
+                                             domain::EchoPolicy::IncludeSender);
     if (!message_id.has_value()) {
         return error_to_status(message_id.error());
     }
