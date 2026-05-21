@@ -21,10 +21,31 @@ target_compile_features(bcmd_domain PUBLIC cxx_std_23)
 
 set_target_properties(bcmd_domain PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
+add_library(bcmd_application STATIC
+    src/application/usecase/join_channel.cpp
+    src/application/usecase/leave_channel.cpp
+    src/application/usecase/send_message.cpp
+    src/application/usecase/list_channels.cpp
+    src/application/usecase/get_recent_messages.cpp
+    src/application/usecase/subscribe_to_channel.cpp
+)
+
+target_include_directories(bcmd_application PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+)
+
+target_link_libraries(bcmd_application PUBLIC
+    bcmd_domain
+)
+
+target_compile_features(bcmd_application PUBLIC cxx_std_23)
+
+set_target_properties(bcmd_application PROPERTIES POSITION_INDEPENDENT_CODE ON)
+
 add_executable(bcmd src/main.cpp)
 
 target_link_libraries(bcmd PRIVATE
-    bcmd_domain
+    bcmd_application
 )
 
 target_compile_features(bcmd PRIVATE cxx_std_23)

@@ -48,3 +48,24 @@ target_link_libraries(server_domain_tests PRIVATE
 target_compile_features(server_domain_tests PRIVATE cxx_std_23)
 
 catch_discover_tests(server_domain_tests PROPERTIES LABELS "server-domain")
+
+add_executable(server_application_tests
+    unit/server/application/join_channel_test.cpp
+    unit/server/application/leave_channel_test.cpp
+    unit/server/application/send_message_test.cpp
+    unit/server/application/list_channels_test.cpp
+    unit/server/application/get_recent_messages_test.cpp
+)
+
+target_include_directories(server_application_tests PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+target_link_libraries(server_application_tests PRIVATE
+    bcmd_application
+    Catch2::Catch2WithMain
+)
+
+target_compile_features(server_application_tests PRIVATE cxx_std_23)
+
+catch_discover_tests(server_application_tests PROPERTIES LABELS "server-application")
