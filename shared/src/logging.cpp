@@ -5,6 +5,7 @@
 #include <string_view>
 
 #include <spdlog/sinks/stdout_color_sinks.h>
+#include <spdlog/sinks/stdout_sinks.h>
 #include <spdlog/spdlog.h>
 
 namespace bcmd {
@@ -46,11 +47,11 @@ std::shared_ptr<spdlog::logger> get_logger(std::string_view name) {
     if (name.empty()) {
         return spdlog::default_logger();
     }
-    const std::string name_str(name);
-    if (auto existing = spdlog::get(name_str)) {
+    const std::string NAME_STR(name);
+    if (auto existing = spdlog::get(NAME_STR)) {
         return existing;
     }
-    auto logger = make_stdout_logger(name_str, true);
+    auto logger = make_stdout_logger(NAME_STR, true);
     spdlog::register_logger(logger);
     return logger;
 }

@@ -45,8 +45,10 @@ bcmd::Result<bcmd::MessageId> SendMessage::execute(const bcmd::ClientId& sender_
 
     auto validated_content = domain::MessageContent::create(content);
     if (!validated_content.has_value()) {
-        return std::unexpected(content.empty() ? bcmd::Error::MessageEmpty
-                                                : bcmd::Error::MessageTooLong);
+        return std::unexpected(content.find_first_not_of(" \t\n\r\f\v") ==
+                                       std::string_view::npos
+                                   ? bcmd::Error::MessageEmpty
+                                   : bcmd::Error::MessageTooLong);
     }
 
     domain::Message message{bcmd::MessageId::generate(), sender_id, channel_id,
@@ -56,8 +58,8 @@ bcmd::Result<bcmd::MessageId> SendMessage::execute(const bcmd::ClientId& sender_
         return std::unexpected(saved.error());
     }
 
-    const auto recipients = domain::MessageRouter::recipientsFor(*channel, message, echo_policy);
-    for (const auto& recipient : recipients) {
+    for (const auto& recipient : domain::MessageRouter::recipientsFor(*channel, message,
+                                                                       echo_policy)) {
         publisher_->publish(recipient, message, /*from_replay=*/false);
     }
 
