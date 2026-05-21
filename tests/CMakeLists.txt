@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.27)
 
 find_package(Catch2 REQUIRED CONFIG)
+find_package(gRPC REQUIRED CONFIG)
 
 include(CTest)
 include(Catch)
@@ -16,7 +17,7 @@ target_link_libraries(proto_smoke_test PRIVATE
 
 target_compile_features(proto_smoke_test PRIVATE cxx_std_23)
 
-catch_discover_tests(proto_smoke_test PROPERTIES LABELS "proto")
+catch_discover_tests(proto_smoke_test PROPERTIES LABELS "unit")
 
 add_executable(shared_tests
     unit/shared/ids_test.cpp
@@ -31,7 +32,7 @@ target_link_libraries(shared_tests PRIVATE
 
 target_compile_features(shared_tests PRIVATE cxx_std_23)
 
-catch_discover_tests(shared_tests PROPERTIES LABELS "shared")
+catch_discover_tests(shared_tests PROPERTIES LABELS "unit")
 
 add_executable(server_domain_tests
     unit/server/domain/value_objects_test.cpp
@@ -47,7 +48,7 @@ target_link_libraries(server_domain_tests PRIVATE
 
 target_compile_features(server_domain_tests PRIVATE cxx_std_23)
 
-catch_discover_tests(server_domain_tests PROPERTIES LABELS "server-domain")
+catch_discover_tests(server_domain_tests PROPERTIES LABELS "unit")
 
 add_executable(server_application_tests
     unit/server/application/join_channel_test.cpp
@@ -68,4 +69,60 @@ target_link_libraries(server_application_tests PRIVATE
 
 target_compile_features(server_application_tests PRIVATE cxx_std_23)
 
-catch_discover_tests(server_application_tests PROPERTIES LABELS "server-application")
+catch_discover_tests(server_application_tests PROPERTIES LABELS "unit")
+
+add_executable(client_application_tests
+    unit/client/application/send_message_command_test.cpp
+)
+
+target_include_directories(client_application_tests PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+target_link_libraries(client_application_tests PRIVATE
+    bcli_lib
+    Catch2::Catch2WithMain
+)
+
+target_compile_features(client_application_tests PRIVATE cxx_std_23)
+
+catch_discover_tests(client_application_tests PROPERTIES LABELS "unit")
+
+function(add_bcmd_integration_test target source)
+    add_executable(${target}
+        ${source}
+    )
+
+    target_include_directories(${target} PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}
+    )
+
+    target_link_libraries(${target} PRIVATE
+        bcmd_server_adapters
+        bcmd_application
+        bcmd_domain
+        bcmd_shared
+        bcmd_proto
+        gRPC::grpc++
+        Catch2::Catch2WithMain
+    )
+
+    target_compile_features(${target} PRIVATE cxx_std_23)
+    catch_discover_tests(${target} PROPERTIES LABELS "integration")
+endfunction()
+
+add_bcmd_integration_test(integration_grpc_round_trip_test
+    integration/grpc_round_trip_test.cpp
+)
+add_bcmd_integration_test(integration_reconnect_test
+    integration/reconnect_test.cpp
+)
+add_bcmd_integration_test(integration_channel_lifecycle_test
+    integration/channel_lifecycle_test.cpp
+)
+add_bcmd_integration_test(integration_history_replay_test
+    integration/history_replay_test.cpp
+)
+add_bcmd_integration_test(integration_tls_enforcement_test
+    integration/tls_enforcement_test.cpp
+)

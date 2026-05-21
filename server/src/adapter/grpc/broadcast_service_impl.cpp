@@ -1,10 +1,8 @@
 #include "bcmd/server/adapter/grpc/broadcast_service_impl.hpp"
 
-#include <chrono>
 #include <expected>
 #include <memory>
 #include <string>
-#include <string_view>
 #include <thread>
 #include <utility>
 
@@ -13,27 +11,6 @@
 #include "bcmd/shared/result.hpp"
 
 namespace bcmd::server::adapter::grpc {
-
-namespace {
-
-bcmd::v1::ChannelEvent make_message_event(const bcmd::MessageId& message_id,
-                                          const bcmd::ClientId& sender_id,
-                                          const bcmd::ChannelId& channel_id,
-                                          std::string_view content) {
-    bcmd::v1::ChannelEvent event;
-    auto* message = event.mutable_message();
-    message->set_message_id(message_id.value());
-    message->set_sender_id(sender_id.value());
-    message->set_channel_id(channel_id.value());
-    message->set_content(std::string(content));
-    message->set_sent_at_ms(std::chrono::duration_cast<std::chrono::milliseconds>(
-                                std::chrono::system_clock::now().time_since_epoch())
-                                .count());
-    message->set_from_replay(false);
-    return event;
-}
-
-}  // namespace
 
 BroadcastServiceImpl::BroadcastServiceImpl(
     std::shared_ptr<application::usecase::JoinChannel> join_channel,
@@ -56,12 +33,12 @@ BroadcastServiceImpl::BroadcastServiceImpl(
 ::grpc::Status BroadcastServiceImpl::Connect(::grpc::ServerContext* /*context*/,
                                              const bcmd::v1::ConnectRequest* request,
                                              bcmd::v1::ConnectResponse* response) {
-    const auto username = domain::Username::create(request->username());
-    if (!username.has_value()) {
+    const auto USERNAME = domain::Username::create(request->username());
+    if (!USERNAME.has_value()) {
         return error_to_status(bcmd::Error::InvalidUsername);
     }
 
-    auto session = client_registry_->registerClient(*username);
+    auto session = client_registry_->registerClient(*USERNAME);
     if (!session.has_value()) {
         return error_to_status(session.error());
     }
@@ -72,15 +49,15 @@ BroadcastServiceImpl::BroadcastServiceImpl(
 ::grpc::Status BroadcastServiceImpl::Disconnect(::grpc::ServerContext* /*context*/,
                                                 const bcmd::v1::DisconnectRequest* request,
                                                 bcmd::v1::DisconnectResponse* /*response*/) {
-    const auto client_id = bcmd::ClientId::parse(request->client_id());
-    if (!client_id.has_value()) {
+    const auto CLIENT_ID = bcmd::ClientId::parse(request->client_id());
+    if (!CLIENT_ID.has_value()) {
         return error_to_status(bcmd::Error::ClientNotFound);
     }
-    const auto removed = client_registry_->remove(*client_id);
-    if (!removed.has_value()) {
-        return error_to_status(removed.error());
+    const auto REMOVED = client_registry_->remove(*CLIENT_ID);
+    if (!REMOVED.has_value()) {
+        return error_to_status(REMOVED.error());
     }
-    publisher_->unregisterSubscriber(*client_id);
+    publisher_->unregisterSubscriber(*CLIENT_ID);
     return ::grpc::Status::OK;
 }
 
@@ -99,57 +76,54 @@ BroadcastServiceImpl::BroadcastServiceImpl(
 ::grpc::Status BroadcastServiceImpl::JoinChannel(::grpc::ServerContext* /*context*/,
                                                  const bcmd::v1::JoinChannelRequest* request,
                                                  bcmd::v1::JoinChannelResponse* /*response*/) {
-    const auto client_id = bcmd::ClientId::parse(request->client_id());
-    if (!client_id.has_value()) {
+    const auto CLIENT_ID = bcmd::ClientId::parse(request->client_id());
+    if (!CLIENT_ID.has_value()) {
         return error_to_status(bcmd::Error::ClientNotFound);
     }
 
-    if (const auto channel_id = bcmd::ChannelId::parse(request->channel_id()); channel_id.has_value()) {
-        const auto joined = join_channel_->execute(*client_id, *channel_id);
-        return joined.has_value() ? ::grpc::Status::OK : error_to_status(joined.error());
+    if (const auto CHANNEL_ID = bcmd::ChannelId::parse(request->channel_id()); CHANNEL_ID.has_value()) {
+        const auto JOINED = join_channel_->execute(*CLIENT_ID, *CHANNEL_ID);
+        return JOINED.has_value() ? ::grpc::Status::OK : error_to_status(JOINED.error());
     }
 
-    auto joined = join_channel_->executeByName(*client_id, request->channel_id());
+    auto joined = join_channel_->executeByName(*CLIENT_ID, request->channel_id());
     return joined.has_value() ? ::grpc::Status::OK : error_to_status(joined.error());
 }
 
 ::grpc::Status BroadcastServiceImpl::LeaveChannel(::grpc::ServerContext* /*context*/,
                                                   const bcmd::v1::LeaveChannelRequest* request,
                                                   bcmd::v1::LeaveChannelResponse* /*response*/) {
-    const auto client_id = bcmd::ClientId::parse(request->client_id());
-    const auto channel_id = bcmd::ChannelId::parse(request->channel_id());
-    if (!client_id.has_value()) {
+    const auto CLIENT_ID = bcmd::ClientId::parse(request->client_id());
+    const auto CHANNEL_ID = bcmd::ChannelId::parse(request->channel_id());
+    if (!CLIENT_ID.has_value()) {
         return error_to_status(bcmd::Error::ClientNotFound);
     }
-    if (!channel_id.has_value()) {
+    if (!CHANNEL_ID.has_value()) {
         return error_to_status(bcmd::Error::ChannelNotFound);
     }
 
-    const auto left = leave_channel_->execute(*client_id, *channel_id);
-    return left.has_value() ? ::grpc::Status::OK : error_to_status(left.error());
+    const auto LEFT = leave_channel_->execute(*CLIENT_ID, *CHANNEL_ID);
+    return LEFT.has_value() ? ::grpc::Status::OK : error_to_status(LEFT.error());
 }
 
 ::grpc::Status BroadcastServiceImpl::SendMessage(::grpc::ServerContext* /*context*/,
                                                  const bcmd::v1::SendMessageRequest* request,
                                                  bcmd::v1::SendMessageResponse* response) {
-    const auto client_id = bcmd::ClientId::parse(request->client_id());
-    const auto channel_id = bcmd::ChannelId::parse(request->channel_id());
-    if (!client_id.has_value()) {
+    const auto CLIENT_ID = bcmd::ClientId::parse(request->client_id());
+    const auto CHANNEL_ID = bcmd::ChannelId::parse(request->channel_id());
+    if (!CLIENT_ID.has_value()) {
         return error_to_status(bcmd::Error::ClientNotFound);
     }
-    if (!channel_id.has_value()) {
+    if (!CHANNEL_ID.has_value()) {
         return error_to_status(bcmd::Error::ChannelNotFound);
     }
 
-    auto message_id = send_message_->execute(*client_id, *channel_id, request->content());
+    auto message_id = send_message_->execute(*CLIENT_ID, *CHANNEL_ID, request->content());
     if (!message_id.has_value()) {
         return error_to_status(message_id.error());
     }
 
     response->set_message_id(message_id->value());
-    publisher_->broadcastEvent(*channel_id,
-                               make_message_event(*message_id, *client_id, *channel_id,
-                                                  request->content()));
     return ::grpc::Status::OK;
 }
 
@@ -157,26 +131,26 @@ BroadcastServiceImpl::BroadcastServiceImpl(
     ::grpc::ServerContext* context,
     const bcmd::v1::SubscribeRequest* request,
     ::grpc::ServerWriter<bcmd::v1::ChannelEvent>* writer) {
-    const auto client_id = bcmd::ClientId::parse(request->client_id());
-    const auto channel_id = bcmd::ChannelId::parse(request->channel_id());
-    if (!client_id.has_value()) {
+    const auto CLIENT_ID = bcmd::ClientId::parse(request->client_id());
+    const auto CHANNEL_ID = bcmd::ChannelId::parse(request->channel_id());
+    if (!CLIENT_ID.has_value()) {
         return error_to_status(bcmd::Error::ClientNotFound);
     }
-    if (!channel_id.has_value()) {
+    if (!CHANNEL_ID.has_value()) {
         return error_to_status(bcmd::Error::ChannelNotFound);
     }
 
-    publisher_->registerSubscriber(*client_id, writer);
-    const auto replayed = subscribe_->execute(*client_id, *channel_id, request->replay_count());
-    if (!replayed.has_value()) {
-        publisher_->unregisterSubscriber(*client_id);
-        return error_to_status(replayed.error());
+    publisher_->registerSubscriber(*CLIENT_ID, writer);
+    const auto REPLAYED = subscribe_->execute(*CLIENT_ID, *CHANNEL_ID, request->replay_count());
+    if (!REPLAYED.has_value()) {
+        publisher_->unregisterSubscriber(*CLIENT_ID);
+        return error_to_status(REPLAYED.error());
     }
 
     while (!context->IsCancelled()) {
         std::this_thread::sleep_for(std::chrono::milliseconds(50));
     }
-    publisher_->unregisterSubscriber(*client_id);
+    publisher_->unregisterSubscriber(*CLIENT_ID);
     return ::grpc::Status::OK;
 }
 
