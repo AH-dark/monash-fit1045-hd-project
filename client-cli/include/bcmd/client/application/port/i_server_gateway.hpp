@@ -12,8 +12,8 @@
 namespace bcmd::client::application::port {
 
 struct ChannelInfo {
-    std::string id;
-    std::string name;
+    std::string id{};
+    std::string name{};
     std::int32_t member_count{0};
 };
 

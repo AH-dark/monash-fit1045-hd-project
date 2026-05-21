@@ -32,7 +32,7 @@ private:
     bcmd::ClientId sender_id_;
     bcmd::ChannelId channel_id_;
     MessageContent content_;
-    std::chrono::system_clock::time_point sent_at_;
+    std::chrono::system_clock::time_point sent_at_{};
 };
 
 }  // namespace bcmd::server::domain

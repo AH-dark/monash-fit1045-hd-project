@@ -31,8 +31,8 @@ public:
 private:
     bcmd::ChannelId id_;
     ChannelName name_;
-    std::unordered_set<bcmd::ClientId> members_;
-    std::chrono::system_clock::time_point created_at_;
+    std::unordered_set<bcmd::ClientId> members_{};
+    std::chrono::system_clock::time_point created_at_{};
 };
 
 }  // namespace bcmd::server::domain

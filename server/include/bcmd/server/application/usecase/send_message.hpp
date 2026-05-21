@@ -27,10 +27,10 @@ public:
         domain::EchoPolicy echo_policy = domain::EchoPolicy::ExcludeSender);
 
 private:
-    std::shared_ptr<port::IChannelRepository> channels_;
-    std::shared_ptr<port::IClientRegistry> clients_;
-    std::shared_ptr<port::IMessageRepository> messages_;
-    std::shared_ptr<port::IMessagePublisher> publisher_;
+    std::shared_ptr<port::IChannelRepository> channels_{};
+    std::shared_ptr<port::IClientRegistry> clients_{};
+    std::shared_ptr<port::IMessageRepository> messages_{};
+    std::shared_ptr<port::IMessagePublisher> publisher_{};
 };
 
 }  // namespace bcmd::server::application::usecase

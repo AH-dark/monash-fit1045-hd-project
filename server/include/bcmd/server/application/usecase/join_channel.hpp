@@ -23,8 +23,8 @@ public:
                                                 std::string_view channel_name);
 
 private:
-    std::shared_ptr<port::IChannelRepository> channels_;
-    std::shared_ptr<port::IClientRegistry> clients_;
+    std::shared_ptr<port::IChannelRepository> channels_{};
+    std::shared_ptr<port::IClientRegistry> clients_{};
 };
 
 }  // namespace bcmd::server::application::usecase

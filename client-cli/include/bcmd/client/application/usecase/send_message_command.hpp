@@ -17,7 +17,7 @@ public:
                                       std::string_view content);
 
 private:
-    std::shared_ptr<port::IServerGateway> gateway_;
+    std::shared_ptr<port::IServerGateway> gateway_{};
 };
 
 }  // namespace bcmd::client::application::usecase

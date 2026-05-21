@@ -11,7 +11,7 @@ enum class CommandType : std::uint8_t { Join, Leave, List, Quit, None };
 
 struct ParsedCommand {
     CommandType type{CommandType::None};
-    std::string arg;
+    std::string arg{};
 };
 
 inline ParsedCommand parseCommand(std::string_view input) {

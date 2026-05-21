@@ -17,8 +17,8 @@ public:
     bcmd::VoidResult execute(const bcmd::ClientId& client_id, const bcmd::ChannelId& channel_id);
 
 private:
-    std::shared_ptr<port::IChannelRepository> channels_;
-    std::shared_ptr<port::IClientRegistry> clients_;
+    std::shared_ptr<port::IChannelRepository> channels_{};
+    std::shared_ptr<port::IClientRegistry> clients_{};
 };
 
 }  // namespace bcmd::server::application::usecase

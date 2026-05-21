@@ -20,8 +20,8 @@ public:
                              std::uint32_t replay_count);
 
 private:
-    std::shared_ptr<port::IServerGateway> gateway_;
-    std::shared_ptr<port::IPresenter> presenter_;
+    std::shared_ptr<port::IServerGateway> gateway_{};
+    std::shared_ptr<port::IPresenter> presenter_{};
 };
 
 }  // namespace bcmd::client::application::usecase

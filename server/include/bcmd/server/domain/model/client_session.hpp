@@ -28,8 +28,8 @@ public:
 private:
     bcmd::ClientId id_;
     Username username_;
-    std::unordered_set<bcmd::ChannelId> joined_channels_;
-    std::chrono::system_clock::time_point connected_since_;
+    std::unordered_set<bcmd::ChannelId> joined_channels_{};
+    std::chrono::system_clock::time_point connected_since_{};
 };
 
 }  // namespace bcmd::server::domain
