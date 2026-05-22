@@ -62,6 +62,7 @@ add_library(bcmd_server_adapters STATIC
     src/adapter/grpc/tls_config.cpp
     src/adapter/grpc/client_publisher.cpp
     src/adapter/grpc/broadcast_service_impl.cpp
+    src/adapter/grpc/heartbeat_sweeper.cpp
     src/adapter/grpc/server_runner.cpp
 )
 
