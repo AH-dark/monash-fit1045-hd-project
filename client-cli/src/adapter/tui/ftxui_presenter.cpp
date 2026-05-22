@@ -5,6 +5,7 @@
 #include "bcmd/client/adapter/tui/components/input_bar.hpp"
 #include "bcmd/client/adapter/tui/components/message_view.hpp"
 #include "bcmd/client/adapter/tui/inbox_queue.hpp"
+#include "bcmd/client/application/port/i_presenter.hpp"
 #include "bcmd/client/domain/inbox_message.hpp"
 #include "bcmd/shared/string_utils.hpp"
 
@@ -62,6 +63,14 @@ void FtxuiPresenter::updateConnectionStatus(bool connected, bool tls, std::strin
         connected_ = connected;
         tls_ = tls;
         username_ = std::string{username};
+    }
+    screen_.PostEvent(ftxui::Event::Custom);
+}
+
+void FtxuiPresenter::updateConnectionState(bcmd::client::application::port::ConnectionState state) {
+    {
+        std::scoped_lock lock{ui_mutex_};
+        connection_state_ = state;
     }
     screen_.PostEvent(ftxui::Event::Custom);
 }

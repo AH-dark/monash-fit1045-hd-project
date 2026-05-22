@@ -2,11 +2,19 @@
 
 #include "bcmd/client/domain/inbox_message.hpp"
 
+#include <cstdint>
 #include <string>
 #include <string_view>
 #include <vector>
 
 namespace bcmd::client::application::port {
+
+enum class ConnectionState : std::uint8_t {
+    Connecting,
+    Connected,
+    NetworkError,
+    Closed,
+};
 
 class IPresenter {
 public:
@@ -17,6 +25,7 @@ public:
     virtual void showError(std::string_view error_text) = 0;
     virtual void showInfo(std::string_view info_text) = 0;
     virtual void updateConnectionStatus(bool connected, bool tls, std::string_view username) = 0;
+    virtual void updateConnectionState(ConnectionState state) = 0;
     virtual void showChannelList(std::vector<std::string> channel_names) = 0;
     virtual void clearMessages() = 0;
 
