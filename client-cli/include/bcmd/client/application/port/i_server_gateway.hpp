@@ -37,6 +37,7 @@ public:
     virtual bcmd::Result<std::string> sendMessage(std::string_view client_id,
                                                   std::string_view channel_id,
                                                   std::string_view content) = 0;
+    virtual bcmd::VoidResult sendHeartbeat(std::string_view client_id) = 0;
     virtual bcmd::VoidResult subscribeToChannel(std::string_view client_id,
                                                 std::string_view channel_id,
                                                 std::uint32_t replay_count,

@@ -10,6 +10,7 @@
 #include <grpcpp/grpcpp.h>
 #include <grpcpp/support/status.h>
 
+#include <chrono>
 #include <cstddef>
 #include <cstdint>
 #include <expected>
@@ -153,6 +154,20 @@ bcmd::Result<std::string> GrpcServerGateway::sendMessage(std::string_view client
     return response.message_id();
 }
 
+bcmd::VoidResult GrpcServerGateway::sendHeartbeat(std::string_view client_id) {
+    ::grpc::ClientContext context;
+    context.set_deadline(std::chrono::system_clock::now() + std::chrono::seconds(5));
+    bcmd::v1::HeartbeatRequest request;
+    bcmd::v1::HeartbeatResponse response;
+    request.set_client_id(bcmd::trim_copy(client_id));
+
+    const auto status = stub_->Heartbeat(&context, request, &response);
+    if (!status.ok()) {
+        return std::unexpected(grpc_status_to_error(status));
+    }
+    return {};
+}
+
 bcmd::VoidResult GrpcServerGateway::subscribeToChannel(std::string_view client_id,
                                                        std::string_view channel_id,
                                                        std::uint32_t replay_count,
@@ -179,6 +194,35 @@ bcmd::VoidResult GrpcServerGateway::subscribeToChannel(std::string_view client_i
             callback(std::move(inbox_message));
         } else if (event.has_replay_complete()) {
             in_history = false;
+        } else if (event.has_member_left()) {
+            const auto& left = event.member_left();
+            // Compensate for the server's broadcastEvent ignoring channel_id (OOS bug).
+            if (left.channel_id() != bcmd::trim_copy(channel_id)) {
+                continue;
+            }
+            domain::InboxMessage system_message;
+            system_message.channel_id = left.channel_id();
+            system_message.sender_name = "[system]";
+            system_message.content = std::string{left.username()} + " left channel";
+            system_message.sent_at_ms = std::chrono::duration_cast<std::chrono::milliseconds>(
+                                            std::chrono::system_clock::now().time_since_epoch())
+                                            .count();
+            system_message.is_history = false;
+            callback(std::move(system_message));
+        } else if (event.has_member_joined()) {
+            const auto& joined = event.member_joined();
+            if (joined.channel_id() != bcmd::trim_copy(channel_id)) {
+                continue;
+            }
+            domain::InboxMessage system_message;
+            system_message.channel_id = joined.channel_id();
+            system_message.sender_name = "[system]";
+            system_message.content = std::string{joined.username()} + " joined channel";
+            system_message.sent_at_ms = std::chrono::duration_cast<std::chrono::milliseconds>(
+                                            std::chrono::system_clock::now().time_since_epoch())
+                                            .count();
+            system_message.is_history = false;
+            callback(std::move(system_message));
         }
     }
 

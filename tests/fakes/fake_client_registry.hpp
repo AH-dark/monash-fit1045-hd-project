@@ -6,9 +6,11 @@
 #include "bcmd/shared/ids.hpp"
 #include "bcmd/shared/result.hpp"
 
+#include <chrono>
 #include <expected>
 #include <unordered_map>
 #include <utility>
+#include <vector>
 
 namespace bcmd::tests {
 
@@ -57,6 +59,26 @@ public:
         name_to_id_.erase(iter->second.username());
         by_id_.erase(iter);
         return {};
+    }
+
+    bcmd::VoidResult touchHeartbeat(const bcmd::ClientId& client_id) override {
+        const auto iter = by_id_.find(client_id);
+        if (iter == by_id_.end()) {
+            return std::unexpected(bcmd::Error::ClientNotFound);
+        }
+        iter->second.touch();
+        return {};
+    }
+
+    std::vector<bcmd::server::domain::ClientSession> collectExpired(
+        std::chrono::steady_clock::time_point deadline) override {
+        std::vector<bcmd::server::domain::ClientSession> expired;
+        for (const auto& [_, session] : by_id_) {
+            if (session.isExpired(deadline)) {
+                expired.push_back(session);
+            }
+        }
+        return expired;
     }
 
 private:

@@ -5,10 +5,12 @@
 #include "bcmd/shared/ids.hpp"
 #include "bcmd/shared/result.hpp"
 
+#include <chrono>
 #include <expected>
 #include <mutex>
 #include <shared_mutex>
 #include <utility>
+#include <vector>
 
 namespace bcmd::server::adapter::persistence {
 
@@ -67,6 +69,28 @@ bcmd::VoidResult InMemoryClientRegistry::remove(const bcmd::ClientId& client_id)
     username_to_id_.erase(found->second.username().value());
     clients_by_id_.erase(found);
     return {};
+}
+
+bcmd::VoidResult InMemoryClientRegistry::touchHeartbeat(const bcmd::ClientId& client_id) {
+    const std::unique_lock lock(mutex_);
+    const auto found = clients_by_id_.find(client_id.value());
+    if (found == clients_by_id_.end()) {
+        return std::unexpected(bcmd::Error::ClientNotFound);
+    }
+    found->second.touch();
+    return {};
+}
+
+std::vector<domain::ClientSession> InMemoryClientRegistry::collectExpired(
+    std::chrono::steady_clock::time_point deadline) {
+    const std::shared_lock lock(mutex_);
+    std::vector<domain::ClientSession> expired;
+    for (const auto& [_, session] : clients_by_id_) {
+        if (session.isExpired(deadline)) {
+            expired.push_back(session);
+        }
+    }
+    return expired;
 }
 
 }  // namespace bcmd::server::adapter::persistence
