@@ -26,6 +26,7 @@
 #include <string>
 #include <thread>
 #include <utility>
+#include <vector>
 
 namespace bcmd::server::adapter::grpc {
 
@@ -71,6 +72,16 @@ BroadcastServiceImpl::BroadcastServiceImpl(
     const auto CLIENT_ID = bcmd::ClientId::parse(bcmd::trim(request->client_id()));
     if (!CLIENT_ID.has_value()) {
         return error_to_status(bcmd::Error::ClientNotFound);
+    }
+    auto session = client_registry_->findById(*CLIENT_ID);
+    if (!session.has_value()) {
+        return error_to_status(session.error());
+    }
+    // Snapshot channel ids — joined_channels_ is not stable after LeaveChannel mutates.
+    const std::vector<bcmd::ChannelId> channels(session->joinedChannels().begin(),
+                                                session->joinedChannels().end());
+    for (const auto& channel_id : channels) {
+        (void)leave_channel_->execute(*CLIENT_ID, channel_id);
     }
     const auto REMOVED = client_registry_->remove(*CLIENT_ID);
     if (!REMOVED.has_value()) {
