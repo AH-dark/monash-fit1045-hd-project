@@ -5,7 +5,6 @@
 #include <grpcpp/support/status.h>
 
 #include "integration/integration_test_utils.hpp"
-#include <__chrono/duration.h>
 #include <algorithm>
 #include <atomic>
 #include <chrono>
