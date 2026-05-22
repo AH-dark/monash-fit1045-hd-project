@@ -5,6 +5,7 @@
 #include "bcmd/shared/result.hpp"
 
 #include <cstdint>
+#include <expected>
 #include <string>
 #include <string_view>
 #include <utility>
