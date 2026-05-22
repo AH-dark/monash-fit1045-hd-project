@@ -20,6 +20,11 @@ public:
     [[nodiscard]] std::chrono::system_clock::time_point connectedSince() const noexcept {
         return connected_since_;
     }
+    void touch() noexcept;
+    [[nodiscard]] std::chrono::steady_clock::time_point lastHeartbeatAt() const noexcept {
+        return last_heartbeat_at_;
+    }
+    [[nodiscard]] bool isExpired(std::chrono::steady_clock::time_point deadline) const noexcept;
 
     void joinChannel(const bcmd::ChannelId& channel_id);
     void leaveChannel(const bcmd::ChannelId& channel_id);
@@ -30,6 +35,7 @@ private:
     Username username_;
     std::unordered_set<bcmd::ChannelId> joined_channels_{};
     std::chrono::system_clock::time_point connected_since_{};
+    std::chrono::steady_clock::time_point last_heartbeat_at_{};
 };
 
 }  // namespace bcmd::server::domain
