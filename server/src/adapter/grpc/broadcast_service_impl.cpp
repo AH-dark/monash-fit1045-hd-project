@@ -167,6 +167,20 @@ BroadcastServiceImpl::BroadcastServiceImpl(
     return ::grpc::Status::OK;
 }
 
+::grpc::Status BroadcastServiceImpl::Heartbeat(::grpc::ServerContext* /*context*/,
+                                               const bcmd::v1::HeartbeatRequest* request,
+                                               bcmd::v1::HeartbeatResponse* /*response*/) {
+    const auto CLIENT_ID = bcmd::ClientId::parse(bcmd::trim(request->client_id()));
+    if (!CLIENT_ID.has_value()) {
+        return error_to_status(bcmd::Error::ClientNotFound);
+    }
+    const auto TOUCHED = client_registry_->touchHeartbeat(*CLIENT_ID);
+    if (!TOUCHED.has_value()) {
+        return error_to_status(TOUCHED.error());
+    }
+    return ::grpc::Status::OK;
+}
+
 ::grpc::Status BroadcastServiceImpl::SubscribeToChannel(
     ::grpc::ServerContext* context, const bcmd::v1::SubscribeRequest* request,
     ::grpc::ServerWriter<bcmd::v1::ChannelEvent>* writer) {
