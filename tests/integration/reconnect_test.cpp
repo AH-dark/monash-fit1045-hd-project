@@ -3,7 +3,6 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include "integration/integration_test_utils.hpp"
-#include <__chrono/duration.h>
 #include <algorithm>
 #include <chrono>
 #include <vector>
