@@ -29,6 +29,7 @@ set_target_properties(bcmd_domain PROPERTIES POSITION_INDEPENDENT_CODE ON)
 add_library(bcmd_application STATIC
     src/application/usecase/join_channel.cpp
     src/application/usecase/leave_channel.cpp
+    src/application/usecase/expire_inactive_clients.cpp
     src/application/usecase/internal/remove_member_broadcast.cpp
     src/application/usecase/send_message.cpp
     src/application/usecase/list_channels.cpp
@@ -43,6 +44,10 @@ target_include_directories(bcmd_application PUBLIC
 
 target_link_libraries(bcmd_application PUBLIC
     bcmd_domain
+)
+
+target_link_libraries(bcmd_application PRIVATE
+    spdlog::spdlog
 )
 
 target_compile_features(bcmd_application PUBLIC cxx_std_23)
