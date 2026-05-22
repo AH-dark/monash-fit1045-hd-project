@@ -52,6 +52,9 @@ public:
     ::grpc::Status SendMessage(::grpc::ServerContext* context,
                                const bcmd::v1::SendMessageRequest* request,
                                bcmd::v1::SendMessageResponse* response) override;
+    ::grpc::Status Heartbeat(::grpc::ServerContext* context,
+                             const bcmd::v1::HeartbeatRequest* request,
+                             bcmd::v1::HeartbeatResponse* response) override;
     ::grpc::Status SubscribeToChannel(
         ::grpc::ServerContext* context, const bcmd::v1::SubscribeRequest* request,
         ::grpc::ServerWriter<bcmd::v1::ChannelEvent>* writer) override;
