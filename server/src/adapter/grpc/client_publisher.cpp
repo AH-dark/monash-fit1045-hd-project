@@ -2,6 +2,7 @@
 
 #include "bcmd/server/application/port/i_client_registry.hpp"
 #include "bcmd/server/domain/model/message.hpp"
+#include "bcmd/server/domain/model/username.hpp"
 #include "bcmd/shared/ids.hpp"
 #include "bcmd/v1/broadcast.pb.h"
 
@@ -62,6 +63,17 @@ void GrpcClientPublisher::publishReplayComplete(const bcmd::ClientId& recipient_
     replay_complete->set_channel_id(channel_id.value());
     replay_complete->set_replayed_count(0);
     found->second->Write(event);
+}
+
+void GrpcClientPublisher::broadcastMemberLeft(const bcmd::ChannelId& channel_id,
+                                              const bcmd::ClientId& client_id,
+                                              const domain::Username& username) {
+    bcmd::v1::ChannelEvent event;
+    auto* member_left = event.mutable_member_left();
+    member_left->set_channel_id(channel_id.value());
+    member_left->set_client_id(client_id.value());
+    member_left->set_username(username.value());
+    broadcastEvent(channel_id, event);
 }
 
 void GrpcClientPublisher::broadcastEvent(const bcmd::ChannelId& /*channel_id*/,

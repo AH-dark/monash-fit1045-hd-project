@@ -18,6 +18,7 @@
 
 #include <grpcpp/server_context.h>
 #include <grpcpp/support/status.h>
+#include <spdlog/spdlog.h>
 
 #include <chrono>
 #include <cstdint>
@@ -26,6 +27,7 @@
 #include <string>
 #include <thread>
 #include <utility>
+#include <vector>
 
 namespace bcmd::server::adapter::grpc {
 
@@ -71,6 +73,21 @@ BroadcastServiceImpl::BroadcastServiceImpl(
     const auto CLIENT_ID = bcmd::ClientId::parse(bcmd::trim(request->client_id()));
     if (!CLIENT_ID.has_value()) {
         return error_to_status(bcmd::Error::ClientNotFound);
+    }
+    auto session = client_registry_->findById(*CLIENT_ID);
+    if (!session.has_value()) {
+        return error_to_status(session.error());
+    }
+    // Snapshot channel ids — joined_channels_ is not stable after LeaveChannel mutates.
+    const std::vector<bcmd::ChannelId> channels(session->joinedChannels().begin(),
+                                                session->joinedChannels().end());
+    for (const auto& channel_id : channels) {
+        const auto left = leave_channel_->execute(*CLIENT_ID, channel_id);
+        if (!left.has_value() && left.error() != bcmd::Error::NotAMember &&
+            left.error() != bcmd::Error::ChannelNotFound) {
+            spdlog::warn("disconnect: leave channel {} for client {} failed: {}",
+                         channel_id.value(), CLIENT_ID->value(), bcmd::error_message(left.error()));
+        }
     }
     const auto REMOVED = client_registry_->remove(*CLIENT_ID);
     if (!REMOVED.has_value()) {
@@ -164,6 +181,20 @@ BroadcastServiceImpl::BroadcastServiceImpl(
     }
 
     response->set_message_id(message_id->value());
+    return ::grpc::Status::OK;
+}
+
+::grpc::Status BroadcastServiceImpl::Heartbeat(::grpc::ServerContext* /*context*/,
+                                               const bcmd::v1::HeartbeatRequest* request,
+                                               bcmd::v1::HeartbeatResponse* /*response*/) {
+    const auto CLIENT_ID = bcmd::ClientId::parse(bcmd::trim(request->client_id()));
+    if (!CLIENT_ID.has_value()) {
+        return error_to_status(bcmd::Error::ClientNotFound);
+    }
+    const auto TOUCHED = client_registry_->touchHeartbeat(*CLIENT_ID);
+    if (!TOUCHED.has_value()) {
+        return error_to_status(TOUCHED.error());
+    }
     return ::grpc::Status::OK;
 }
 
