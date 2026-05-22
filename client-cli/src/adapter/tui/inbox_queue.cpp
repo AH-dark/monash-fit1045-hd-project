@@ -4,6 +4,7 @@
 
 #include <cstddef>
 #include <mutex>
+#include <queue>
 #include <utility>
 #include <vector>
 

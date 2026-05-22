@@ -1,6 +1,7 @@
 #include "bcmd/client/adapter/grpc/grpc_server_gateway.hpp"
 #include "bcmd/client/adapter/tui/ftxui_presenter.hpp"
 #include "bcmd/client/adapter/tui/inbox_queue.hpp"
+#include "bcmd/client/application/port/i_presenter.hpp"
 #include "bcmd/client/application/port/i_server_gateway.hpp"
 #include "bcmd/client/application/usecase/connect_to_server.hpp"
 #include "bcmd/client/application/usecase/create_channel_command.hpp"
@@ -8,6 +9,7 @@
 #include "bcmd/client/application/usecase/send_heartbeat_command.hpp"
 #include "bcmd/client/application/usecase/send_message_command.hpp"
 #include "bcmd/client/application/usecase/subscribe_command.hpp"
+#include "bcmd/client/domain/inbox_message.hpp"
 #include "bcmd/shared/logging.hpp"
 #include "bcmd/shared/result.hpp"
 #include "bcmd/shared/string_utils.hpp"
@@ -209,7 +211,7 @@ public:
     }
 
     void startHeartbeat() {
-        heartbeat_thread_ = std::jthread([weak = weak_from_this()](std::stop_token stop) {
+        heartbeat_thread_ = std::jthread([weak = weak_from_this()](const std::stop_token& stop) {
             while (!stop.stop_requested()) {
                 auto self = weak.lock();
                 if (!self) {
@@ -245,7 +247,7 @@ private:
         }
     }
 
-    void runHeartbeat(std::stop_token stop) {
+    void runHeartbeat(const std::stop_token& stop) {
         const auto sleep_until_t = std::chrono::steady_clock::now() + heartbeat_interval_;
         while (std::chrono::steady_clock::now() < sleep_until_t && !stop.stop_requested()) {
             std::this_thread::sleep_for(std::chrono::milliseconds(200));
@@ -387,7 +389,7 @@ int run(int argc, char** argv) {
     session->startChannelListPolling(std::chrono::seconds{5});
     session->startHeartbeat();
 
-    std::jthread channel_state_watcher{[channel, presenter](std::stop_token stop) {
+    std::jthread channel_state_watcher{[channel, presenter](const std::stop_token& stop) {
         using ConnectionState = bcmd::client::application::port::ConnectionState;
         auto state = channel->GetState(/*try_to_connect=*/false);
         if (state != GRPC_CHANNEL_READY) {
