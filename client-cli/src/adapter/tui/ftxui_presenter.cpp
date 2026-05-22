@@ -190,9 +190,22 @@ ftxui::Element FtxuiPresenter::render(const ftxui::Component& channels,
     history_count_ = static_cast<int>(
         std::ranges::count_if(messages_, [](const auto& message) { return message.is_history; }));
 
-    const std::string connection = connected_ ? "connected" : "disconnected";
+    using ConnectionState = bcmd::client::application::port::ConnectionState;
+    const auto connection_state_str = [this] {
+        switch (connection_state_) {
+            case ConnectionState::Connecting:
+                return std::string{"status: connecting"};
+            case ConnectionState::Connected:
+                return std::string{"status: connected"};
+            case ConnectionState::NetworkError:
+                return std::string{"status: network error"};
+            case ConnectionState::Closed:
+                return std::string{"status: closed"};
+        }
+        return std::string{"status: unknown"};
+    }();
     const std::string tls_status = tls_ ? "TLS" : "insecure";
-    const std::string status = "Status: " + connection + " (" + tls_status + ") as " + username_;
+    const std::string status = "(" + tls_status + ") as " + username_;
     const std::string error = error_toast_.empty() ? "" : " | Error: " + error_toast_;
     const std::string info = info_toast_.empty() ? "" : " | " + info_toast_;
     const std::string hint = show_help_ ? "" : " | press ? for help";
@@ -209,7 +222,11 @@ ftxui::Element FtxuiPresenter::render(const ftxui::Component& channels,
             }) | ftxui::flex,
             ftxui::separator(),
             input->Render() | ftxui::border,
-            ftxui::text(status + error + info + hint) | ftxui::dim,
+            ftxui::hbox({
+                ftxui::text(connection_state_str) | ftxui::dim,
+                ftxui::filler(),
+                ftxui::text(status + error + info + hint) | ftxui::dim,
+            }),
         }) |
         ftxui::border;
 
