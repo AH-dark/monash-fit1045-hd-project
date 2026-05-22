@@ -18,6 +18,7 @@
 
 #include <grpcpp/server_context.h>
 #include <grpcpp/support/status.h>
+#include <spdlog/spdlog.h>
 
 #include <chrono>
 #include <cstdint>
@@ -81,7 +82,12 @@ BroadcastServiceImpl::BroadcastServiceImpl(
     const std::vector<bcmd::ChannelId> channels(session->joinedChannels().begin(),
                                                 session->joinedChannels().end());
     for (const auto& channel_id : channels) {
-        (void)leave_channel_->execute(*CLIENT_ID, channel_id);
+        const auto left = leave_channel_->execute(*CLIENT_ID, channel_id);
+        if (!left.has_value() && left.error() != bcmd::Error::NotAMember &&
+            left.error() != bcmd::Error::ChannelNotFound) {
+            spdlog::warn("disconnect: leave channel {} for client {} failed: {}",
+                         channel_id.value(), CLIENT_ID->value(), bcmd::error_message(left.error()));
+        }
     }
     const auto REMOVED = client_registry_->remove(*CLIENT_ID);
     if (!REMOVED.has_value()) {

@@ -174,8 +174,9 @@ bcmd::VoidResult GrpcServerGateway::subscribeToChannel(std::string_view client_i
                                                        MessageCallback callback) {
     ::grpc::ClientContext context;
     bcmd::v1::SubscribeRequest request;
+    const auto trimmed_channel_id = bcmd::trim_copy(channel_id);
     request.set_client_id(bcmd::trim_copy(client_id));
-    request.set_channel_id(bcmd::trim_copy(channel_id));
+    request.set_channel_id(trimmed_channel_id);
     request.set_replay_count(replay_count);
 
     auto reader = stub_->SubscribeToChannel(&context, request);
@@ -197,7 +198,7 @@ bcmd::VoidResult GrpcServerGateway::subscribeToChannel(std::string_view client_i
         } else if (event.has_member_left()) {
             const auto& left = event.member_left();
             // Compensate for the server's broadcastEvent ignoring channel_id (OOS bug).
-            if (left.channel_id() != bcmd::trim_copy(channel_id)) {
+            if (left.channel_id() != trimmed_channel_id) {
                 continue;
             }
             domain::InboxMessage system_message;
@@ -211,7 +212,7 @@ bcmd::VoidResult GrpcServerGateway::subscribeToChannel(std::string_view client_i
             callback(std::move(system_message));
         } else if (event.has_member_joined()) {
             const auto& joined = event.member_joined();
-            if (joined.channel_id() != bcmd::trim_copy(channel_id)) {
+            if (joined.channel_id() != trimmed_channel_id) {
                 continue;
             }
             domain::InboxMessage system_message;
