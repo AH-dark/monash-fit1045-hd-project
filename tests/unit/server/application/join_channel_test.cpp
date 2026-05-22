@@ -101,17 +101,15 @@ TEST_CASE("JoinChannel returns AlreadyMember when re-joining",
     CHECK(second.error() == bcmd::Error::AlreadyMember);
 }
 
-TEST_CASE("JoinChannel::executeByName creates the channel when absent",
+TEST_CASE("JoinChannel::executeByName returns ChannelNotFound when absent",
           "[application][use-case][join-channel]") {
     Fixture fixture;
     const auto client_id = fixture.registerClient("alice");
 
-    const auto created = fixture.use_case.executeByName(client_id, "general");
+    const auto result = fixture.use_case.executeByName(client_id, "general");
 
-    REQUIRE(created.has_value());
-    auto stored = fixture.channels->findById(*created);
-    REQUIRE(stored.has_value());
-    CHECK(stored->hasMember(client_id));
+    REQUIRE_FALSE(result.has_value());
+    CHECK(result.error() == bcmd::Error::ChannelNotFound);
 }
 
 TEST_CASE("JoinChannel::executeByName reuses an existing channel",

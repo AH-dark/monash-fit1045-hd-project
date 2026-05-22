@@ -56,6 +56,7 @@ add_executable(server_application_tests
     unit/server/application/send_message_test.cpp
     unit/server/application/list_channels_test.cpp
     unit/server/application/get_recent_messages_test.cpp
+    unit/server/application/expire_inactive_clients_test.cpp
 )
 
 target_include_directories(server_application_tests PRIVATE
@@ -70,6 +71,23 @@ target_link_libraries(server_application_tests PRIVATE
 target_compile_features(server_application_tests PRIVATE cxx_std_23)
 
 catch_discover_tests(server_application_tests PROPERTIES LABELS "unit")
+
+add_executable(server_adapter_persistence_tests
+    unit/server/adapter/persistence/in_memory_client_registry_heartbeat_test.cpp
+)
+
+target_include_directories(server_adapter_persistence_tests PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+target_link_libraries(server_adapter_persistence_tests PRIVATE
+    bcmd_server_adapters
+    Catch2::Catch2WithMain
+)
+
+target_compile_features(server_adapter_persistence_tests PRIVATE cxx_std_23)
+
+catch_discover_tests(server_adapter_persistence_tests PROPERTIES LABELS "unit")
 
 add_executable(client_application_tests
     unit/client/application/send_message_command_test.cpp
@@ -125,4 +143,10 @@ add_bcmd_integration_test(integration_history_replay_test
 )
 add_bcmd_integration_test(integration_tls_enforcement_test
     integration/tls_enforcement_test.cpp
+)
+add_bcmd_integration_test(integration_heartbeat_expiry_test
+    integration/heartbeat_expiry_test.cpp
+)
+add_bcmd_integration_test(integration_disconnect_broadcasts_member_left_test
+    integration/disconnect_broadcasts_member_left_test.cpp
 )

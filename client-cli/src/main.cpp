@@ -1,12 +1,15 @@
 #include "bcmd/client/adapter/grpc/grpc_server_gateway.hpp"
 #include "bcmd/client/adapter/tui/ftxui_presenter.hpp"
 #include "bcmd/client/adapter/tui/inbox_queue.hpp"
+#include "bcmd/client/application/port/i_presenter.hpp"
 #include "bcmd/client/application/port/i_server_gateway.hpp"
 #include "bcmd/client/application/usecase/connect_to_server.hpp"
 #include "bcmd/client/application/usecase/create_channel_command.hpp"
 #include "bcmd/client/application/usecase/join_channel_command.hpp"
+#include "bcmd/client/application/usecase/send_heartbeat_command.hpp"
 #include "bcmd/client/application/usecase/send_message_command.hpp"
 #include "bcmd/client/application/usecase/subscribe_command.hpp"
+#include "bcmd/client/domain/inbox_message.hpp"
 #include "bcmd/shared/logging.hpp"
 #include "bcmd/shared/result.hpp"
 #include "bcmd/shared/string_utils.hpp"
@@ -27,6 +30,7 @@
 #include <memory>
 #include <mutex>
 #include <sstream>
+#include <stop_token>
 #include <string>
 #include <string_view>
 #include <thread>
@@ -66,6 +70,7 @@ public:
                   std::shared_ptr<usecase::CreateChannelCommand> create_uc,
                   std::shared_ptr<usecase::SendMessageCommand> send_uc,
                   std::shared_ptr<usecase::SubscribeCommand> subscribe_uc,
+                  std::shared_ptr<usecase::SendHeartbeatCommand> heartbeat_uc,
                   std::shared_ptr<port::IServerGateway> gateway,
                   std::shared_ptr<tui_adapter::FtxuiPresenter> presenter, std::string client_id,
                   std::uint32_t replay_count)
@@ -73,6 +78,7 @@ public:
           create_uc_{std::move(create_uc)},
           send_uc_{std::move(send_uc)},
           subscribe_uc_{std::move(subscribe_uc)},
+          heartbeat_uc_{std::move(heartbeat_uc)},
           gateway_{std::move(gateway)},
           presenter_{std::move(presenter)},
           client_id_{std::move(client_id)},
@@ -127,7 +133,17 @@ public:
             listChannels();
             return;
         }
-        presenter_->clearMessages();
+        {
+            bcmd::client::domain::InboxMessage system_message;
+            system_message.channel_id = resolved_channel_id;
+            system_message.sender_name = "[system]";
+            system_message.content = "connected to channel " + std::string{trimmed};
+            system_message.sent_at_ms = std::chrono::duration_cast<std::chrono::milliseconds>(
+                                            std::chrono::system_clock::now().time_since_epoch())
+                                            .count();
+            system_message.is_history = false;
+            presenter_->showMessage(std::move(system_message));
+        }
         std::thread{&ClientSession::runSubscription, shared_from_this(), resolved_channel_id}
             .detach();
         listChannels();
@@ -194,12 +210,29 @@ public:
         });
     }
 
+    void startHeartbeat() {
+        heartbeat_thread_ = std::jthread([weak = weak_from_this()](const std::stop_token& stop) {
+            while (!stop.stop_requested()) {
+                auto self = weak.lock();
+                if (!self) {
+                    return;
+                }
+                self->runHeartbeat(stop);
+            }
+        });
+    }
+
+    void stopHeartbeat() { heartbeat_thread_.request_stop(); }
+
     void disconnect() {
+        stopHeartbeat();
         polling_stop_.store(true);
         polling_cv_.notify_all();
         if (polling_thread_.joinable()) {
             polling_thread_.join();
         }
+        using ConnectionState = bcmd::client::application::port::ConnectionState;
+        presenter_->updateConnectionState(ConnectionState::Closed);
         const auto result = gateway_->disconnect(client_id_);
         if (!result.has_value()) {
             spdlog::error("disconnect failed: {}", bcmd::error_message(result.error()));
@@ -211,6 +244,26 @@ private:
         const auto result = subscribe_uc_->execute(client_id_, channel_id, replay_count_);
         if (!result.has_value()) {
             spdlog::error("subscription ended: {}", bcmd::error_message(result.error()));
+        }
+    }
+
+    void runHeartbeat(const std::stop_token& stop) {
+        const auto sleep_until_t = std::chrono::steady_clock::now() + heartbeat_interval_;
+        while (std::chrono::steady_clock::now() < sleep_until_t && !stop.stop_requested()) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(200));
+        }
+        if (stop.stop_requested()) {
+            return;
+        }
+        const auto result = heartbeat_uc_->execute(client_id_);
+        if (stop.stop_requested()) {
+            return;
+        }
+        using ConnectionState = bcmd::client::application::port::ConnectionState;
+        if (result.has_value()) {
+            presenter_->updateConnectionState(ConnectionState::Connected);
+        } else {
+            presenter_->updateConnectionState(ConnectionState::NetworkError);
         }
     }
 
@@ -232,6 +285,7 @@ private:
     std::shared_ptr<usecase::CreateChannelCommand> create_uc_;
     std::shared_ptr<usecase::SendMessageCommand> send_uc_;
     std::shared_ptr<usecase::SubscribeCommand> subscribe_uc_;
+    std::shared_ptr<usecase::SendHeartbeatCommand> heartbeat_uc_;
     std::shared_ptr<port::IServerGateway> gateway_;
     std::shared_ptr<tui_adapter::FtxuiPresenter> presenter_;
     std::string client_id_;
@@ -244,6 +298,9 @@ private:
     std::mutex polling_mutex_;
     std::condition_variable polling_cv_;
     std::thread polling_thread_;
+
+    std::chrono::seconds heartbeat_interval_{10};
+    std::jthread heartbeat_thread_;
 };
 
 std::shared_ptr<::grpc::ChannelCredentials> build_credentials(bool insecure,
@@ -306,6 +363,7 @@ int run(int argc, char** argv) {
     auto create_uc = std::make_shared<usecase::CreateChannelCommand>(gateway);
     auto send_uc = std::make_shared<usecase::SendMessageCommand>(gateway);
     auto subscribe_uc = std::make_shared<usecase::SubscribeCommand>(gateway, presenter);
+    auto heartbeat_uc = std::make_shared<usecase::SendHeartbeatCommand>(gateway);
 
     auto client_id_result = connect_uc->execute(username);
     if (!client_id_result.has_value()) {
@@ -315,8 +373,9 @@ int run(int argc, char** argv) {
     const std::string& client_id = *client_id_result;
     presenter->updateConnectionStatus(true, !insecure, username);
 
-    auto session = std::make_shared<ClientSession>(join_uc, create_uc, send_uc, subscribe_uc,
-                                                   gateway, presenter, client_id, replay_count);
+    auto session =
+        std::make_shared<ClientSession>(join_uc, create_uc, send_uc, subscribe_uc, heartbeat_uc,
+                                        gateway, presenter, client_id, replay_count);
 
     presenter->setActions(tui_adapter::FtxuiPresenter::Actions{
         .send_message = [session](const std::string& content) { session->sendMessage(content); },
@@ -328,6 +387,41 @@ int run(int argc, char** argv) {
 
     session->listChannels();
     session->startChannelListPolling(std::chrono::seconds{5});
+    session->startHeartbeat();
+
+    std::jthread channel_state_watcher{[channel, presenter](const std::stop_token& stop) {
+        using ConnectionState = bcmd::client::application::port::ConnectionState;
+        auto state = channel->GetState(/*try_to_connect=*/false);
+        if (state != GRPC_CHANNEL_READY) {
+            presenter->updateConnectionState(ConnectionState::Connecting);
+        }
+        while (!stop.stop_requested()) {
+            const auto deadline = std::chrono::system_clock::now() + std::chrono::seconds(1);
+            const bool changed = channel->WaitForStateChange(state, deadline);
+            if (stop.stop_requested()) {
+                break;
+            }
+            if (!changed) {
+                continue;
+            }
+            const auto new_state = channel->GetState(/*try_to_connect=*/false);
+            switch (new_state) {
+                case GRPC_CHANNEL_READY:
+                    break;  // heartbeat is authoritative for Connected
+                case GRPC_CHANNEL_CONNECTING:
+                case GRPC_CHANNEL_IDLE:
+                    presenter->updateConnectionState(ConnectionState::Connecting);
+                    break;
+                case GRPC_CHANNEL_TRANSIENT_FAILURE:
+                    presenter->updateConnectionState(ConnectionState::NetworkError);
+                    break;
+                case GRPC_CHANNEL_SHUTDOWN:
+                    presenter->updateConnectionState(ConnectionState::Closed);
+                    break;
+            }
+            state = new_state;
+        }
+    }};
 
     return presenter->run([session] { session->disconnect(); });
 }

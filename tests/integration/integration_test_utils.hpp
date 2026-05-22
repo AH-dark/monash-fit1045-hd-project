@@ -2,11 +2,13 @@
 
 #include "bcmd/server/adapter/grpc/broadcast_service_impl.hpp"
 #include "bcmd/server/adapter/grpc/client_publisher.hpp"
+#include "bcmd/server/adapter/grpc/heartbeat_sweeper.hpp"
 #include "bcmd/server/adapter/grpc/server_runner.hpp"
 #include "bcmd/server/adapter/persistence/in_memory_channel_repository.hpp"
 #include "bcmd/server/adapter/persistence/in_memory_client_registry.hpp"
 #include "bcmd/server/adapter/persistence/in_memory_message_repository.hpp"
 #include "bcmd/server/application/usecase/create_channel.hpp"
+#include "bcmd/server/application/usecase/expire_inactive_clients.hpp"
 #include "bcmd/server/application/usecase/get_recent_messages.hpp"
 #include "bcmd/server/application/usecase/join_channel.hpp"
 #include "bcmd/server/application/usecase/leave_channel.hpp"
@@ -72,7 +74,9 @@ inline std::shared_ptr<::grpc::Channel> make_insecure_channel(std::string_view a
 
 class TestServer {
 public:
-    explicit TestServer(bool insecure = false) {
+    explicit TestServer(bool insecure = false,
+                        std::chrono::seconds heartbeat_timeout = std::chrono::seconds{0},
+                        std::chrono::seconds heartbeat_sweep_interval = std::chrono::seconds{1}) {
         namespace grpc_adapter = bcmd::server::adapter::grpc;
         namespace persistence = bcmd::server::adapter::persistence;
         namespace usecase = bcmd::server::application::usecase;
@@ -83,7 +87,8 @@ public:
         auto publisher = std::make_shared<grpc_adapter::GrpcClientPublisher>(client_registry);
 
         auto join_channel = std::make_shared<usecase::JoinChannel>(channel_repo, client_registry);
-        auto leave_channel = std::make_shared<usecase::LeaveChannel>(channel_repo, client_registry);
+        auto leave_channel =
+            std::make_shared<usecase::LeaveChannel>(channel_repo, client_registry, publisher);
         auto send_message = std::make_shared<usecase::SendMessage>(channel_repo, client_registry,
                                                                    message_repo, publisher);
         auto list_channels = std::make_shared<usecase::ListChannels>(channel_repo);
@@ -107,6 +112,13 @@ public:
             runner_->set_ssl_credentials(read_file(cert_path), read_file(key_path));
         }
 
+        if (heartbeat_timeout > std::chrono::seconds{0}) {
+            auto expire = std::make_shared<usecase::ExpireInactiveClients>(client_registry,
+                                                                           channel_repo, publisher);
+            sweeper_ = std::make_unique<grpc_adapter::HeartbeatSweeper>(
+                std::move(expire), heartbeat_sweep_interval, heartbeat_timeout);
+        }
+
         thread_ = std::thread([this] { (void)runner_->run_and_block(); });
         REQUIRE(runner_->wait_until_started(std::chrono::seconds{3}));
     }
@@ -114,6 +126,7 @@ public:
     TestServer(TestServer&&) = delete;
     TestServer& operator=(TestServer&&) = delete;
     ~TestServer() {
+        sweeper_.reset();
         if (runner_ != nullptr) {
             runner_->shutdown();
         }
@@ -130,6 +143,7 @@ public:
 private:
     std::unique_ptr<bcmd::server::adapter::grpc::BroadcastServiceImpl> service_;
     std::unique_ptr<bcmd::server::adapter::grpc::GrpcServerRunner> runner_;
+    std::unique_ptr<bcmd::server::adapter::grpc::HeartbeatSweeper> sweeper_;
     std::thread thread_;
 };
 
@@ -156,6 +170,30 @@ inline std::string connect(BroadcastStub& stub, std::string_view username) {
 
 inline std::string join_channel(BroadcastStub& stub, std::string_view client_id,
                                 std::string_view channel) {
+    if (!bcmd::ChannelId::parse(channel).has_value()) {
+        ::grpc::ClientContext list_context;
+        set_timeout(list_context, std::chrono::seconds{2});
+        bcmd::v1::ListChannelsRequest list_request;
+        bcmd::v1::ListChannelsResponse list_response;
+        REQUIRE(stub.ListChannels(&list_context, list_request, &list_response).ok());
+        bool already_exists = false;
+        for (const auto& summary : list_response.channels()) {
+            if (summary.name() == channel) {
+                already_exists = true;
+                break;
+            }
+        }
+        if (!already_exists) {
+            ::grpc::ClientContext create_context;
+            set_timeout(create_context, std::chrono::seconds{2});
+            bcmd::v1::CreateChannelRequest create_request;
+            bcmd::v1::CreateChannelResponse create_response;
+            create_request.set_client_id(std::string{client_id});
+            create_request.set_channel_name(std::string{channel});
+            REQUIRE(stub.CreateChannel(&create_context, create_request, &create_response).ok());
+        }
+    }
+
     ::grpc::ClientContext join_context;
     set_timeout(join_context, std::chrono::seconds{2});
     bcmd::v1::JoinChannelRequest join_request;
@@ -180,6 +218,24 @@ inline std::string join_channel(BroadcastStub& stub, std::string_view client_id,
     }
     FAIL("joined channel was not visible in ListChannels");
     return {};
+}
+
+inline ::grpc::Status send_heartbeat(BroadcastStub& stub, std::string_view client_id) {
+    ::grpc::ClientContext context;
+    set_timeout(context, std::chrono::seconds{2});
+    bcmd::v1::HeartbeatRequest request;
+    bcmd::v1::HeartbeatResponse response;
+    request.set_client_id(std::string{client_id});
+    return stub.Heartbeat(&context, request, &response);
+}
+
+inline ::grpc::Status disconnect(BroadcastStub& stub, std::string_view client_id) {
+    ::grpc::ClientContext context;
+    set_timeout(context, std::chrono::seconds{2});
+    bcmd::v1::DisconnectRequest request;
+    bcmd::v1::DisconnectResponse response;
+    request.set_client_id(std::string{client_id});
+    return stub.Disconnect(&context, request, &response);
 }
 
 inline void send_message(BroadcastStub& stub, std::string_view client_id,

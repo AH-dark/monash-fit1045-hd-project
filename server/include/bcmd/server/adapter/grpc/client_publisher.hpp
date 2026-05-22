@@ -3,6 +3,7 @@
 #include "bcmd/server/application/port/i_client_registry.hpp"
 #include "bcmd/server/application/port/i_message_publisher.hpp"
 #include "bcmd/server/domain/model/message.hpp"
+#include "bcmd/server/domain/model/username.hpp"
 #include "bcmd/shared/ids.hpp"
 #include "bcmd/v1/broadcast.pb.h"
 
@@ -22,13 +23,16 @@ public:
 
     void registerSubscriber(const bcmd::ClientId& id,
                             ::grpc::ServerWriter<bcmd::v1::ChannelEvent>* writer);
-    void unregisterSubscriber(const bcmd::ClientId& id);
+    void unregisterSubscriber(const bcmd::ClientId& id) override;
 
     void publish(const bcmd::ClientId& recipient_id, const domain::Message& message,
                  bool from_replay = false) override;
 
     void publishReplayComplete(const bcmd::ClientId& recipient_id,
                                const bcmd::ChannelId& channel_id) override;
+
+    void broadcastMemberLeft(const bcmd::ChannelId& channel_id, const bcmd::ClientId& client_id,
+                             const domain::Username& username) override;
 
     void broadcastEvent(const bcmd::ChannelId& channel_id, const bcmd::v1::ChannelEvent& event);
 

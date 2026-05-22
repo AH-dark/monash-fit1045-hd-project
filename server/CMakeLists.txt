@@ -29,6 +29,8 @@ set_target_properties(bcmd_domain PROPERTIES POSITION_INDEPENDENT_CODE ON)
 add_library(bcmd_application STATIC
     src/application/usecase/join_channel.cpp
     src/application/usecase/leave_channel.cpp
+    src/application/usecase/expire_inactive_clients.cpp
+    src/application/usecase/internal/remove_member_broadcast.cpp
     src/application/usecase/send_message.cpp
     src/application/usecase/list_channels.cpp
     src/application/usecase/get_recent_messages.cpp
@@ -44,6 +46,10 @@ target_link_libraries(bcmd_application PUBLIC
     bcmd_domain
 )
 
+target_link_libraries(bcmd_application PRIVATE
+    spdlog::spdlog
+)
+
 target_compile_features(bcmd_application PUBLIC cxx_std_23)
 
 set_target_properties(bcmd_application PROPERTIES POSITION_INDEPENDENT_CODE ON)
@@ -56,6 +62,7 @@ add_library(bcmd_server_adapters STATIC
     src/adapter/grpc/tls_config.cpp
     src/adapter/grpc/client_publisher.cpp
     src/adapter/grpc/broadcast_service_impl.cpp
+    src/adapter/grpc/heartbeat_sweeper.cpp
     src/adapter/grpc/server_runner.cpp
 )
 

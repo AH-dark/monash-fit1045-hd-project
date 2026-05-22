@@ -30,6 +30,7 @@ public:
     bcmd::VoidResult leaveChannel(std::string_view client_id, std::string_view channel_id) override;
     bcmd::Result<std::string> sendMessage(std::string_view client_id, std::string_view channel_id,
                                           std::string_view content) override;
+    bcmd::VoidResult sendHeartbeat(std::string_view client_id) override;
     bcmd::VoidResult subscribeToChannel(std::string_view client_id, std::string_view channel_id,
                                         std::uint32_t replay_count,
                                         MessageCallback callback) override;

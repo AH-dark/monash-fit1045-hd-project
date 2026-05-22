@@ -17,6 +17,9 @@ service BroadcastService {
   rpc LeaveChannel(LeaveChannelRequest) returns (LeaveChannelResponse);
   rpc SendMessage(SendMessageRequest) returns (SendMessageResponse);
 
+  // Liveness probe (idempotent unary RPC)
+  rpc Heartbeat(HeartbeatRequest) returns (HeartbeatResponse);
+
   // Event subscription (server-streaming)
   rpc SubscribeToChannel(SubscribeRequest) returns (stream ChannelEvent);
 }
@@ -54,6 +57,10 @@ message SendMessageRequest {
 }
 
 message SendMessageResponse { string message_id = 1; }
+
+message HeartbeatRequest { string client_id = 1; }
+
+message HeartbeatResponse {}
 
 message SubscribeRequest {
   string client_id    = 1;

@@ -5,8 +5,10 @@
 #include "bcmd/shared/result.hpp"
 
 #include <cstdint>
+#include <expected>
 #include <string>
 #include <string_view>
+#include <utility>
 #include <vector>
 
 namespace bcmd::tests {
@@ -27,6 +29,7 @@ public:
     bcmd::Result<std::string> join_channel_by_name_result{std::string{"channel-1"}};
     bcmd::VoidResult leave_channel_result{};
     bcmd::Result<std::string> send_message_result{std::string{"message-1"}};
+    bcmd::VoidResult heartbeat_result{std::unexpected(bcmd::Error::NetworkError)};
     bcmd::VoidResult subscribe_result{};
 
     std::vector<bcmd::client::domain::InboxMessage> subscription_messages;
@@ -39,6 +42,7 @@ public:
     int join_channel_by_name_calls{0};
     int leave_channel_calls{0};
     int send_message_calls{0};
+    int heartbeat_calls{0};
     int subscribe_calls{0};
 
     std::string last_username;
@@ -105,6 +109,12 @@ public:
         return send_message_result;
     }
 
+    bcmd::VoidResult sendHeartbeat(std::string_view client_id) override {
+        ++heartbeat_calls;
+        last_client_id = std::string{client_id};
+        return heartbeat_result;
+    }
+
     bcmd::VoidResult subscribeToChannel(std::string_view client_id, std::string_view channel_id,
                                         std::uint32_t replay_count,
                                         MessageCallback callback) override {
@@ -117,6 +127,10 @@ public:
         }
         return subscribe_result;
     }
+
+    void setHeartbeatResult(bcmd::VoidResult result) { heartbeat_result = std::move(result); }
+
+    int heartbeatCallCount() const { return heartbeat_calls; }
 };
 
 // NOLINTEND(misc-non-private-member-variables-in-classes,
