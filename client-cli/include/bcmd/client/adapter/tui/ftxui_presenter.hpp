@@ -34,6 +34,7 @@ public:
     void showError(std::string_view error_text) override;
     void showInfo(std::string_view info_text) override;
     void updateConnectionStatus(bool connected, bool tls, std::string_view username) override;
+    void updateConnectionState(bcmd::client::application::port::ConnectionState state) override;
     void showChannelList(std::vector<std::string> channel_names) override;
     void clearMessages() override;
 
@@ -56,6 +57,8 @@ private:
     int history_count_{0};
     bool connected_{false};
     bool tls_{false};
+    bcmd::client::application::port::ConnectionState connection_state_{
+        bcmd::client::application::port::ConnectionState::Connecting};
     bool show_help_{false};
     std::string username_{};
     std::string error_toast_{};
