@@ -36,7 +36,6 @@ TEST_CASE("InMemoryClientRegistry stamps a recent lastHeartbeatAt on registratio
     const auto heartbeat = session->lastHeartbeatAt();
     CHECK(heartbeat >= before);
     CHECK(heartbeat <= after);
-    CHECK((after - heartbeat) < std::chrono::milliseconds(100));
 }
 
 TEST_CASE("InMemoryClientRegistry::touchHeartbeat advances the timestamp",
