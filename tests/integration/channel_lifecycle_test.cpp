@@ -5,7 +5,6 @@
 #include <grpcpp/support/status.h>
 
 #include "integration/integration_test_utils.hpp"
-#include <__chrono/duration.h>
 #include <chrono>
 
 TEST_CASE("channel lifecycle supports create join broadcast and leave",
