@@ -83,7 +83,8 @@ public:
         auto publisher = std::make_shared<grpc_adapter::GrpcClientPublisher>(client_registry);
 
         auto join_channel = std::make_shared<usecase::JoinChannel>(channel_repo, client_registry);
-        auto leave_channel = std::make_shared<usecase::LeaveChannel>(channel_repo, client_registry);
+        auto leave_channel =
+            std::make_shared<usecase::LeaveChannel>(channel_repo, client_registry, publisher);
         auto send_message = std::make_shared<usecase::SendMessage>(channel_repo, client_registry,
                                                                    message_repo, publisher);
         auto list_channels = std::make_shared<usecase::ListChannels>(channel_repo);

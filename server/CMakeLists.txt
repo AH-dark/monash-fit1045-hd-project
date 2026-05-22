@@ -29,6 +29,7 @@ set_target_properties(bcmd_domain PROPERTIES POSITION_INDEPENDENT_CODE ON)
 add_library(bcmd_application STATIC
     src/application/usecase/join_channel.cpp
     src/application/usecase/leave_channel.cpp
+    src/application/usecase/internal/remove_member_broadcast.cpp
     src/application/usecase/send_message.cpp
     src/application/usecase/list_channels.cpp
     src/application/usecase/get_recent_messages.cpp
