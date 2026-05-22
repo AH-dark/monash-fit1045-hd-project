@@ -81,6 +81,12 @@ int run(int argc, char** argv) {
             heartbeat_sweep_interval_secs, heartbeat_timeout_secs);
     }
 
+    if (heartbeat_timeout_secs > 0 && heartbeat_sweep_interval_secs == 0) {
+        spdlog::error(
+            "--heartbeat-sweep-interval must be at least 1 when heartbeat expiry is enabled");
+        return 1;
+    }
+
     namespace persistence = bcmd::server::adapter::persistence;
     namespace grpc_adapter = bcmd::server::adapter::grpc;
     namespace usecase = bcmd::server::application::usecase;
