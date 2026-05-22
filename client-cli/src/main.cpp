@@ -127,7 +127,17 @@ public:
             listChannels();
             return;
         }
-        presenter_->clearMessages();
+        {
+            bcmd::client::domain::InboxMessage system_message;
+            system_message.channel_id = resolved_channel_id;
+            system_message.sender_name = "[system]";
+            system_message.content = "connected to channel " + std::string{trimmed};
+            system_message.sent_at_ms = std::chrono::duration_cast<std::chrono::milliseconds>(
+                                            std::chrono::system_clock::now().time_since_epoch())
+                                            .count();
+            system_message.is_history = false;
+            presenter_->showMessage(std::move(system_message));
+        }
         std::thread{&ClientSession::runSubscription, shared_from_this(), resolved_channel_id}
             .detach();
         listChannels();
