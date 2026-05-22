@@ -5,6 +5,9 @@
 #include "bcmd/shared/ids.hpp"
 #include "bcmd/shared/result.hpp"
 
+#include <chrono>
+#include <vector>
+
 namespace bcmd::server::application::port {
 
 // Registry for active client sessions.
@@ -23,6 +26,15 @@ public:
 
     // Returns `Error::ClientNotFound` when the id is unknown.
     virtual bcmd::VoidResult remove(const bcmd::ClientId& client_id) = 0;
+
+    // Updates the last-seen timestamp for the given client. Returns
+    // `Error::ClientNotFound` when the id is unknown.
+    virtual bcmd::VoidResult touchHeartbeat(const bcmd::ClientId& client_id) = 0;
+
+    // Returns copies of every session whose last-seen timestamp is older
+    // than `deadline`. Callers decide whether to remove them.
+    virtual std::vector<domain::ClientSession> collectExpired(
+        std::chrono::steady_clock::time_point deadline) = 0;
 
 protected:
     IClientRegistry() = default;

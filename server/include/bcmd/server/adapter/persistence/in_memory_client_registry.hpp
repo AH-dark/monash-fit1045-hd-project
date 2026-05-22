@@ -6,9 +6,11 @@
 #include "bcmd/shared/ids.hpp"
 #include "bcmd/shared/result.hpp"
 
+#include <chrono>
 #include <shared_mutex>
 #include <string>
 #include <unordered_map>
+#include <vector>
 
 namespace bcmd::server::adapter::persistence {
 
@@ -19,6 +21,9 @@ public:
     bcmd::Result<domain::ClientSession> registerClient(domain::Username username) override;
     bcmd::VoidResult save(const domain::ClientSession& session) override;
     bcmd::VoidResult remove(const bcmd::ClientId& client_id) override;
+    bcmd::VoidResult touchHeartbeat(const bcmd::ClientId& client_id) override;
+    std::vector<domain::ClientSession> collectExpired(
+        std::chrono::steady_clock::time_point deadline) override;
 
 private:
     mutable std::shared_mutex mutex_;
