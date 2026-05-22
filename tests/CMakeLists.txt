@@ -144,3 +144,9 @@ add_bcmd_integration_test(integration_history_replay_test
 add_bcmd_integration_test(integration_tls_enforcement_test
     integration/tls_enforcement_test.cpp
 )
+add_bcmd_integration_test(integration_heartbeat_expiry_test
+    integration/heartbeat_expiry_test.cpp
+)
+add_bcmd_integration_test(integration_disconnect_broadcasts_member_left_test
+    integration/disconnect_broadcasts_member_left_test.cpp
+)
