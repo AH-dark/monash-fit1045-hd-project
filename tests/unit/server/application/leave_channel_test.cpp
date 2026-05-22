@@ -10,6 +10,7 @@
 
 #include "fakes/fake_channel_repository.hpp"
 #include "fakes/fake_client_registry.hpp"
+#include "fakes/fake_message_publisher.hpp"
 #include <memory>
 
 namespace {
@@ -20,12 +21,14 @@ using bcmd::server::domain::ChannelName;
 using bcmd::server::domain::Username;
 using bcmd::tests::FakeChannelRepository;
 using bcmd::tests::FakeClientRegistry;
+using bcmd::tests::FakeMessagePublisher;
 
 struct Fixture {
     std::shared_ptr<FakeChannelRepository> channels = std::make_shared<FakeChannelRepository>();
     std::shared_ptr<FakeClientRegistry> clients = std::make_shared<FakeClientRegistry>();
+    std::shared_ptr<FakeMessagePublisher> publisher = std::make_shared<FakeMessagePublisher>();
     JoinChannel join_use_case{channels, clients};
-    LeaveChannel use_case{channels, clients};
+    LeaveChannel use_case{channels, clients, publisher};
 
     bcmd::ClientId registerClient(const char* name) const {
         auto username = Username::create(name);
@@ -56,6 +59,7 @@ TEST_CASE("LeaveChannel returns ChannelNotFound when channel is missing",
 
     REQUIRE_FALSE(result.has_value());
     CHECK(result.error() == bcmd::Error::ChannelNotFound);
+    CHECK(fixture.publisher->broadcasts().empty());
 }
 
 TEST_CASE("LeaveChannel returns NotAMember when client never joined",
@@ -68,6 +72,19 @@ TEST_CASE("LeaveChannel returns NotAMember when client never joined",
 
     REQUIRE_FALSE(result.has_value());
     CHECK(result.error() == bcmd::Error::NotAMember);
+}
+
+TEST_CASE("LeaveChannel does NOT broadcast when client is not a member",
+          "[application][use-case][leave-channel]") {
+    Fixture fixture;
+    const auto client_id = fixture.registerClient("alice");
+    const auto channel_id = fixture.createChannel("general");
+
+    const auto result = fixture.use_case.execute(client_id, channel_id);
+
+    REQUIRE_FALSE(result.has_value());
+    CHECK(result.error() == bcmd::Error::NotAMember);
+    CHECK(fixture.publisher->broadcasts().empty());
 }
 
 TEST_CASE("LeaveChannel removes the client from the channel on success",
@@ -90,6 +107,23 @@ TEST_CASE("LeaveChannel removes the client from the channel on success",
     CHECK_FALSE(session->isInChannel(channel_id));
 }
 
+TEST_CASE("LeaveChannel broadcasts MemberLeftEvent on successful leave",
+          "[application][use-case][leave-channel]") {
+    Fixture fixture;
+    const auto client_id = fixture.registerClient("alice");
+    const auto channel_id = fixture.createChannel("general");
+    REQUIRE(fixture.join_use_case.execute(client_id, channel_id).has_value());
+
+    const auto result = fixture.use_case.execute(client_id, channel_id);
+
+    REQUIRE(result.has_value());
+    REQUIRE(fixture.publisher->broadcasts().size() == 1);
+    const auto& record = fixture.publisher->broadcasts().front();
+    CHECK(record.channel_id == channel_id);
+    CHECK(record.client_id == client_id);
+    CHECK(record.username == "alice");
+}
+
 TEST_CASE("LeaveChannel a second time returns NotAMember",
           "[application][use-case][leave-channel]") {
     Fixture fixture;
@@ -102,4 +136,5 @@ TEST_CASE("LeaveChannel a second time returns NotAMember",
 
     REQUIRE_FALSE(second.has_value());
     CHECK(second.error() == bcmd::Error::NotAMember);
+    CHECK(fixture.publisher->broadcasts().size() == 1);
 }
