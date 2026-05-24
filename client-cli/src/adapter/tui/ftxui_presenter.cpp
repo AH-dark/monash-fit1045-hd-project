@@ -172,6 +172,8 @@ void FtxuiPresenter::handleSubmit() {
         case cli::CommandType::List:
             actions.list_channels();
             break;
+        case cli::CommandType::Unknown:
+            break;
         case cli::CommandType::None:
             if (!input.empty() && actions.send_message) {
                 actions.send_message(input);
