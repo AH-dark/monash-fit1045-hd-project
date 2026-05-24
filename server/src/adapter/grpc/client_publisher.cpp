@@ -15,6 +15,7 @@
 #include <shared_mutex>
 #include <unordered_set>
 #include <utility>
+#include <vector>
 
 namespace bcmd::server::adapter::grpc {
 
@@ -31,31 +32,66 @@ GrpcClientPublisher::GrpcClientPublisher(
     std::shared_ptr<application::port::IClientRegistry> client_registry)
     : client_registry_(std::move(client_registry)) {}
 
-void GrpcClientPublisher::registerSubscriber(const bcmd::ClientId& id,
-                                             ::grpc::ServerWriter<bcmd::v1::ChannelEvent>* writer) {
+void GrpcClientPublisher::registerSubscriber(
+    const bcmd::ClientId& id, ::grpc::ServerWriterInterface<bcmd::v1::ChannelEvent>* writer) {
+    auto entry = std::make_shared<GrpcClientPublisher::WriterEntry>();
+    entry->writer = writer;
+
     const std::unique_lock lock(mutex_);
-    writers_.insert_or_assign(id.value(), writer);
+    writers_.insert_or_assign(id.value(), std::move(entry));
 }
 
 void GrpcClientPublisher::unregisterSubscriber(const bcmd::ClientId& id) {
-    const std::unique_lock lock(mutex_);
-    writers_.erase(id.value());
+    std::shared_ptr<GrpcClientPublisher::WriterEntry> entry;
+    {
+        const std::unique_lock lock(mutex_);
+        const auto found = writers_.find(id.value());
+        if (found == writers_.end()) {
+            return;
+        }
+        entry = std::move(found->second);
+        writers_.erase(found);
+    }
+    // Wait for any in-flight Write() on this writer to complete, then disarm the
+    // entry so callers that still hold a shared_ptr observe a null writer and skip.
+    if (entry) {
+        const std::scoped_lock write_lock(entry->write_mutex);
+        entry->writer = nullptr;
+    }
 }
 
 void GrpcClientPublisher::publish(const bcmd::ClientId& recipient_id,
                                   const domain::Message& message, bool from_replay) {
-    const std::shared_lock lock(mutex_);
-    const auto found = writers_.find(recipient_id.value());
-    if (found != writers_.end() && found->second != nullptr) {
-        found->second->Write(message_to_event(message, from_replay));
+    std::shared_ptr<GrpcClientPublisher::WriterEntry> entry;
+    {
+        const std::shared_lock lock(mutex_);
+        const auto found = writers_.find(recipient_id.value());
+        if (found == writers_.end()) {
+            return;
+        }
+        entry = found->second;
+    }
+    if (!entry) {
+        return;
+    }
+    const std::scoped_lock write_lock(entry->write_mutex);
+    if (entry->writer != nullptr) {
+        entry->writer->Write(message_to_event(message, from_replay));
     }
 }
 
 void GrpcClientPublisher::publishReplayComplete(const bcmd::ClientId& recipient_id,
                                                 const bcmd::ChannelId& channel_id) {
-    const std::shared_lock lock(mutex_);
-    const auto found = writers_.find(recipient_id.value());
-    if (found == writers_.end() || found->second == nullptr) {
+    std::shared_ptr<GrpcClientPublisher::WriterEntry> entry;
+    {
+        const std::shared_lock lock(mutex_);
+        const auto found = writers_.find(recipient_id.value());
+        if (found == writers_.end()) {
+            return;
+        }
+        entry = found->second;
+    }
+    if (!entry) {
         return;
     }
 
@@ -63,7 +99,11 @@ void GrpcClientPublisher::publishReplayComplete(const bcmd::ClientId& recipient_
     auto* replay_complete = event.mutable_replay_complete();
     replay_complete->set_channel_id(channel_id.value());
     replay_complete->set_replayed_count(0);
-    found->second->Write(event);
+
+    const std::scoped_lock write_lock(entry->write_mutex);
+    if (entry->writer != nullptr) {
+        entry->writer->Write(event);
+    }
 }
 
 void GrpcClientPublisher::broadcastMemberLeft(const bcmd::ChannelId& channel_id,
@@ -76,21 +116,41 @@ void GrpcClientPublisher::broadcastMemberLeft(const bcmd::ChannelId& channel_id,
     member_left->set_client_id(client_id.value());
     member_left->set_username(username.value());
 
-    const std::shared_lock lock(mutex_);
-    for (const auto& [client_id_str, writer] : writers_) {
-        const auto recipient_id = bcmd::ClientId::parse(client_id_str);
-        if (writer != nullptr && recipient_id.has_value() && recipients.contains(*recipient_id)) {
-            writer->Write(event);
+    std::vector<std::shared_ptr<GrpcClientPublisher::WriterEntry>> targets;
+    {
+        const std::shared_lock lock(mutex_);
+        targets.reserve(writers_.size());
+        for (const auto& [client_id_str, entry] : writers_) {
+            const auto recipient_id = bcmd::ClientId::parse(client_id_str);
+            if (entry && recipient_id.has_value() && recipients.contains(*recipient_id)) {
+                targets.push_back(entry);
+            }
+        }
+    }
+    for (const auto& entry : targets) {
+        const std::scoped_lock write_lock(entry->write_mutex);
+        if (entry->writer != nullptr) {
+            entry->writer->Write(event);
         }
     }
 }
 
 void GrpcClientPublisher::broadcastEvent(const bcmd::ChannelId& /*channel_id*/,
                                          const bcmd::v1::ChannelEvent& event) {
-    const std::shared_lock lock(mutex_);
-    for (const auto& [_, writer] : writers_) {
-        if (writer != nullptr) {
-            writer->Write(event);
+    std::vector<std::shared_ptr<GrpcClientPublisher::WriterEntry>> targets;
+    {
+        const std::shared_lock lock(mutex_);
+        targets.reserve(writers_.size());
+        for (const auto& [_, entry] : writers_) {
+            if (entry) {
+                targets.push_back(entry);
+            }
+        }
+    }
+    for (const auto& entry : targets) {
+        const std::scoped_lock write_lock(entry->write_mutex);
+        if (entry->writer != nullptr) {
+            entry->writer->Write(event);
         }
     }
 }

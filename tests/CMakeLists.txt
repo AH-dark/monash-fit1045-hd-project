@@ -90,6 +90,7 @@ target_compile_features(server_adapter_persistence_tests PRIVATE cxx_std_23)
 catch_discover_tests(server_adapter_persistence_tests PROPERTIES LABELS "unit")
 
 add_executable(server_adapter_grpc_tests
+    unit/server/adapter/grpc/client_publisher_concurrency_test.cpp
     unit/server/adapter/grpc/error_to_status_test.cpp
 )
 
