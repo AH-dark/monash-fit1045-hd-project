@@ -14,7 +14,6 @@
 #include <mutex>
 #include <string>
 #include <string_view>
-#include <utility>
 #include <vector>
 
 namespace bcmd::client::adapter::tui {
@@ -42,6 +41,7 @@ public:
 
     void setActions(Actions actions);
 
+#ifdef BCMD_CLIENT_TUI_TESTING
     // Test-only inspectors and helpers.
     [[nodiscard]] int testScrollOffset() const { return scroll_offset_; }
     [[nodiscard]] bool testAutoScroll() const { return auto_scroll_; }
@@ -52,9 +52,7 @@ public:
     [[nodiscard]] const std::vector<domain::InboxMessage>& testMessages() const {
         return messages_;
     }
-    void testSetMessages(std::vector<domain::InboxMessage> messages) {
-        messages_ = std::move(messages);
-    }
+    void testSetMessages(std::vector<domain::InboxMessage> messages) { messages_.swap(messages); }
     void testSetScrollState(int scroll_offset, bool auto_scroll) {
         scroll_offset_ = scroll_offset;
         auto_scroll_ = auto_scroll;
@@ -63,22 +61,26 @@ public:
         viewport_height_hint_ = viewport_height_hint;
     }
     void testSetShowHelp(bool show_help) { show_help_ = show_help; }
-    void testSetInputText(std::string input_text) { input_text_ = std::move(input_text); }
-    void testSetActions(Actions actions) { actions_ = std::move(actions); }
+    void testSetInputText(std::string input_text) { input_text_.swap(input_text); }
+    void testSetActions(const Actions& actions) { actions_ = actions; }
     void testSetHistoryCount(int history_count) { history_count_ = history_count; }
     void testClearMessages() { clearMessages(); }
     void testShowMessage(domain::InboxMessage message) { showMessage(std::move(message)); }
     void testHandleSubmit() { handleSubmit(); }
     bool testHandleScrollEvent(ftxui::Event event) { return handleScrollEvent(std::move(event)); }
-
-    void handleParsedCommandForTest(const cli::ParsedCommand& parsed, const std::string& input,
-                                    const Actions& actions);
+    void testHandleParsedCommand(const cli::ParsedCommand& parsed, const std::string& input,
+                                 const Actions& actions) {
+        handleParsedCommandImpl(parsed, input, actions);
+    }
+#endif
 
     // Runs the FTXUI event loop (blocking). Call from main UI thread.
     int run(std::function<void()> on_quit);
 
 private:
     void handleSubmit();
+    void handleParsedCommandImpl(const cli::ParsedCommand& parsed, const std::string& input,
+                                 const Actions& actions);
     bool handleScrollEvent(ftxui::Event event);
     void clampScrollOffsetLocked();
     void scrollByLocked(int delta);

@@ -166,11 +166,11 @@ void FtxuiPresenter::handleSubmit() {
     }
 
     const auto parsed = cli::parseCommand(input);
-    handleParsedCommandForTest(parsed, input, actions);
+    this->handleParsedCommandImpl(parsed, input, actions);
 }
 
-void FtxuiPresenter::handleParsedCommandForTest(const cli::ParsedCommand& parsed,
-                                                const std::string& input, const Actions& actions) {
+void FtxuiPresenter::handleParsedCommandImpl(const cli::ParsedCommand& parsed,
+                                             const std::string& input, const Actions& actions) {
     if (parsed.type == cli::CommandType::None && !input.empty() && input.starts_with('/')) {
         showError("unknown command: " + input + " - type ? for help");
         return;
