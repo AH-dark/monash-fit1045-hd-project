@@ -89,6 +89,19 @@ target_compile_features(server_adapter_persistence_tests PRIVATE cxx_std_23)
 
 catch_discover_tests(server_adapter_persistence_tests PROPERTIES LABELS "unit")
 
+add_executable(server_adapter_grpc_tests
+    unit/server/adapter/grpc/error_to_status_test.cpp
+)
+
+target_link_libraries(server_adapter_grpc_tests PRIVATE
+    bcmd_server_adapters
+    Catch2::Catch2WithMain
+)
+
+target_compile_features(server_adapter_grpc_tests PRIVATE cxx_std_23)
+
+catch_discover_tests(server_adapter_grpc_tests PROPERTIES LABELS "unit")
+
 add_executable(client_application_tests
     unit/client/application/send_message_command_test.cpp
 )
