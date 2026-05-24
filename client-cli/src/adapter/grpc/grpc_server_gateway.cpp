@@ -197,10 +197,7 @@ bcmd::VoidResult GrpcServerGateway::subscribeToChannel(std::string_view client_i
             in_history = false;
         } else if (event.has_member_left()) {
             const auto& left = event.member_left();
-            // Compensate for the server's broadcastEvent ignoring channel_id (OOS bug).
-            if (left.channel_id() != trimmed_channel_id) {
-                continue;
-            }
+            // Server filters MemberLeft events to current channel members.
             domain::InboxMessage system_message;
             system_message.channel_id = left.channel_id();
             system_message.sender_name = "[system]";
@@ -212,9 +209,6 @@ bcmd::VoidResult GrpcServerGateway::subscribeToChannel(std::string_view client_i
             callback(std::move(system_message));
         } else if (event.has_member_joined()) {
             const auto& joined = event.member_joined();
-            if (joined.channel_id() != trimmed_channel_id) {
-                continue;
-            }
             domain::InboxMessage system_message;
             system_message.channel_id = joined.channel_id();
             system_message.sender_name = "[system]";

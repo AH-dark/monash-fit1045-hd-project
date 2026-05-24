@@ -14,6 +14,7 @@
 #include <chrono>
 #include <cstddef>
 #include <memory>
+#include <unordered_set>
 
 namespace {
 
@@ -158,4 +159,33 @@ TEST_CASE("ExpireInactiveClients only removes sessions older than the deadline",
     CHECK_FALSE(fixture.clients->findById(stale_a).has_value());
     CHECK_FALSE(fixture.clients->findById(stale_b).has_value());
     CHECK(fixture.clients->findById(fresh).has_value());
+}
+
+TEST_CASE("ExpireInactiveClients broadcasts post-removal recipient snapshots",
+          "[application][use-case][expire-inactive-clients]") {
+    Fixture fixture;
+    const auto alice = fixture.registerClient("alice");
+    const auto bob = fixture.registerClient("bob");
+    const auto carol = fixture.registerClient("carol");
+    const auto channel_id = fixture.createChannel("general");
+    REQUIRE(fixture.join_use_case.execute(alice, channel_id).has_value());
+    REQUIRE(fixture.join_use_case.execute(bob, channel_id).has_value());
+    REQUIRE(fixture.join_use_case.execute(carol, channel_id).has_value());
+
+    const auto expired_count = fixture.use_case.run(deadlineExpiringEverySession());
+
+    CHECK(expired_count == 3);
+    REQUIRE(fixture.publisher->broadcasts().size() == 3);
+    std::unordered_set<bcmd::ClientId> removed;
+    for (const auto& record : fixture.publisher->broadcasts()) {
+        CHECK(record.channel_id == channel_id);
+        CHECK_FALSE(record.recipients.contains(record.client_id));
+        for (const auto& previously_removed : removed) {
+            CHECK_FALSE(record.recipients.contains(previously_removed));
+        }
+        removed.insert(record.client_id);
+    }
+    CHECK(fixture.publisher->broadcasts().at(0).recipients.size() == 2);
+    CHECK(fixture.publisher->broadcasts().at(1).recipients.size() == 1);
+    CHECK(fixture.publisher->broadcasts().at(2).recipients.empty());
 }

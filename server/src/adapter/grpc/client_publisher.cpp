@@ -13,6 +13,7 @@
 #include <memory>
 #include <mutex>
 #include <shared_mutex>
+#include <unordered_set>
 #include <utility>
 
 namespace bcmd::server::adapter::grpc {
@@ -66,6 +67,7 @@ void GrpcClientPublisher::publishReplayComplete(const bcmd::ClientId& recipient_
 }
 
 void GrpcClientPublisher::broadcastMemberLeft(const bcmd::ChannelId& channel_id,
+                                              const std::unordered_set<bcmd::ClientId>& recipients,
                                               const bcmd::ClientId& client_id,
                                               const domain::Username& username) {
     bcmd::v1::ChannelEvent event;
@@ -73,7 +75,14 @@ void GrpcClientPublisher::broadcastMemberLeft(const bcmd::ChannelId& channel_id,
     member_left->set_channel_id(channel_id.value());
     member_left->set_client_id(client_id.value());
     member_left->set_username(username.value());
-    broadcastEvent(channel_id, event);
+
+    const std::shared_lock lock(mutex_);
+    for (const auto& [client_id_str, writer] : writers_) {
+        const auto recipient_id = bcmd::ClientId::parse(client_id_str);
+        if (writer != nullptr && recipient_id.has_value() && recipients.contains(*recipient_id)) {
+            writer->Write(event);
+        }
+    }
 }
 
 void GrpcClientPublisher::broadcastEvent(const bcmd::ChannelId& /*channel_id*/,
