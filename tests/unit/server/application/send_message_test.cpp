@@ -85,6 +85,20 @@ TEST_CASE("SendMessage returns MessageTooLong for oversize content",
     CHECK(result.error() == bcmd::Error::MessageTooLong);
 }
 
+TEST_CASE("SendMessage returns MessageInvalidPrefix for slash-prefixed content",
+          "[application][use-case][send-message]") {
+    Fixture fixture;
+    const auto sender = fixture.registerClient("alice");
+    const auto channel_id = fixture.createChannel("general");
+    REQUIRE(fixture.join_use_case.execute(sender, channel_id).has_value());
+
+    const auto result = fixture.use_case.execute(sender, channel_id, "/echo bot");
+
+    REQUIRE_FALSE(result.has_value());
+    CHECK(result.error() == bcmd::Error::MessageInvalidPrefix);
+    CHECK(fixture.publisher->deliveries.empty());
+}
+
 TEST_CASE("SendMessage rejects a sender that is not a channel member",
           "[application][use-case][send-message]") {
     Fixture fixture;

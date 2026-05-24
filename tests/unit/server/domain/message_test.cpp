@@ -13,7 +13,7 @@ namespace {
 bcmd::server::domain::MessageContent make_content(const char* raw) {
     auto content = bcmd::server::domain::MessageContent::create(raw);
     REQUIRE(content.has_value());
-    return *content;
+    return content.value();
 }
 
 }  // namespace
