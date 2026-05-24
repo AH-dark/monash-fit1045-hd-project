@@ -1,8 +1,9 @@
 #pragma once
 
+#include "bcmd/shared/result.hpp"
+
 #include <cstddef>
 #include <functional>
-#include <optional>
 #include <string>
 #include <string_view>
 #include <utility>
@@ -17,7 +18,7 @@ public:
     static constexpr std::size_t MIN_LENGTH = 1;
     static constexpr std::size_t MAX_LENGTH = 4096;
 
-    static std::optional<MessageContent> create(std::string_view raw);
+    static bcmd::Result<MessageContent> create(std::string_view raw);
 
     [[nodiscard]] const std::string& value() const noexcept { return value_; }
 

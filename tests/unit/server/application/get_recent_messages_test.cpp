@@ -21,7 +21,7 @@ using bcmd::tests::FakeMessageRepository;
 MessageContent make_content(const std::string& raw) {
     auto content = MessageContent::create(raw);
     REQUIRE(content.has_value());
-    return *content;
+    return content.value();
 }
 
 void seed_messages(FakeMessageRepository& repo, const bcmd::ChannelId& channel_id,

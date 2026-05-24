@@ -12,6 +12,7 @@ TEST_CASE("error_message yields a non-empty description for every enum value", "
     CHECK_FALSE(bcmd::error_message(bcmd::Error::ClientAlreadyExists).empty());
     CHECK_FALSE(bcmd::error_message(bcmd::Error::AlreadyMember).empty());
     CHECK_FALSE(bcmd::error_message(bcmd::Error::NotAMember).empty());
+    CHECK_FALSE(bcmd::error_message(bcmd::Error::MessageInvalidPrefix).empty());
     CHECK_FALSE(bcmd::error_message(bcmd::Error::MessageTooLong).empty());
     CHECK_FALSE(bcmd::error_message(bcmd::Error::MessageEmpty).empty());
     CHECK_FALSE(bcmd::error_message(bcmd::Error::InvalidUsername).empty());
@@ -24,6 +25,11 @@ TEST_CASE("error_message yields a non-empty description for every enum value", "
 TEST_CASE("error_message returns stable text for ChannelNotFound", "[result][shared]") {
     CHECK(bcmd::error_message(bcmd::Error::ChannelNotFound) ==
           std::string_view{"channel not found"});
+}
+
+TEST_CASE("error_message returns a prefix validation error for MessageInvalidPrefix",
+          "[result][shared]") {
+    CHECK(bcmd::error_message(bcmd::Error::MessageInvalidPrefix).contains("'/'"));
 }
 
 TEST_CASE("Result<int> carries a success value", "[result][shared]") {

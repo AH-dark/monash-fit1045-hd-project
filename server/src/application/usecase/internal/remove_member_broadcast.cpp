@@ -7,6 +7,7 @@
 #include "bcmd/shared/result.hpp"
 
 #include <expected>
+#include <unordered_set>
 
 namespace bcmd::server::application::usecase::internal {
 
@@ -24,7 +25,9 @@ bcmd::VoidResult removeMemberAndBroadcast(port::IChannelRepository& channels,
     if (auto saved = channels.save(*channel); !saved.has_value()) {
         return std::unexpected(saved.error());
     }
-    publisher.broadcastMemberLeft(channel_id, session.id(), session.username());
+    const auto& members = channel->members();
+    const std::unordered_set<bcmd::ClientId> recipients(members.begin(), members.end());
+    publisher.broadcastMemberLeft(channel_id, recipients, session.id(), session.username());
     return {};
 }
 

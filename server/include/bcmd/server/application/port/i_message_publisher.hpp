@@ -4,6 +4,8 @@
 #include "bcmd/server/domain/model/username.hpp"
 #include "bcmd/shared/ids.hpp"
 
+#include <unordered_set>
+
 namespace bcmd::server::application::port {
 
 // Outbound delivery port: hands a message to a single subscribed client.
@@ -21,8 +23,10 @@ public:
     virtual void publishReplayComplete(const bcmd::ClientId& recipient_id,
                                        const bcmd::ChannelId& channel_id) = 0;
 
-    // Broadcasts a member-left notification to subscribers of the channel.
+    // Broadcasts a member-left notification to subscribers whose client id is
+    // present in the caller-assembled channel membership snapshot.
     virtual void broadcastMemberLeft(const bcmd::ChannelId& channel_id,
+                                     const std::unordered_set<bcmd::ClientId>& recipients,
                                      const bcmd::ClientId& client_id,
                                      const domain::Username& username) = 0;
 

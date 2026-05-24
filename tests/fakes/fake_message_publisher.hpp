@@ -7,6 +7,7 @@
 
 #include <cstddef>
 #include <string>
+#include <unordered_set>
 #include <vector>
 
 namespace bcmd::tests {
@@ -26,6 +27,7 @@ public:
 
     struct MemberLeftRecord {
         bcmd::ChannelId channel_id;
+        std::unordered_set<bcmd::ClientId> recipients;
         bcmd::ClientId client_id;
         std::string username;
     };
@@ -41,10 +43,13 @@ public:
         replay_markers.push_back(ReplayMarker{recipient_id, channel_id});
     }
 
-    void broadcastMemberLeft(const bcmd::ChannelId& channel_id, const bcmd::ClientId& client_id,
+    void broadcastMemberLeft(const bcmd::ChannelId& channel_id,
+                             const std::unordered_set<bcmd::ClientId>& recipients,
+                             const bcmd::ClientId& client_id,
                              const bcmd::server::domain::Username& username) override {
         broadcasts_.push_back(MemberLeftRecord{
             .channel_id = channel_id,
+            .recipients = recipients,
             .client_id = client_id,
             .username = username.value(),
         });

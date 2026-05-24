@@ -5,6 +5,7 @@
 #include <ftxui/component/component.hpp>
 #include <ftxui/dom/elements.hpp>
 
+#include <algorithm>
 #include <array>
 #include <chrono>
 #include <cstddef>
@@ -17,6 +18,40 @@
 namespace bcmd::client::adapter::tui {
 
 // NOLINTBEGIN(readability-identifier-naming)
+
+struct ScrollWindow {
+    int first;
+    int last;
+};
+
+[[nodiscard]] inline ScrollWindow computeScrollWindow(int message_count, int scroll_offset,
+                                                      int viewport_height) {
+    const int clamped_message_count = std::max(message_count, 0);
+    if (viewport_height <= 0) {
+        return ScrollWindow{.first = 0, .last = clamped_message_count};
+    }
+
+    const int max_scroll_offset = std::max(clamped_message_count - viewport_height, 0);
+    const int clamped_scroll_offset = std::clamp(scroll_offset, 0, max_scroll_offset);
+    const int first = std::max(clamped_message_count - viewport_height - clamped_scroll_offset, 0);
+    const int last = std::min(first + viewport_height, clamped_message_count);
+    return ScrollWindow{.first = first, .last = last};
+}
+
+[[nodiscard]] inline bool shouldRenderLiveSeparator(int message_count, int history_count,
+                                                    int scroll_offset, int viewport_height) {
+    const bool show_separator = history_count > 0 && std::cmp_less(history_count, message_count);
+    if (!show_separator) {
+        return false;
+    }
+
+    if (viewport_height <= 0) {
+        return true;
+    }
+
+    const ScrollWindow window = computeScrollWindow(message_count, scroll_offset, viewport_height);
+    return window.first < history_count && std::cmp_less(history_count, window.last);
+}
 
 inline std::string formatTimestamp(std::int64_t epoch_ms) {
     if (epoch_ms <= 0) {
@@ -37,15 +72,23 @@ inline std::string formatTimestamp(std::int64_t epoch_ms) {
 }
 
 inline ftxui::Element RenderMessageView(const std::vector<domain::InboxMessage>& messages,
-                                        int history_count) {
+                                        int history_count, int scroll_offset = 0,
+                                        int viewport_height = 0) {
+    const ScrollWindow window =
+        computeScrollWindow(static_cast<int>(messages.size()), scroll_offset, viewport_height);
     ftxui::Elements rows;
-    const bool show_separator = history_count > 0 && std::cmp_less(history_count, messages.size());
+    const bool use_window = viewport_height > 0;
+    const bool show_window_separator = shouldRenderLiveSeparator(
+        static_cast<int>(messages.size()), history_count, scroll_offset, viewport_height);
 
-    std::size_t idx{0};
-    for (const auto& message : messages) {
-        if (show_separator && std::cmp_equal(idx, history_count)) {
+    const int first = use_window ? window.first : 0;
+    const int last = use_window ? window.last : static_cast<int>(messages.size());
+
+    for (int idx = first; idx < last; ++idx) {
+        if (show_window_separator && idx == history_count) {
             rows.push_back(ftxui::text("--- live ---") | ftxui::dim | ftxui::center);
         }
+        const auto& message = messages[static_cast<std::size_t>(idx)];
         const std::string sender = message.sender_name.empty() ? "unknown" : message.sender_name;
         const std::string timestamp = formatTimestamp(message.sent_at_ms);
         rows.push_back(ftxui::hbox({
@@ -53,7 +96,6 @@ inline ftxui::Element RenderMessageView(const std::vector<domain::InboxMessage>&
             ftxui::text(sender + ": ") | ftxui::bold,
             ftxui::paragraph(message.content),
         }));
-        ++idx;
     }
 
     if (rows.empty()) {

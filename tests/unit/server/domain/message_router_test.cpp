@@ -29,7 +29,7 @@ ChannelName make_name(const char* raw) {
 MessageContent make_content(const char* raw) {
     auto content = MessageContent::create(raw);
     REQUIRE(content.has_value());
-    return *content;
+    return content.value();
 }
 
 bool contains(const std::vector<bcmd::ClientId>& haystack, const bcmd::ClientId& needle) {

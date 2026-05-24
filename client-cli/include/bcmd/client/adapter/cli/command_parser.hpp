@@ -9,7 +9,7 @@
 namespace bcmd::client::adapter::cli {
 
 // NOLINTBEGIN(readability-identifier-naming)
-enum class CommandType : std::uint8_t { Join, Create, Leave, List, Quit, None };
+enum class CommandType : std::uint8_t { Join, Create, Leave, List, Quit, Unknown, None };
 
 struct ParsedCommand {
     CommandType type{CommandType::None};
@@ -42,6 +42,9 @@ inline ParsedCommand parseCommand(std::string_view input) {
     }
     if (trimmed == "/quit") {
         return ParsedCommand{.type = CommandType::Quit, .arg = {}};
+    }
+    if (trimmed.starts_with("/")) {
+        return ParsedCommand{.type = CommandType::Unknown, .arg = std::string{trimmed}};
     }
     return ParsedCommand{};
 }

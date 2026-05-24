@@ -1,6 +1,7 @@
 #include "bcmd/server/domain/model/channel_name.hpp"
 #include "bcmd/server/domain/model/message_content.hpp"
 #include "bcmd/server/domain/model/username.hpp"
+#include "bcmd/shared/result.hpp"
 
 #include <catch2/catch_test_macros.hpp>
 
@@ -104,20 +105,28 @@ TEST_CASE("MessageContent::create accepts a normal message",
           "[domain][value-object][message-content]") {
     const auto content = MessageContent::create("hello");
     REQUIRE(content.has_value());
-    CHECK(content->value() == "hello");
+    CHECK(content.value().value() == "hello");
 }
 
 TEST_CASE("MessageContent::create trims surrounding whitespace before validating",
           "[domain][value-object][message-content]") {
     const auto content = MessageContent::create("  hello  ");
     REQUIRE(content.has_value());
-    CHECK(content->value() == "hello");
+    CHECK(content.value().value() == "hello");
 }
 
-TEST_CASE("MessageContent::create rejects whitespace-only input",
+TEST_CASE("MessageContent::create rejects whitespace-only input as empty",
           "[domain][value-object][message-content]") {
-    CHECK_FALSE(MessageContent::create("   ").has_value());
-    CHECK_FALSE(MessageContent::create("\t\n").has_value());
+    const auto spaces = MessageContent::create("   ");
+    const auto tabs = MessageContent::create("\t\n");
+    const auto empty = MessageContent::create("");
+
+    REQUIRE_FALSE(spaces.has_value());
+    REQUIRE_FALSE(tabs.has_value());
+    REQUIRE_FALSE(empty.has_value());
+    CHECK(spaces.error() == bcmd::Error::MessageEmpty);
+    CHECK(tabs.error() == bcmd::Error::MessageEmpty);
+    CHECK(empty.error() == bcmd::Error::MessageEmpty);
 }
 
 TEST_CASE("MessageContent::create accepts the boundary length of exactly 4096 characters",
@@ -125,16 +134,47 @@ TEST_CASE("MessageContent::create accepts the boundary length of exactly 4096 ch
     const std::string boundary(4096, 'm');
     const auto content = MessageContent::create(boundary);
     REQUIRE(content.has_value());
-    CHECK(content->value().size() == 4096);
+    CHECK(content.value().value().size() == 4096);
 }
 
 TEST_CASE("MessageContent::create rejects input longer than 4096 characters",
           "[domain][value-object][message-content]") {
     const std::string too_long(4097, 'm');
-    CHECK_FALSE(MessageContent::create(too_long).has_value());
+    const auto content = MessageContent::create(too_long);
+
+    REQUIRE_FALSE(content.has_value());
+    CHECK(content.error() == bcmd::Error::MessageTooLong);
 }
 
 TEST_CASE("MessageContent::create rejects an empty string",
           "[domain][value-object][message-content]") {
-    CHECK_FALSE(MessageContent::create("").has_value());
+    const auto content = MessageContent::create("");
+
+    REQUIRE_FALSE(content.has_value());
+    CHECK(content.error() == bcmd::Error::MessageEmpty);
+}
+
+TEST_CASE("MessageContent::create rejects a leading slash after trim",
+          "[domain][value-object][message-content]") {
+    const auto direct = MessageContent::create("/echo bot");
+    const auto tabbed = MessageContent::create("\t/foo");
+    const auto spaced = MessageContent::create("   /bar");
+    const auto slash = MessageContent::create("/");
+
+    REQUIRE_FALSE(direct.has_value());
+    REQUIRE_FALSE(tabbed.has_value());
+    REQUIRE_FALSE(spaced.has_value());
+    REQUIRE_FALSE(slash.has_value());
+    CHECK(direct.error() == bcmd::Error::MessageInvalidPrefix);
+    CHECK(tabbed.error() == bcmd::Error::MessageInvalidPrefix);
+    CHECK(spaced.error() == bcmd::Error::MessageInvalidPrefix);
+    CHECK(slash.error() == bcmd::Error::MessageInvalidPrefix);
+}
+
+TEST_CASE("MessageContent::create accepts a slash in the middle of content",
+          "[domain][value-object][message-content]") {
+    const auto content = MessageContent::create("see /docs");
+
+    REQUIRE(content.has_value());
+    CHECK(content.value().value() == "see /docs");
 }

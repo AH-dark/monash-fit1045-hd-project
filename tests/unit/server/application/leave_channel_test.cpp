@@ -122,6 +122,28 @@ TEST_CASE("LeaveChannel broadcasts MemberLeftEvent on successful leave",
     CHECK(record.channel_id == channel_id);
     CHECK(record.client_id == client_id);
     CHECK(record.username == "alice");
+    CHECK(record.recipients.empty());
+}
+
+TEST_CASE("LeaveChannel broadcasts MemberLeft only to remaining channel members",
+          "[application][use-case][leave-channel]") {
+    Fixture fixture;
+    const auto leaver_id = fixture.registerClient("alice");
+    const auto remaining_id = fixture.registerClient("bob");
+    const auto channel_id = fixture.createChannel("general");
+    REQUIRE(fixture.join_use_case.execute(leaver_id, channel_id).has_value());
+    REQUIRE(fixture.join_use_case.execute(remaining_id, channel_id).has_value());
+
+    const auto result = fixture.use_case.execute(leaver_id, channel_id);
+
+    REQUIRE(result.has_value());
+    REQUIRE(fixture.publisher->broadcasts().size() == 1);
+    const auto& record = fixture.publisher->broadcasts().front();
+    CHECK(record.channel_id == channel_id);
+    CHECK(record.client_id == leaver_id);
+    CHECK(record.recipients.size() == 1);
+    CHECK(record.recipients.contains(remaining_id));
+    CHECK_FALSE(record.recipients.contains(leaver_id));
 }
 
 TEST_CASE("LeaveChannel a second time returns NotAMember",

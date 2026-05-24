@@ -45,9 +45,7 @@ bcmd::Result<bcmd::MessageId> SendMessage::execute(const bcmd::ClientId& sender_
 
     auto validated_content = domain::MessageContent::create(content);
     if (!validated_content.has_value()) {
-        return std::unexpected(content.find_first_not_of(" \t\n\r\f\v") == std::string_view::npos
-                                   ? bcmd::Error::MessageEmpty
-                                   : bcmd::Error::MessageTooLong);
+        return std::unexpected(validated_content.error());
     }
 
     domain::Message message{bcmd::MessageId::generate(), sender_id, channel_id, *validated_content};

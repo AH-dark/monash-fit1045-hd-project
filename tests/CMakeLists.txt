@@ -89,6 +89,20 @@ target_compile_features(server_adapter_persistence_tests PRIVATE cxx_std_23)
 
 catch_discover_tests(server_adapter_persistence_tests PROPERTIES LABELS "unit")
 
+add_executable(server_adapter_grpc_tests
+    unit/server/adapter/grpc/client_publisher_concurrency_test.cpp
+    unit/server/adapter/grpc/error_to_status_test.cpp
+)
+
+target_link_libraries(server_adapter_grpc_tests PRIVATE
+    bcmd_server_adapters
+    Catch2::Catch2WithMain
+)
+
+target_compile_features(server_adapter_grpc_tests PRIVATE cxx_std_23)
+
+catch_discover_tests(server_adapter_grpc_tests PROPERTIES LABELS "unit")
+
 add_executable(client_application_tests
     unit/client/application/send_message_command_test.cpp
 )
@@ -105,6 +119,44 @@ target_link_libraries(client_application_tests PRIVATE
 target_compile_features(client_application_tests PRIVATE cxx_std_23)
 
 catch_discover_tests(client_application_tests PROPERTIES LABELS "unit")
+
+add_executable(client_adapter_tests
+    unit/client/adapter/cli/command_parser_test.cpp
+    unit/client/adapter/tui/channel_list_test.cpp
+    unit/client/adapter/tui/scroll_math_test.cpp
+    unit/client/adapter/tui/presenter_scroll_test.cpp
+)
+
+target_include_directories(client_adapter_tests PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+target_compile_definitions(client_adapter_tests PRIVATE
+    BCMD_CLIENT_TUI_TESTING
+)
+
+target_link_libraries(client_adapter_tests PRIVATE
+    bcli_lib
+    Catch2::Catch2WithMain
+)
+
+target_compile_features(client_adapter_tests PRIVATE cxx_std_23)
+
+catch_discover_tests(client_adapter_tests TEST_PREFIX "client_adapter_tests." PROPERTIES LABELS "unit")
+
+add_executable(client_adapter_grpc_tests
+    unit/client/adapter/grpc/event_filter_test.cpp
+    unit/client/adapter/grpc/status_to_error_test.cpp
+)
+
+target_link_libraries(client_adapter_grpc_tests PRIVATE
+    bcli_lib
+    Catch2::Catch2WithMain
+)
+
+target_compile_features(client_adapter_grpc_tests PRIVATE cxx_std_23)
+
+catch_discover_tests(client_adapter_grpc_tests PROPERTIES LABELS "unit")
 
 function(add_bcmd_integration_test target source)
     add_executable(${target}
@@ -149,4 +201,10 @@ add_bcmd_integration_test(integration_heartbeat_expiry_test
 )
 add_bcmd_integration_test(integration_disconnect_broadcasts_member_left_test
     integration/disconnect_broadcasts_member_left_test.cpp
+)
+add_bcmd_integration_test(integration_cross_channel_leave_isolation_test
+    integration/cross_channel_leave_isolation_test.cpp
+)
+add_bcmd_integration_test(integration_server_rejects_slash_prefix_test
+    integration/server_rejects_slash_prefix_test.cpp
 )

@@ -5,7 +5,6 @@
 #include "bcmd/v1/broadcast.grpc.pb.h"
 
 #include <grpcpp/grpcpp.h>
-#include <grpcpp/support/status.h>
 
 #include <cstdint>
 #include <memory>
@@ -37,8 +36,6 @@ public:
 
 private:
     std::unique_ptr<bcmd::v1::BroadcastService::Stub> stub_{};
-
-    static bcmd::Error grpc_status_to_error(const ::grpc::Status& status);
 };
 
 }  // namespace bcmd::client::adapter::grpc

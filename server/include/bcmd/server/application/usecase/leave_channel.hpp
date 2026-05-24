@@ -7,6 +7,7 @@
 #include "bcmd/shared/result.hpp"
 
 #include <memory>
+#include <unordered_set>
 #include <utility>
 
 namespace bcmd::server::application::usecase {
@@ -30,8 +31,8 @@ private:
 
         void publishReplayComplete(const bcmd::ClientId&, const bcmd::ChannelId&) override {}
 
-        void broadcastMemberLeft(const bcmd::ChannelId&, const bcmd::ClientId&,
-                                 const domain::Username&) override {}
+        void broadcastMemberLeft(const bcmd::ChannelId&, const std::unordered_set<bcmd::ClientId>&,
+                                 const bcmd::ClientId&, const domain::Username&) override {}
 
         void unregisterSubscriber(const bcmd::ClientId&) override {}
     };

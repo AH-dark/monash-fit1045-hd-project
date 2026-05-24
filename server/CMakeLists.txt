@@ -61,6 +61,7 @@ add_library(bcmd_server_adapters STATIC
     src/adapter/persistence/in_memory_event_log.cpp
     src/adapter/grpc/tls_config.cpp
     src/adapter/grpc/client_publisher.cpp
+    src/adapter/grpc/detail/error_to_status.cpp
     src/adapter/grpc/broadcast_service_impl.cpp
     src/adapter/grpc/heartbeat_sweeper.cpp
     src/adapter/grpc/server_runner.cpp

@@ -8,9 +8,9 @@
 
 namespace bcmd::server::application::usecase::internal {
 
-// Removes `client_id` from `channel_id` in the channel repository,
-// broadcasts a MemberLeftEvent to subscribers of `channel_id` via the publisher,
-// and saves the updated channel. STRICT error semantics: returns
+// Removes `client_id` from `channel_id` in the channel repository, saves the
+// updated channel, snapshots remaining members, and broadcasts a MemberLeftEvent
+// only to subscribers in that snapshot. STRICT error semantics: returns
 // `Error::NotAMember` if the client is not in the channel, `Error::ChannelNotFound`
 // if the channel does not exist. Does NOT touch the client registry.
 //
@@ -18,9 +18,9 @@ namespace bcmd::server::application::usecase::internal {
 // a concurrent Disconnect) MUST swallow `NotAMember`/`ChannelNotFound` at the
 // call site. LeaveChannel does NOT swallow.
 //
-// Lock-order invariant: this function acquires the channel repository's lock
-// and the publisher's lock independently; it MUST NOT hold the client registry
-// lock when called.
+// Lock-order invariant: this function uses snapshot-passing so the publisher
+// never queries the channel repository; channel repository and publisher locks
+// remain independent, and callers MUST NOT hold the client registry lock.
 bcmd::VoidResult removeMemberAndBroadcast(port::IChannelRepository& channels,
                                           port::IMessagePublisher& publisher,
                                           const domain::ClientSession& session,
