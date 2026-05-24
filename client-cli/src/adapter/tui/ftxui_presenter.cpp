@@ -12,6 +12,7 @@
 #include <ftxui/component/component.hpp>
 #include <ftxui/component/component_base.hpp>
 #include <ftxui/component/event.hpp>
+#include <ftxui/component/mouse.hpp>
 #include <ftxui/dom/elements.hpp>
 #include <ftxui/screen/color.hpp>
 
@@ -31,6 +32,13 @@ namespace bcmd::client::adapter::tui {
 FtxuiPresenter::FtxuiPresenter(std::shared_ptr<InboxQueue> inbox) : inbox_(std::move(inbox)) {}
 
 void FtxuiPresenter::showMessage(domain::InboxMessage message) {
+    {
+        std::scoped_lock lock{ui_mutex_};
+        if (auto_scroll_) {
+            scroll_offset_ = 0;
+        }
+    }
+
     inbox_->push(std::move(message));
     screen_.PostEvent(ftxui::Event::Custom);
 }
@@ -86,12 +94,15 @@ void FtxuiPresenter::showChannelList(std::vector<std::string> channel_names) {
 }
 
 void FtxuiPresenter::clearMessages() {
-    inbox_->clear();
     {
         std::scoped_lock lock{ui_mutex_};
+        scroll_offset_ = 0;
+        auto_scroll_ = true;
         messages_.clear();
         history_count_ = 0;
     }
+
+    inbox_->clear();
     screen_.PostEvent(ftxui::Event::Custom);
 }
 
@@ -130,6 +141,9 @@ int FtxuiPresenter::run(std::function<void()> on_quit) {
             screen_.PostEvent(ftxui::Event::Custom);
             return true;
         }
+        if (handleScrollEvent(event)) {
+            return true;
+        }
         return false;
     });
 
@@ -152,6 +166,15 @@ void FtxuiPresenter::handleSubmit() {
     }
 
     const auto parsed = cli::parseCommand(input);
+    handleParsedCommandForTest(parsed, input, actions);
+}
+
+void FtxuiPresenter::handleParsedCommandForTest(const cli::ParsedCommand& parsed,
+                                                const std::string& input, const Actions& actions) {
+    if (parsed.type == cli::CommandType::None && !input.empty() && input.starts_with('/')) {
+        showError("unknown command: " + input + " - type ? for help");
+        return;
+    }
 
     switch (parsed.type) {
         case cli::CommandType::Join:
@@ -168,12 +191,17 @@ void FtxuiPresenter::handleSubmit() {
             screen_.ExitLoopClosure()();
             break;
         case cli::CommandType::Leave:
-            actions.leave_channel();
+            if (actions.leave_channel) {
+                actions.leave_channel();
+            }
             break;
         case cli::CommandType::List:
-            actions.list_channels();
+            if (actions.list_channels) {
+                actions.list_channels();
+            }
             break;
         case cli::CommandType::Unknown:
+            showError("unknown command: " + parsed.arg + " - type ? for help");
             break;
         case cli::CommandType::None:
             if (!input.empty() && actions.send_message) {
@@ -183,6 +211,86 @@ void FtxuiPresenter::handleSubmit() {
     }
 }
 
+bool FtxuiPresenter::handleScrollEvent(ftxui::Event event) {
+    const bool is_mouse_wheel =
+        event.is_mouse() && (event.mouse().button == ftxui::Mouse::WheelUp ||
+                             event.mouse().button == ftxui::Mouse::WheelDown);
+    const bool is_scroll_event = event == ftxui::Event::PageUp || event == ftxui::Event::PageDown ||
+                                 event == ftxui::Event::Home || event == ftxui::Event::End ||
+                                 event == ftxui::Event::ArrowUp ||
+                                 event == ftxui::Event::ArrowDown || is_mouse_wheel;
+    if (!is_scroll_event) {
+        return false;
+    }
+
+    std::scoped_lock lock{ui_mutex_};
+    if (show_help_) {
+        return true;
+    }
+
+    if (event == ftxui::Event::PageUp) {
+        scrollByLocked(viewport_height_hint_);
+        return true;
+    }
+    if (event == ftxui::Event::PageDown) {
+        scrollByLocked(-viewport_height_hint_);
+        return true;
+    }
+    if (event == ftxui::Event::ArrowUp) {
+        scrollByLocked(1);
+        return true;
+    }
+    if (event == ftxui::Event::ArrowDown) {
+        scrollByLocked(-1);
+        return true;
+    }
+    if (event == ftxui::Event::Home) {
+        scrollToTopLocked();
+        return true;
+    }
+    if (event == ftxui::Event::End) {
+        scrollToBottomLocked();
+        return true;
+    }
+
+    if (is_mouse_wheel) {
+        if (event.mouse().button == ftxui::Mouse::WheelUp) {
+            scrollByLocked(3);
+            return true;
+        }
+        if (event.mouse().button == ftxui::Mouse::WheelDown) {
+            scrollByLocked(-3);
+            return true;
+        }
+    }
+
+    return false;
+}
+
+void FtxuiPresenter::clampScrollOffsetLocked() {
+    const int max_scroll_offset =
+        std::max(static_cast<int>(messages_.size()) - viewport_height_hint_, 0);
+    scroll_offset_ = std::clamp(scroll_offset_, 0, max_scroll_offset);
+    auto_scroll_ = (scroll_offset_ == 0);
+}
+
+void FtxuiPresenter::scrollByLocked(int delta) {
+    const int max_scroll_offset =
+        std::max(static_cast<int>(messages_.size()) - viewport_height_hint_, 0);
+    scroll_offset_ = std::clamp(scroll_offset_ + delta, 0, max_scroll_offset);
+    auto_scroll_ = (scroll_offset_ == 0);
+}
+
+void FtxuiPresenter::scrollToTopLocked() {
+    scroll_offset_ = std::max(static_cast<int>(messages_.size()) - viewport_height_hint_, 0);
+    auto_scroll_ = (scroll_offset_ == 0);
+}
+
+void FtxuiPresenter::scrollToBottomLocked() {
+    scroll_offset_ = 0;
+    auto_scroll_ = true;
+}
+
 // NOLINTNEXTLINE(readability-make-member-function-const)
 ftxui::Element FtxuiPresenter::render(const ftxui::Component& channels,
                                       const ftxui::Component& input) {
@@ -190,6 +298,7 @@ ftxui::Element FtxuiPresenter::render(const ftxui::Component& channels,
     inbox_->drainTo(messages_);
     history_count_ = static_cast<int>(
         std::ranges::count_if(messages_, [](const auto& message) { return message.is_history; }));
+    clampScrollOffsetLocked();
 
     using ConnectionState = bcmd::client::application::port::ConnectionState;
     const auto connection_state_str = [this] {
@@ -217,7 +326,8 @@ ftxui::Element FtxuiPresenter::render(const ftxui::Component& channels,
                 ftxui::vbox({ftxui::text("Channels") | ftxui::bold, channels->Render()}) |
                     ftxui::size(ftxui::WIDTH, ftxui::EQUAL, 24) | ftxui::border,
                 ftxui::vbox({ftxui::text("Messages") | ftxui::bold,
-                             RenderMessageView(messages_, history_count_) |
+                             RenderMessageView(messages_, history_count_, scroll_offset_,
+                                               viewport_height_hint_) |
                                  ftxui::vscroll_indicator | ftxui::frame}) |
                     ftxui::flex | ftxui::border,
             }) | ftxui::flex,

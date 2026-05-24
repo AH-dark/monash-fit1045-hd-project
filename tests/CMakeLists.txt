@@ -123,10 +123,15 @@ add_executable(client_adapter_tests
     unit/client/adapter/cli/command_parser_test.cpp
     unit/client/adapter/tui/channel_list_test.cpp
     unit/client/adapter/tui/scroll_math_test.cpp
+    unit/client/adapter/tui/presenter_scroll_test.cpp
 )
 
 target_include_directories(client_adapter_tests PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+target_compile_definitions(client_adapter_tests PRIVATE
+    BCMD_CLIENT_TUI_TESTING
 )
 
 target_link_libraries(client_adapter_tests PRIVATE
