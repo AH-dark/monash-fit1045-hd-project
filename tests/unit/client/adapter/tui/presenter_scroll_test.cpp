@@ -1,0 +1,155 @@
+#include "bcmd/client/adapter/cli/command_parser.hpp"
+#include "bcmd/client/adapter/tui/ftxui_presenter.hpp"
+#include "bcmd/client/adapter/tui/inbox_queue.hpp"
+#include "bcmd/client/domain/inbox_message.hpp"
+
+#include <catch2/catch_test_macros.hpp>
+#include <ftxui/component/event.hpp>
+#include <ftxui/component/mouse.hpp>
+
+#include <cstddef>
+#include <memory>
+#include <string>
+#include <utility>
+#include <vector>
+
+namespace {
+
+using bcmd::client::adapter::cli::CommandType;
+using bcmd::client::adapter::cli::ParsedCommand;
+using bcmd::client::adapter::tui::FtxuiPresenter;
+using bcmd::client::adapter::tui::InboxQueue;
+
+// NOLINTBEGIN(misc-use-anonymous-namespace, readability-identifier-naming)
+
+std::shared_ptr<InboxQueue> MakeInboxQueue() { return std::make_shared<InboxQueue>(); }
+
+FtxuiPresenter MakePresenter() { return FtxuiPresenter{MakeInboxQueue()}; }
+
+bcmd::client::domain::InboxMessage MakeMessage(std::string id, bool is_history = false) {
+    return bcmd::client::domain::InboxMessage{.message_id = std::move(id),
+                                              .channel_id = "alpha",
+                                              .sender_name = "alice",
+                                              .content = "hello",
+                                              .sent_at_ms = 1,
+                                              .is_history = is_history};
+}
+
+std::vector<bcmd::client::domain::InboxMessage> MakeMessages(int count) {
+    std::vector<bcmd::client::domain::InboxMessage> messages;
+    messages.reserve(static_cast<std::size_t>(count));
+    for (int index = 0; index < count; ++index) {
+        messages.push_back(MakeMessage(std::to_string(index), index < 5));
+    }
+    return messages;
+}
+
+ftxui::Event MouseWheelEvent(ftxui::Mouse::Button button) {
+    ftxui::Mouse mouse{};
+    mouse.button = button;
+    mouse.x = 0;
+    mouse.y = 0;
+    return ftxui::Event::Mouse("", mouse);
+}
+
+TEST_CASE("Presenter scroll events move the window and clamp to the bounds",
+          "[client-adapter][tui]") {
+    auto presenter = MakePresenter();
+    presenter.testSetMessages(MakeMessages(40));
+    presenter.testSetViewportHeightHint(10);
+
+    CHECK(presenter.testHandleScrollEvent(ftxui::Event::PageUp));
+    CHECK(presenter.testScrollOffset() == 10);
+    CHECK_FALSE(presenter.testAutoScroll());
+
+    CHECK(presenter.testHandleScrollEvent(ftxui::Event::ArrowUp));
+    CHECK(presenter.testScrollOffset() == 11);
+
+    CHECK(presenter.testHandleScrollEvent(MouseWheelEvent(ftxui::Mouse::WheelUp)));
+    CHECK(presenter.testScrollOffset() == 14);
+
+    CHECK(presenter.testHandleScrollEvent(ftxui::Event::PageDown));
+    CHECK(presenter.testScrollOffset() == 4);
+
+    CHECK(presenter.testHandleScrollEvent(MouseWheelEvent(ftxui::Mouse::WheelDown)));
+    CHECK(presenter.testScrollOffset() == 1);
+
+    CHECK(presenter.testHandleScrollEvent(ftxui::Event::End));
+    CHECK(presenter.testScrollOffset() == 0);
+    CHECK(presenter.testAutoScroll());
+
+    CHECK(presenter.testHandleScrollEvent(ftxui::Event::Home));
+    CHECK(presenter.testScrollOffset() == 30);
+    CHECK_FALSE(presenter.testAutoScroll());
+}
+
+TEST_CASE("Presenter ignores scroll input while the help modal is open", "[client-adapter][tui]") {
+    auto presenter = MakePresenter();
+    presenter.testSetMessages(MakeMessages(40));
+    presenter.testSetViewportHeightHint(10);
+    presenter.testSetScrollState(7, false);
+    presenter.testSetShowHelp(true);
+
+    CHECK(presenter.testHandleScrollEvent(ftxui::Event::PageUp));
+    CHECK(presenter.testScrollOffset() == 7);
+    CHECK_FALSE(presenter.testAutoScroll());
+}
+
+TEST_CASE("Presenter keeps offset when auto-scroll is disabled and resets on clear",
+          "[client-adapter][tui]") {
+    auto presenter = MakePresenter();
+
+    presenter.testSetScrollState(8, false);
+    presenter.testShowMessage(MakeMessage("m1"));
+    CHECK(presenter.testScrollOffset() == 8);
+
+    presenter.testSetScrollState(0, true);
+    presenter.testShowMessage(MakeMessage("m2"));
+    CHECK(presenter.testScrollOffset() == 0);
+
+    presenter.testSetMessages(MakeMessages(10));
+    presenter.testSetHistoryCount(5);
+    presenter.testSetScrollState(6, false);
+    presenter.testClearMessages();
+
+    CHECK(presenter.testMessages().empty());
+    CHECK(presenter.testHistoryCount() == 0);
+    CHECK(presenter.testScrollOffset() == 0);
+    CHECK(presenter.testAutoScroll());
+}
+
+TEST_CASE("Presenter reports unknown slash commands and does not send them",
+          "[client-adapter][tui]") {
+    auto presenter = MakePresenter();
+    int sent_count{0};
+    FtxuiPresenter::Actions actions{};
+    actions.send_message = [&sent_count](const std::string&) { ++sent_count; };
+    presenter.testSetActions(std::move(actions));
+    presenter.testSetInputText("/ghost");
+
+    presenter.testHandleSubmit();
+
+    CHECK(presenter.testErrorToast() == "unknown command: /ghost - type ? for help");
+    CHECK(sent_count == 0);
+}
+
+TEST_CASE("Presenter rejects slash-prefixed input even if parsing returns none",
+          "[client-adapter][tui]") {
+    auto presenter = MakePresenter();
+    int sent_count{0};
+    FtxuiPresenter::Actions actions{};
+    actions.send_message = [&sent_count](const std::string&) { ++sent_count; };
+    presenter.testSetActions(std::move(actions));
+
+    ParsedCommand parsed{};
+    parsed.type = CommandType::None;
+
+    presenter.handleParsedCommandForTest(parsed, "/ghost", actions);
+
+    CHECK(presenter.testErrorToast() == "unknown command: /ghost - type ? for help");
+    CHECK(sent_count == 0);
+}
+
+// NOLINTEND(misc-use-anonymous-namespace, readability-identifier-naming)
+
+}  // namespace
