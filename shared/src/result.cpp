@@ -18,10 +18,12 @@ std::string_view error_message(Error error) noexcept {
             return "already a member";
         case Error::NotAMember:
             return "not a member";
-        case Error::MessageTooLong:
-            return "message too long";
         case Error::MessageEmpty:
             return "message is empty";
+        case Error::MessageInvalidPrefix:
+            return "message must not start with '/'";
+        case Error::MessageTooLong:
+            return "message too long";
         case Error::InvalidUsername:
             return "invalid username";
         case Error::InvalidChannelName:
