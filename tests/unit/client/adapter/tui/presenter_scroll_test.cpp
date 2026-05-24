@@ -122,6 +122,59 @@ TEST_CASE("Presenter keeps offset when auto-scroll is disabled and resets on cle
     CHECK(presenter.testAutoScroll());
 }
 
+TEST_CASE("Presenter joins the clicked channel by index", "[client-adapter][tui]") {
+    auto presenter = MakePresenter();
+    presenter.showChannelList({"alpha", "beta", "gamma"});
+
+    std::string joined_channel;
+    int join_count{0};
+    FtxuiPresenter::Actions actions{};
+    actions.join_channel = [&join_count, &joined_channel](const std::string& channel) {
+        ++join_count;
+        joined_channel = channel;
+    };
+    presenter.testSetActions(actions);
+
+    testOnChannelEnter(presenter, 0);
+
+    CHECK(join_count == 1);
+    CHECK(joined_channel == "alpha");
+}
+
+TEST_CASE("Presenter joins the clicked channel when selection has moved", "[client-adapter][tui]") {
+    auto presenter = MakePresenter();
+    presenter.showChannelList({"alpha", "beta", "gamma"});
+
+    std::string joined_channel;
+    int join_count{0};
+    FtxuiPresenter::Actions actions{};
+    actions.join_channel = [&join_count, &joined_channel](const std::string& channel) {
+        ++join_count;
+        joined_channel = channel;
+    };
+    presenter.testSetActions(actions);
+
+    testOnChannelEnter(presenter, 2);
+
+    CHECK(join_count == 1);
+    CHECK(joined_channel == "gamma");
+}
+
+TEST_CASE("Presenter ignores out-of-range channel clicks", "[client-adapter][tui]") {
+    auto presenter = MakePresenter();
+    presenter.showChannelList({"alpha", "beta", "gamma"});
+
+    int join_count{0};
+    FtxuiPresenter::Actions actions{};
+    actions.join_channel = [&join_count](const std::string&) { ++join_count; };
+    presenter.testSetActions(actions);
+
+    testOnChannelEnter(presenter, -1);
+    testOnChannelEnter(presenter, 3);
+
+    CHECK(join_count == 0);
+}
+
 TEST_CASE("Presenter sends plain messages when input is not a command", "[client-adapter][tui]") {
     auto presenter = MakePresenter();
     int sent_count{0};

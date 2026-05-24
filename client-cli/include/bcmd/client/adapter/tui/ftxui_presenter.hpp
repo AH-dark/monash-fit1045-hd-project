@@ -78,7 +78,12 @@ public:
     int run(std::function<void()> on_quit);
 
 private:
+    friend void testOnChannelEnter(FtxuiPresenter& presenter, int idx) {
+        presenter.onChannelEnter(idx);
+    }
+
     void handleSubmit();
+    void onChannelEnter(int idx);
     void handleParsedCommandImpl(const cli::ParsedCommand& parsed, const std::string& input,
                                  const Actions& actions);
     bool handleScrollEvent(ftxui::Event event);

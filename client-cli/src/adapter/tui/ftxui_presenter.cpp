@@ -113,7 +113,8 @@ void FtxuiPresenter::setActions(Actions actions) {
 
 // NOLINTNEXTLINE(performance-unnecessary-value-param)
 int FtxuiPresenter::run(std::function<void()> on_quit) {
-    auto channels = ChannelList(&channel_names_, &selected_channel_idx_, [](int) {});
+    auto channels = ChannelList(&channel_names_, &selected_channel_idx_,
+                                [this](int idx) { this->onChannelEnter(idx); });
     auto input = InputBar(&input_text_, [this] { handleSubmit(); });
     auto layout = ftxui::Container::Vertical({channels, input});
     auto renderer =
@@ -167,6 +168,23 @@ void FtxuiPresenter::handleSubmit() {
 
     const auto parsed = cli::parseCommand(input);
     this->handleParsedCommandImpl(parsed, input, actions);
+}
+
+void FtxuiPresenter::onChannelEnter(int idx) {
+    std::string name;
+    std::function<void(std::string)> action;
+    {
+        std::scoped_lock lock{ui_mutex_};
+        if (idx < 0 || idx >= static_cast<int>(channel_names_.size())) {
+            return;
+        }
+        name = channel_names_[static_cast<std::size_t>(idx)];
+        action = actions_.join_channel;
+    }
+
+    if (action) {
+        action(name);
+    }
 }
 
 void FtxuiPresenter::handleParsedCommandImpl(const cli::ParsedCommand& parsed,
