@@ -100,8 +100,9 @@ void FtxuiPresenter::setActions(Actions actions) {
     actions_ = std::move(actions);
 }
 
+// NOLINTNEXTLINE(performance-unnecessary-value-param)
 int FtxuiPresenter::run(std::function<void()> on_quit) {
-    auto channels = ChannelList(&channel_names_, &selected_channel_idx_);
+    auto channels = ChannelList(&channel_names_, &selected_channel_idx_, [](int) {});
     auto input = InputBar(&input_text_, [this] { handleSubmit(); });
     auto layout = ftxui::Container::Vertical({channels, input});
     auto renderer =
