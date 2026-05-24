@@ -190,3 +190,6 @@ add_bcmd_integration_test(integration_disconnect_broadcasts_member_left_test
 add_bcmd_integration_test(integration_cross_channel_leave_isolation_test
     integration/cross_channel_leave_isolation_test.cpp
 )
+add_bcmd_integration_test(integration_server_rejects_slash_prefix_test
+    integration/server_rejects_slash_prefix_test.cpp
+)
