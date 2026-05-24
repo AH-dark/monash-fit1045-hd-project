@@ -143,6 +143,19 @@ target_compile_features(client_adapter_tests PRIVATE cxx_std_23)
 
 catch_discover_tests(client_adapter_tests TEST_PREFIX "client_adapter_tests." PROPERTIES LABELS "unit")
 
+add_executable(client_adapter_grpc_tests
+    unit/client/adapter/grpc/status_to_error_test.cpp
+)
+
+target_link_libraries(client_adapter_grpc_tests PRIVATE
+    bcli_lib
+    Catch2::Catch2WithMain
+)
+
+target_compile_features(client_adapter_grpc_tests PRIVATE cxx_std_23)
+
+catch_discover_tests(client_adapter_grpc_tests PROPERTIES LABELS "unit")
+
 function(add_bcmd_integration_test target source)
     add_executable(${target}
         ${source}

@@ -1,5 +1,6 @@
 #include "bcmd/client/adapter/grpc/grpc_server_gateway.hpp"
 
+#include "bcmd/client/adapter/grpc/detail/status_to_error.hpp"
 #include "bcmd/client/application/port/i_server_gateway.hpp"
 #include "bcmd/client/domain/inbox_message.hpp"
 #include "bcmd/shared/result.hpp"
@@ -8,7 +9,6 @@
 #include "bcmd/v1/broadcast.pb.h"
 
 #include <grpcpp/grpcpp.h>
-#include <grpcpp/support/status.h>
 
 #include <chrono>
 #include <cstddef>
@@ -33,7 +33,7 @@ bcmd::Result<std::string> GrpcServerGateway::connect(std::string_view username) 
 
     const auto status = stub_->Connect(&context, request, &response);
     if (!status.ok()) {
-        return std::unexpected(grpc_status_to_error(status));
+        return std::unexpected(detail::statusToError(status));
     }
     return response.client_id();
 }
@@ -46,7 +46,7 @@ bcmd::VoidResult GrpcServerGateway::disconnect(std::string_view client_id) {
 
     const auto status = stub_->Disconnect(&context, request, &response);
     if (!status.ok()) {
-        return std::unexpected(grpc_status_to_error(status));
+        return std::unexpected(detail::statusToError(status));
     }
     return {};
 }
@@ -61,7 +61,7 @@ bcmd::Result<std::string> GrpcServerGateway::createChannel(std::string_view clie
 
     const auto status = stub_->CreateChannel(&context, request, &response);
     if (!status.ok()) {
-        return std::unexpected(grpc_status_to_error(status));
+        return std::unexpected(detail::statusToError(status));
     }
     return response.channel_id();
 }
@@ -73,7 +73,7 @@ bcmd::Result<std::vector<application::port::ChannelInfo>> GrpcServerGateway::lis
 
     const auto status = stub_->ListChannels(&context, request, &response);
     if (!status.ok()) {
-        return std::unexpected(grpc_status_to_error(status));
+        return std::unexpected(detail::statusToError(status));
     }
 
     std::vector<application::port::ChannelInfo> channels;
@@ -95,7 +95,7 @@ bcmd::VoidResult GrpcServerGateway::joinChannel(std::string_view client_id,
 
     const auto status = stub_->JoinChannel(&context, request, &response);
     if (!status.ok()) {
-        return std::unexpected(grpc_status_to_error(status));
+        return std::unexpected(detail::statusToError(status));
     }
     return {};
 }
@@ -132,7 +132,7 @@ bcmd::VoidResult GrpcServerGateway::leaveChannel(std::string_view client_id,
 
     const auto status = stub_->LeaveChannel(&context, request, &response);
     if (!status.ok()) {
-        return std::unexpected(grpc_status_to_error(status));
+        return std::unexpected(detail::statusToError(status));
     }
     return {};
 }
@@ -149,7 +149,7 @@ bcmd::Result<std::string> GrpcServerGateway::sendMessage(std::string_view client
 
     const auto status = stub_->SendMessage(&context, request, &response);
     if (!status.ok()) {
-        return std::unexpected(grpc_status_to_error(status));
+        return std::unexpected(detail::statusToError(status));
     }
     return response.message_id();
 }
@@ -163,7 +163,7 @@ bcmd::VoidResult GrpcServerGateway::sendHeartbeat(std::string_view client_id) {
 
     const auto status = stub_->Heartbeat(&context, request, &response);
     if (!status.ok()) {
-        return std::unexpected(grpc_status_to_error(status));
+        return std::unexpected(detail::statusToError(status));
     }
     return {};
 }
@@ -197,7 +197,6 @@ bcmd::VoidResult GrpcServerGateway::subscribeToChannel(std::string_view client_i
             in_history = false;
         } else if (event.has_member_left()) {
             const auto& left = event.member_left();
-            // Server filters MemberLeft events to current channel members.
             domain::InboxMessage system_message;
             system_message.channel_id = left.channel_id();
             system_message.sender_name = "[system]";
@@ -223,48 +222,9 @@ bcmd::VoidResult GrpcServerGateway::subscribeToChannel(std::string_view client_i
 
     const auto status = reader->Finish();
     if (!status.ok()) {
-        return std::unexpected(grpc_status_to_error(status));
+        return std::unexpected(detail::statusToError(status));
     }
     return {};
-}
-
-bcmd::Error GrpcServerGateway::grpc_status_to_error(const ::grpc::Status& status) {
-    const std::string_view message{status.error_message()};
-
-    switch (status.error_code()) {
-        case ::grpc::StatusCode::NOT_FOUND:
-            if (message.starts_with("client not found")) {
-                return bcmd::Error::ClientNotFound;
-            }
-            if (message.starts_with("not a member")) {
-                return bcmd::Error::NotAMember;
-            }
-            return bcmd::Error::ChannelNotFound;
-        case ::grpc::StatusCode::ALREADY_EXISTS:
-            if (message.starts_with("channel already exists")) {
-                return bcmd::Error::ChannelAlreadyExists;
-            }
-            if (message.starts_with("client already exists")) {
-                return bcmd::Error::ClientAlreadyExists;
-            }
-            return bcmd::Error::AlreadyMember;
-        case ::grpc::StatusCode::INVALID_ARGUMENT:
-            if (message.starts_with("invalid username")) {
-                return bcmd::Error::InvalidUsername;
-            }
-            if (message.starts_with("message too long")) {
-                return bcmd::Error::MessageTooLong;
-            }
-            if (message.starts_with("message is empty")) {
-                return bcmd::Error::MessageEmpty;
-            }
-            return bcmd::Error::InvalidChannelName;
-        case ::grpc::StatusCode::UNAVAILABLE:
-        case ::grpc::StatusCode::UNKNOWN:
-        case ::grpc::StatusCode::INTERNAL:
-        default:
-            return bcmd::Error::NetworkError;
-    }
 }
 
 }  // namespace bcmd::client::adapter::grpc
