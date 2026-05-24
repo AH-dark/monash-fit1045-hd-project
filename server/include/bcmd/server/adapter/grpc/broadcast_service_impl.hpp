@@ -69,8 +69,6 @@ private:
     std::shared_ptr<application::usecase::SubscribeToChannel> subscribe_{};
     std::shared_ptr<GrpcClientPublisher> publisher_{};
     std::shared_ptr<application::port::IClientRegistry> client_registry_{};
-
-    static ::grpc::Status error_to_status(bcmd::Error error);
 };
 
 }  // namespace bcmd::server::adapter::grpc
