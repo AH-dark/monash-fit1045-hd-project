@@ -144,6 +144,7 @@ target_compile_features(client_adapter_tests PRIVATE cxx_std_23)
 catch_discover_tests(client_adapter_tests TEST_PREFIX "client_adapter_tests." PROPERTIES LABELS "unit")
 
 add_executable(client_adapter_grpc_tests
+    unit/client/adapter/grpc/event_filter_test.cpp
     unit/client/adapter/grpc/status_to_error_test.cpp
 )
 

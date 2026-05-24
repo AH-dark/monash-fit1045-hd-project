@@ -1,5 +1,6 @@
 #include "bcmd/client/adapter/grpc/grpc_server_gateway.hpp"
 
+#include "bcmd/client/adapter/grpc/detail/event_filter.hpp"
 #include "bcmd/client/adapter/grpc/detail/status_to_error.hpp"
 #include "bcmd/client/application/port/i_server_gateway.hpp"
 #include "bcmd/client/domain/inbox_message.hpp"
@@ -183,6 +184,9 @@ bcmd::VoidResult GrpcServerGateway::subscribeToChannel(std::string_view client_i
     bcmd::v1::ChannelEvent event;
     bool in_history = replay_count > 0;
     while (reader->Read(&event)) {
+        if (!detail::shouldEmitEventForChannel(event, trimmed_channel_id)) {
+            continue;
+        }
         if (event.has_message()) {
             const auto& message = event.message();
             domain::InboxMessage inbox_message;

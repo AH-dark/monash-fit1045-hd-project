@@ -8,6 +8,7 @@ find_package(stduuid REQUIRED CONFIG)
 find_package(Catch2 REQUIRED CONFIG)
 
 add_library(bcli_lib STATIC
+    src/adapter/grpc/detail/event_filter.cpp
     src/adapter/grpc/detail/status_to_error.cpp
     src/adapter/grpc/grpc_server_gateway.cpp
     src/adapter/tui/ftxui_presenter.cpp
