@@ -1,3 +1,7 @@
+#ifndef BCMD_CLIENT_TUI_TESTING
+#define BCMD_CLIENT_TUI_TESTING 1
+#endif
+
 #include "bcmd/client/adapter/cli/command_parser.hpp"
 #include "bcmd/client/adapter/tui/ftxui_presenter.hpp"
 #include "bcmd/client/adapter/tui/inbox_queue.hpp"
@@ -118,13 +122,49 @@ TEST_CASE("Presenter keeps offset when auto-scroll is disabled and resets on cle
     CHECK(presenter.testAutoScroll());
 }
 
+TEST_CASE("Presenter sends plain messages when input is not a command", "[client-adapter][tui]") {
+    auto presenter = MakePresenter();
+    int sent_count{0};
+    std::string last_message;
+    FtxuiPresenter::Actions actions{};
+    actions.send_message = [&sent_count, &last_message](const std::string& message) {
+        ++sent_count;
+        last_message = message;
+    };
+    presenter.testSetActions(actions);
+    presenter.testSetInputText("hello");
+
+    presenter.testHandleSubmit();
+
+    CHECK(sent_count == 1);
+    CHECK(last_message == "hello");
+}
+
+TEST_CASE("Presenter dispatches join commands to the join action", "[client-adapter][tui]") {
+    auto presenter = MakePresenter();
+    int join_count{0};
+    std::string joined_channel;
+    FtxuiPresenter::Actions actions{};
+    actions.join_channel = [&join_count, &joined_channel](const std::string& channel) {
+        ++join_count;
+        joined_channel = channel;
+    };
+    presenter.testSetActions(actions);
+    presenter.testSetInputText("/join lobby");
+
+    presenter.testHandleSubmit();
+
+    CHECK(join_count == 1);
+    CHECK(joined_channel == "lobby");
+}
+
 TEST_CASE("Presenter reports unknown slash commands and does not send them",
           "[client-adapter][tui]") {
     auto presenter = MakePresenter();
     int sent_count{0};
     FtxuiPresenter::Actions actions{};
     actions.send_message = [&sent_count](const std::string&) { ++sent_count; };
-    presenter.testSetActions(std::move(actions));
+    presenter.testSetActions(actions);
     presenter.testSetInputText("/ghost");
 
     presenter.testHandleSubmit();
@@ -139,12 +179,12 @@ TEST_CASE("Presenter rejects slash-prefixed input even if parsing returns none",
     int sent_count{0};
     FtxuiPresenter::Actions actions{};
     actions.send_message = [&sent_count](const std::string&) { ++sent_count; };
-    presenter.testSetActions(std::move(actions));
+    presenter.testSetActions(actions);
 
     ParsedCommand parsed{};
     parsed.type = CommandType::None;
 
-    presenter.handleParsedCommandForTest(parsed, "/ghost", actions);
+    presenter.testHandleParsedCommand(parsed, "/ghost", actions);
 
     CHECK(presenter.testErrorToast() == "unknown command: /ghost - type ? for help");
     CHECK(sent_count == 0);
