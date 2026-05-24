@@ -1,7 +1,9 @@
 #include "bcmd/server/domain/model/message_content.hpp"
 
+#include "bcmd/shared/result.hpp"
+
 #include <cctype>
-#include <optional>
+#include <expected>
 #include <string>
 #include <string_view>
 
@@ -26,10 +28,16 @@ std::string_view trim(std::string_view raw) noexcept {
 
 }  // namespace
 
-std::optional<MessageContent> MessageContent::create(std::string_view raw) {
+bcmd::Result<MessageContent> MessageContent::create(std::string_view raw) {
     const auto trimmed = trim(raw);
-    if (trimmed.size() < MIN_LENGTH || trimmed.size() > MAX_LENGTH) {
-        return std::nullopt;
+    if (trimmed.empty()) {
+        return std::unexpected(bcmd::Error::MessageEmpty);
+    }
+    if (trimmed.size() > MAX_LENGTH) {
+        return std::unexpected(bcmd::Error::MessageTooLong);
+    }
+    if (trimmed.front() == '/') {
+        return std::unexpected(bcmd::Error::MessageInvalidPrefix);
     }
     return MessageContent{std::string(trimmed)};
 }
