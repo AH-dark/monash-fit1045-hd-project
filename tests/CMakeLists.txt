@@ -187,3 +187,6 @@ add_bcmd_integration_test(integration_heartbeat_expiry_test
 add_bcmd_integration_test(integration_disconnect_broadcasts_member_left_test
     integration/disconnect_broadcasts_member_left_test.cpp
 )
+add_bcmd_integration_test(integration_cross_channel_leave_isolation_test
+    integration/cross_channel_leave_isolation_test.cpp
+)
