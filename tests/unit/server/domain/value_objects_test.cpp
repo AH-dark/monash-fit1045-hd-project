@@ -124,8 +124,9 @@ TEST_CASE("MessageContent::create rejects whitespace-only input as empty",
     REQUIRE_FALSE(spaces.has_value());
     REQUIRE_FALSE(tabs.has_value());
     REQUIRE_FALSE(empty.has_value());
-    CHECK(spaces.error() == empty.error());
-    CHECK(tabs.error() == empty.error());
+    CHECK(spaces.error() == bcmd::Error::MessageEmpty);
+    CHECK(tabs.error() == bcmd::Error::MessageEmpty);
+    CHECK(empty.error() == bcmd::Error::MessageEmpty);
 }
 
 TEST_CASE("MessageContent::create accepts the boundary length of exactly 4096 characters",
@@ -140,21 +141,17 @@ TEST_CASE("MessageContent::create rejects input longer than 4096 characters",
           "[domain][value-object][message-content]") {
     const std::string too_long(4097, 'm');
     const auto content = MessageContent::create(too_long);
-    const auto reference = MessageContent::create(std::string(MessageContent::MAX_LENGTH + 1, 'm'));
 
     REQUIRE_FALSE(content.has_value());
-    REQUIRE_FALSE(reference.has_value());
-    CHECK(content.error() == reference.error());
+    CHECK(content.error() == bcmd::Error::MessageTooLong);
 }
 
 TEST_CASE("MessageContent::create rejects an empty string",
           "[domain][value-object][message-content]") {
     const auto content = MessageContent::create("");
-    const auto reference = MessageContent::create(" ");
 
     REQUIRE_FALSE(content.has_value());
-    REQUIRE_FALSE(reference.has_value());
-    CHECK(content.error() == reference.error());
+    CHECK(content.error() == bcmd::Error::MessageEmpty);
 }
 
 TEST_CASE("MessageContent::create rejects a leading slash after trim",
@@ -168,9 +165,10 @@ TEST_CASE("MessageContent::create rejects a leading slash after trim",
     REQUIRE_FALSE(tabbed.has_value());
     REQUIRE_FALSE(spaced.has_value());
     REQUIRE_FALSE(slash.has_value());
-    CHECK(direct.error() == slash.error());
-    CHECK(tabbed.error() == slash.error());
-    CHECK(spaced.error() == slash.error());
+    CHECK(direct.error() == bcmd::Error::MessageInvalidPrefix);
+    CHECK(tabbed.error() == bcmd::Error::MessageInvalidPrefix);
+    CHECK(spaced.error() == bcmd::Error::MessageInvalidPrefix);
+    CHECK(slash.error() == bcmd::Error::MessageInvalidPrefix);
 }
 
 TEST_CASE("MessageContent::create accepts a slash in the middle of content",
