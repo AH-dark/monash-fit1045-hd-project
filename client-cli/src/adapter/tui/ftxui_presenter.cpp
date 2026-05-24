@@ -101,9 +101,8 @@ void FtxuiPresenter::setActions(Actions actions) {
 }
 
 int FtxuiPresenter::run(std::function<void()> on_quit) {
-    const auto onQuit = std::make_shared<std::function<void()>>(std::move(on_quit));
     auto channels = ChannelList(&channel_names_, &selected_channel_idx_);
-    auto input = InputBar(&input_text_, [this, onQuit] { handleSubmit(*onQuit); });
+    auto input = InputBar(&input_text_, [this] { handleSubmit(); });
     auto layout = ftxui::Container::Vertical({channels, input});
     auto renderer =
         ftxui::Renderer(layout, [this, channels, input] { return render(channels, input); });
@@ -134,10 +133,15 @@ int FtxuiPresenter::run(std::function<void()> on_quit) {
     });
 
     screen_.Loop(component);
+    // FTXUI converts SIGINT/SIGTERM into a normal Loop() return, so this is
+    // the single cleanup site that guarantees the server receives Disconnect.
+    if (on_quit) {
+        on_quit();
+    }
     return 0;
 }
 
-void FtxuiPresenter::handleSubmit(const std::function<void()>& on_quit) {
+void FtxuiPresenter::handleSubmit() {
     std::string input;
     Actions actions;
     {
@@ -168,7 +172,6 @@ void FtxuiPresenter::handleSubmit(const std::function<void()>& on_quit) {
             }
             break;
         case cli::CommandType::Quit:
-            on_quit();
             screen_.ExitLoopClosure()();
             break;
         case cli::CommandType::None:
