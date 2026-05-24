@@ -78,9 +78,11 @@ public:
     int run(std::function<void()> on_quit);
 
 private:
+#ifdef BCMD_CLIENT_TUI_TESTING
     friend void testOnChannelEnter(FtxuiPresenter& presenter, int idx) {
         presenter.onChannelEnter(idx);
     }
+#endif
 
     void handleSubmit();
     void onChannelEnter(int idx);
