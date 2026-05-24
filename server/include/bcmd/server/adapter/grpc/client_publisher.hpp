@@ -13,6 +13,7 @@
 #include <shared_mutex>
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 
 namespace bcmd::server::adapter::grpc {
 
@@ -31,7 +32,9 @@ public:
     void publishReplayComplete(const bcmd::ClientId& recipient_id,
                                const bcmd::ChannelId& channel_id) override;
 
-    void broadcastMemberLeft(const bcmd::ChannelId& channel_id, const bcmd::ClientId& client_id,
+    void broadcastMemberLeft(const bcmd::ChannelId& channel_id,
+                             const std::unordered_set<bcmd::ClientId>& recipients,
+                             const bcmd::ClientId& client_id,
                              const domain::Username& username) override;
 
     void broadcastEvent(const bcmd::ChannelId& channel_id, const bcmd::v1::ChannelEvent& event);
