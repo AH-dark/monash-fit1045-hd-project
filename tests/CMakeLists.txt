@@ -106,6 +106,23 @@ target_compile_features(client_application_tests PRIVATE cxx_std_23)
 
 catch_discover_tests(client_application_tests PROPERTIES LABELS "unit")
 
+add_executable(client_adapter_tests
+    unit/client/adapter/cli/command_parser_test.cpp
+)
+
+target_include_directories(client_adapter_tests PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+target_link_libraries(client_adapter_tests PRIVATE
+    bcli_lib
+    Catch2::Catch2WithMain
+)
+
+target_compile_features(client_adapter_tests PRIVATE cxx_std_23)
+
+catch_discover_tests(client_adapter_tests PROPERTIES LABELS "unit")
+
 function(add_bcmd_integration_test target source)
     add_executable(${target}
         ${source}
