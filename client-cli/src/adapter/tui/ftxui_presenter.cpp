@@ -151,14 +151,6 @@ void FtxuiPresenter::handleSubmit() {
     }
 
     const auto parsed = cli::parseCommand(input);
-    if (parsed.type == cli::CommandType::Leave || parsed.type == cli::CommandType::List) {
-        const auto& action =
-            parsed.type == cli::CommandType::Leave ? actions.leave_channel : actions.list_channels;
-        if (action) {
-            action();
-        }
-        return;
-    }
 
     switch (parsed.type) {
         case cli::CommandType::Join:
@@ -174,13 +166,16 @@ void FtxuiPresenter::handleSubmit() {
         case cli::CommandType::Quit:
             screen_.ExitLoopClosure()();
             break;
+        case cli::CommandType::Leave:
+            actions.leave_channel();
+            break;
+        case cli::CommandType::List:
+            actions.list_channels();
+            break;
         case cli::CommandType::None:
             if (!input.empty() && actions.send_message) {
                 actions.send_message(input);
             }
-            break;
-        case cli::CommandType::Leave:
-        case cli::CommandType::List:
             break;
     }
 }
