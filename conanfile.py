@@ -9,7 +9,7 @@ class BcmdRecipe(ConanFile):
 
     def requirements(self):
         self.requires("grpc/1.78.1")
-        self.requires("protobuf/5.29.6", override=True)
+        self.requires("protobuf/6.33.5", override=True)
         self.requires("ftxui/6.1.9")
         self.requires("cli11/2.6.2")
         self.requires("spdlog/1.17.0")
