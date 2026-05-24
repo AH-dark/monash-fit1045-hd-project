@@ -109,6 +109,7 @@ catch_discover_tests(client_application_tests PROPERTIES LABELS "unit")
 add_executable(client_adapter_tests
     unit/client/adapter/cli/command_parser_test.cpp
     unit/client/adapter/tui/channel_list_test.cpp
+    unit/client/adapter/tui/scroll_math_test.cpp
 )
 
 target_include_directories(client_adapter_tests PRIVATE
