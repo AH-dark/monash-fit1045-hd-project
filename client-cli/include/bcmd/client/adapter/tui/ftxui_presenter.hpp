@@ -44,7 +44,7 @@ public:
     int run(std::function<void()> on_quit);
 
 private:
-    void handleSubmit(const std::function<void()>& on_quit);
+    void handleSubmit();
     ftxui::Element render(const ftxui::Component& channels, const ftxui::Component& input);
 
     std::shared_ptr<InboxQueue> inbox_{};
