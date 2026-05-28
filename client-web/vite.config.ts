@@ -7,6 +7,9 @@ import viteReact, { reactCompilerPreset } from '@vitejs/plugin-react'
 import babel from '@rolldown/plugin-babel'
 import tailwindcss from '@tailwindcss/vite'
 import { nitro } from 'nitro/vite'
+import { env } from './src/env'
+
+void env.VITE_GRPC_WEB_URL
 
 const config = defineConfig({
   resolve: { tsconfigPaths: true },
