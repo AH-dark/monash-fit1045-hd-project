@@ -1,19 +1,34 @@
 import { useCallback } from "react";
-import { isClientNotFound, mapError } from "#/api/broadcast/errors";
+
+import { useShallow } from "zustand/react/shallow";
+
+import { isClientNotFound, mapError } from "@/api/broadcast/errors";
 import {
 	connect as rpcConnect,
 	disconnect as rpcDisconnect,
-} from "#/api/broadcast/operations";
-import { useAuthStore } from "#/stores/auth-store";
+} from "@/api/broadcast/operations";
+import { useAuthStore } from "@/stores/auth-store";
 
 export function useAuth() {
-	const status = useAuthStore((s) => s.status);
-	const clientId = useAuthStore((s) => s.clientId);
-	const username = useAuthStore((s) => s.username);
-	const setConnecting = useAuthStore((s) => s.setConnecting);
-	const setConnected = useAuthStore((s) => s.setConnected);
-	const setDisconnected = useAuthStore((s) => s.setDisconnected);
-	const reset = useAuthStore((s) => s.reset);
+	const {
+		status,
+		clientId,
+		username,
+		setConnecting,
+		setConnected,
+		setDisconnected,
+		reset,
+	} = useAuthStore(
+		useShallow((s) => ({
+			status: s.status,
+			clientId: s.clientId,
+			username: s.username,
+			setConnecting: s.setConnecting,
+			setConnected: s.setConnected,
+			setDisconnected: s.setDisconnected,
+			reset: s.reset,
+		})),
+	);
 
 	const connect = useCallback(
 		async (usernameInput: string) => {

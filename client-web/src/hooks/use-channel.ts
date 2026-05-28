@@ -1,18 +1,27 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { isClientNotFound, mapError } from "#/api/broadcast/errors";
+
+import { useShallow } from "zustand/react/shallow";
+
+import { isClientNotFound, mapError } from "@/api/broadcast/errors";
 import {
 	joinChannel,
 	leaveChannel,
 	subscribeToChannel,
-} from "#/api/broadcast/operations";
-import { useAuthStore } from "#/stores/auth-store";
-import { useMessagesStore } from "#/stores/messages-store";
+} from "@/api/broadcast/operations";
+import { useAuthStore } from "@/stores/auth-store";
+import { useMessagesStore } from "@/stores/messages-store";
 
 export function useChannel(clientId: string | null, channelId: string | null) {
 	const [isConnected, setIsConnected] = useState(false);
-	const resetAuth = useAuthStore((s) => s.reset);
-	const addMessage = useMessagesStore((s) => s.addMessage);
-	const clearMessages = useMessagesStore((s) => s.clearMessages);
+	const { resetAuth } = useAuthStore(
+		useShallow((s) => ({ resetAuth: s.reset })),
+	);
+	const { addMessage, clearMessages } = useMessagesStore(
+		useShallow((s) => ({
+			addMessage: s.addMessage,
+			clearMessages: s.clearMessages,
+		})),
+	);
 	const messages = useMessagesStore((s) =>
 		channelId ? (s.messages.get(channelId) ?? []) : [],
 	);

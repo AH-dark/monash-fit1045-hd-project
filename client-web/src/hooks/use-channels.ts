@@ -1,20 +1,33 @@
 import { useEffect } from "react";
-import { isClientNotFound, mapError } from "#/api/broadcast/errors";
-import { subscribeToChannelList } from "#/api/broadcast/operations";
-import { useAuthStore } from "#/stores/auth-store";
-import { useChannelsStore } from "#/stores/channels-store";
+
+import { useShallow } from "zustand/react/shallow";
+
+import { isClientNotFound, mapError } from "@/api/broadcast/errors";
+import { subscribeToChannelList } from "@/api/broadcast/operations";
+import { useAuthStore } from "@/stores/auth-store";
+import { useChannelsStore } from "@/stores/channels-store";
 
 export function useChannels(clientId: string | null) {
-	const applySnapshot = useChannelsStore((s) => s.applySnapshot);
-	const applyCreated = useChannelsStore((s) => s.applyCreated);
-	const applyMemberCountChanged = useChannelsStore(
-		(s) => s.applyMemberCountChanged,
+	const {
+		applySnapshot,
+		applyCreated,
+		applyMemberCountChanged,
+		resetChannels,
+		channels,
+		snapshotApplied,
+	} = useChannelsStore(
+		useShallow((s) => ({
+			applySnapshot: s.applySnapshot,
+			applyCreated: s.applyCreated,
+			applyMemberCountChanged: s.applyMemberCountChanged,
+			resetChannels: s.reset,
+			channels: s.channels,
+			snapshotApplied: s.snapshotApplied,
+		})),
 	);
-	const resetChannels = useChannelsStore((s) => s.reset);
-	const resetAuth = useAuthStore((s) => s.reset);
-
-	const channels = useChannelsStore((s) => s.channels);
-	const snapshotApplied = useChannelsStore((s) => s.snapshotApplied);
+	const { resetAuth } = useAuthStore(
+		useShallow((s) => ({ resetAuth: s.reset })),
+	);
 
 	useEffect(() => {
 		if (!clientId) return;
