@@ -15,7 +15,9 @@ vi.mock("#/api/broadcast/operations", () => ({
 
 describe("useChannel", () => {
 	beforeEach(() => {
-		useMessagesStore.setState({ messages: new Map([["channel-1", emptyMessages]]) });
+		useMessagesStore.setState({
+			messages: new Map([["channel-1", emptyMessages]]),
+		});
 		vi.clearAllMocks();
 	});
 

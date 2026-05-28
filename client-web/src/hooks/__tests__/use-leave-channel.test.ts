@@ -1,4 +1,4 @@
-import { renderHook, act } from "@testing-library/react";
+import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { BroadcastError } from "#/api/broadcast/errors";
 import { useLeaveChannel } from "#/hooks/use-leave-channel";

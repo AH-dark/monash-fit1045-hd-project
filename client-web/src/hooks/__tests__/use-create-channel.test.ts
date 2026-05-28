@@ -1,4 +1,4 @@
-import { renderHook, act } from "@testing-library/react";
+import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { BroadcastError } from "#/api/broadcast/errors";
 import { useCreateChannel } from "#/hooks/use-create-channel";
@@ -28,7 +28,10 @@ describe("useCreateChannel", () => {
 			await result.current.createChannel("client-1", "test-channel");
 		});
 
-		expect(mocks.createChannel).toHaveBeenCalledWith("client-1", "test-channel");
+		expect(mocks.createChannel).toHaveBeenCalledWith(
+			"client-1",
+			"test-channel",
+		);
 		expect(useChannelsStore.getState().channels.get("ch-1")).toEqual({
 			id: "ch-1",
 			name: "test",

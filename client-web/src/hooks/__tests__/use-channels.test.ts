@@ -22,9 +22,9 @@ describe("useChannels", () => {
 	});
 
 	it("resets channels on unmount", () => {
-		useChannelsStore.getState().applySnapshot([
-			{ id: "channel-1", name: "General", memberCount: 1 },
-		]);
+		useChannelsStore
+			.getState()
+			.applySnapshot([{ id: "channel-1", name: "General", memberCount: 1 }]);
 		const { unmount } = renderHook(() => useChannels("client-1"));
 
 		unmount();

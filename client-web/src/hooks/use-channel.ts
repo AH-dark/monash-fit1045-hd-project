@@ -13,8 +13,8 @@ export function useChannel(clientId: string | null, channelId: string | null) {
 	const resetAuth = useAuthStore((s) => s.reset);
 	const addMessage = useMessagesStore((s) => s.addMessage);
 	const clearMessages = useMessagesStore((s) => s.clearMessages);
-	const messages = useMessagesStore(
-		(s) => (channelId ? (s.messages.get(channelId) ?? []) : []),
+	const messages = useMessagesStore((s) =>
+		channelId ? (s.messages.get(channelId) ?? []) : [],
 	);
 
 	const cancelledRef = useRef(false);
