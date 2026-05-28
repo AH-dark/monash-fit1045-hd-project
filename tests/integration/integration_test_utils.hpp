@@ -16,6 +16,7 @@
 #include "bcmd/server/application/usecase/list_channels.hpp"
 #include "bcmd/server/application/usecase/send_message.hpp"
 #include "bcmd/server/application/usecase/subscribe_to_channel.hpp"
+#include "bcmd/server/application/usecase/subscribe_to_channel_list.hpp"
 #include "bcmd/shared/ids.hpp"
 #include "bcmd/v1/broadcast.grpc.pb.h"
 #include "bcmd/v1/broadcast.pb.h"
@@ -101,10 +102,12 @@ public:
         auto get_recent = std::make_shared<usecase::GetRecentMessages>(message_repo);
         auto subscribe =
             std::make_shared<usecase::SubscribeToChannel>(channel_repo, message_repo, publisher);
+        auto subscribe_channel_list = std::make_shared<usecase::SubscribeToChannelList>(
+            client_registry, channel_list_publisher);
 
         service_ = std::make_unique<grpc_adapter::BroadcastServiceImpl>(
             join_channel, leave_channel, send_message, list_channels, create_channel, get_recent,
-            subscribe, publisher, client_registry);
+            subscribe, publisher, client_registry, subscribe_channel_list, channel_list_publisher);
         runner_ = std::make_unique<grpc_adapter::GrpcServerRunner>("127.0.0.1:0");
         runner_->add_service(*service_);
 
