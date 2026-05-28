@@ -1,12 +1,13 @@
 import { renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { useHeartbeat } from "#/hooks/use-heartbeat";
+
+import { useHeartbeat } from "@/hooks/use-heartbeat";
 
 const mocks = vi.hoisted(() => ({
 	heartbeat: vi.fn().mockResolvedValue(undefined),
 }));
 
-vi.mock("#/api/broadcast/operations", () => ({
+vi.mock("@/api/broadcast/operations", () => ({
 	heartbeat: mocks.heartbeat,
 }));
 

@@ -1,14 +1,15 @@
 import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { useAuth } from "#/hooks/use-auth";
-import { useAuthStore } from "#/stores/auth-store";
+
+import { useAuth } from "@/hooks/use-auth";
+import { useAuthStore } from "@/stores/auth-store";
 
 const mocks = vi.hoisted(() => ({
 	connect: vi.fn().mockResolvedValue({ clientId: "test-id" }),
 	disconnect: vi.fn().mockResolvedValue(undefined),
 }));
 
-vi.mock("#/api/broadcast/operations", () => ({
+vi.mock("@/api/broadcast/operations", () => ({
 	connect: mocks.connect,
 	disconnect: mocks.disconnect,
 }));

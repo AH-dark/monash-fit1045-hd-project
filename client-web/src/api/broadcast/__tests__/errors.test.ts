@@ -1,10 +1,11 @@
 import { Code, ConnectError } from "@connectrpc/connect";
 import { describe, expect, it } from "vitest";
+
 import {
 	BroadcastError,
 	isClientNotFound,
 	mapError,
-} from "#/api/broadcast/errors";
+} from "@/api/broadcast/errors";
 
 describe("broadcast/errors", () => {
 	describe("mapError", () => {

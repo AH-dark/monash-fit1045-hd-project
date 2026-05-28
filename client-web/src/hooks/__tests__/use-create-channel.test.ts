@@ -1,8 +1,9 @@
 import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { BroadcastError } from "#/api/broadcast/errors";
-import { useCreateChannel } from "#/hooks/use-create-channel";
-import { useChannelsStore } from "#/stores/channels-store";
+
+import { BroadcastError } from "@/api/broadcast/errors";
+import { useCreateChannel } from "@/hooks/use-create-channel";
+import { useChannelsStore } from "@/stores/channels-store";
 
 const mocks = vi.hoisted(() => ({
 	createChannel: vi.fn().mockResolvedValue({
@@ -11,7 +12,7 @@ const mocks = vi.hoisted(() => ({
 	}),
 }));
 
-vi.mock("#/api/broadcast/operations", () => ({
+vi.mock("@/api/broadcast/operations", () => ({
 	createChannel: mocks.createChannel,
 }));
 

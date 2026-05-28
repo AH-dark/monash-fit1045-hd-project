@@ -1,11 +1,12 @@
 import { renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { useChannel } from "#/hooks/use-channel";
-import { useMessagesStore } from "#/stores/messages-store";
+
+import { useChannel } from "@/hooks/use-channel";
+import { useMessagesStore } from "@/stores/messages-store";
 
 const emptyMessages: [] = [];
 
-vi.mock("#/api/broadcast/operations", () => ({
+vi.mock("@/api/broadcast/operations", () => ({
 	joinChannel: vi.fn().mockResolvedValue(undefined),
 	leaveChannel: vi.fn().mockResolvedValue(undefined),
 	subscribeToChannel: vi.fn().mockReturnValue({

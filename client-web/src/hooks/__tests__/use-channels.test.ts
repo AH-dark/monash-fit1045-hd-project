@@ -1,9 +1,10 @@
 import { renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { useChannels } from "#/hooks/use-channels";
-import { useChannelsStore } from "#/stores/channels-store";
 
-vi.mock("#/api/broadcast/operations", () => ({
+import { useChannels } from "@/hooks/use-channels";
+import { useChannelsStore } from "@/stores/channels-store";
+
+vi.mock("@/api/broadcast/operations", () => ({
 	subscribeToChannelList: vi.fn().mockReturnValue({
 		[Symbol.asyncIterator]: () => ({ next: () => new Promise(() => {}) }),
 	}),

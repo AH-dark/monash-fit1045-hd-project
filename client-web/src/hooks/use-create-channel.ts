@@ -1,7 +1,8 @@
 import { useCallback } from "react";
-import { mapError } from "#/api/broadcast/errors";
-import { createChannel as rpcCreateChannel } from "#/api/broadcast/operations";
-import { useChannelsStore } from "#/stores/channels-store";
+
+import { mapError } from "@/api/broadcast/errors";
+import { createChannel as rpcCreateChannel } from "@/api/broadcast/operations";
+import { useChannelsStore } from "@/stores/channels-store";
 
 export function useCreateChannel() {
 	const applyCreated = useChannelsStore((s) => s.applyCreated);

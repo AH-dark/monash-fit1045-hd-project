@@ -1,13 +1,14 @@
 import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { BroadcastError } from "#/api/broadcast/errors";
-import { useLeaveChannel } from "#/hooks/use-leave-channel";
+
+import { BroadcastError } from "@/api/broadcast/errors";
+import { useLeaveChannel } from "@/hooks/use-leave-channel";
 
 const mocks = vi.hoisted(() => ({
 	leaveChannel: vi.fn().mockResolvedValue(undefined),
 }));
 
-vi.mock("#/api/broadcast/operations", () => ({
+vi.mock("@/api/broadcast/operations", () => ({
 	leaveChannel: mocks.leaveChannel,
 }));
 

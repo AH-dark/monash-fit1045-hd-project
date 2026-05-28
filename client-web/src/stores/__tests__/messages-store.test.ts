@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { useMessagesStore } from "#/stores/messages-store";
+
+import { useMessagesStore } from "@/stores/messages-store";
 
 function sampleMessage(id: string, channelId = "c1") {
 	return {

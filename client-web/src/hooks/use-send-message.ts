@@ -1,6 +1,7 @@
 import { useCallback } from "react";
-import { mapError } from "#/api/broadcast/errors";
-import { sendMessage as rpcSendMessage } from "#/api/broadcast/operations";
+
+import { mapError } from "@/api/broadcast/errors";
+import { sendMessage as rpcSendMessage } from "@/api/broadcast/operations";
 
 export function useSendMessage() {
 	const sendMessage = useCallback(

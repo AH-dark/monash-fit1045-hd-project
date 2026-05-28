@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
-import { heartbeat as rpcHeartbeat } from "#/api/broadcast/operations";
+
+import { heartbeat as rpcHeartbeat } from "@/api/broadcast/operations";
 
 export function useHeartbeat(clientId: string | null, intervalMs = 3000) {
 	const clientIdRef = useRef(clientId);

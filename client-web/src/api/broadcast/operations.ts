@@ -1,7 +1,8 @@
 import type {
 	ChannelEvent,
 	ChannelListEvent,
-} from "#/gen/bcmd/v1/broadcast_pb.ts";
+} from "@/gen/bcmd/v1/broadcast_pb.ts";
+
 import { broadcastClient } from "./client.ts";
 
 export async function connect(username: string): Promise<{ clientId: string }> {

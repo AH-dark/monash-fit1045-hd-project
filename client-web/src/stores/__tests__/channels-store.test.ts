@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { useChannelsStore } from "#/stores/channels-store";
+
+import { useChannelsStore } from "@/stores/channels-store";
 
 describe("channels-store", () => {
 	beforeEach(() => {

@@ -1,13 +1,14 @@
 import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { BroadcastError } from "#/api/broadcast/errors";
-import { useSendMessage } from "#/hooks/use-send-message";
+
+import { BroadcastError } from "@/api/broadcast/errors";
+import { useSendMessage } from "@/hooks/use-send-message";
 
 const mocks = vi.hoisted(() => ({
 	sendMessage: vi.fn().mockResolvedValue({ messageId: "msg-1" }),
 }));
 
-vi.mock("#/api/broadcast/operations", () => ({
+vi.mock("@/api/broadcast/operations", () => ({
 	sendMessage: mocks.sendMessage,
 }));
 
