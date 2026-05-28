@@ -12,9 +12,13 @@
     "test": "vitest run",
     "format": "biome format",
     "lint": "biome lint",
-    "check": "biome check"
+    "check": "biome check",
+    "proto:gen": "buf generate"
   },
   "dependencies": {
+    "@bufbuild/protobuf": "latest",
+    "@connectrpc/connect": "latest",
+    "@connectrpc/connect-web": "latest",
     "@t3-oss/env-core": "^0.13.10",
     "@tailwindcss/vite": "^4.1.18",
     "@tanstack/react-devtools": "latest",
@@ -35,10 +39,14 @@
     "tailwind-merge": "^3.0.2",
     "tailwindcss": "^4.1.18",
     "tw-animate-css": "^1.3.6",
-    "zod": "^4.3.6"
+    "zod": "^4.3.6",
+    "zustand": "latest"
   },
   "devDependencies": {
     "@biomejs/biome": "2.4.5",
+    "@bufbuild/buf": "latest",
+    "@bufbuild/protoc-gen-es": "latest",
+    "@connectrpc/protoc-gen-connect-es": "latest",
     "@rolldown/plugin-babel": "^0.2.3",
     "@tailwindcss/typography": "^0.5.16",
     "@tanstack/devtools-vite": "latest",
