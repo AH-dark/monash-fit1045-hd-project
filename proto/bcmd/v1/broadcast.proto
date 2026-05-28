@@ -22,6 +22,8 @@ service BroadcastService {
 
   // Event subscription (server-streaming)
   rpc SubscribeToChannel(SubscribeRequest) returns (stream ChannelEvent);
+
+  rpc SubscribeToChannelList(SubscribeChannelListRequest) returns (stream ChannelListEvent);
 }
 
 message ConnectRequest { string username = 1; }
@@ -95,3 +97,22 @@ message MemberLeftEvent    { string channel_id = 1; string client_id = 2; string
 message ChannelClosedEvent { string channel_id = 1; string reason = 2; }
 
 message ReplayCompleteEvent { string channel_id = 1; uint32 replayed_count = 2; }
+
+message SubscribeChannelListRequest { string client_id = 1; }
+
+message ChannelListEvent {
+  oneof event {
+    ChannelListSnapshot snapshot = 1;
+    ChannelCreatedEvent created = 2;
+    ChannelMemberCountChangedEvent member_count_changed = 3;
+  }
+}
+
+message ChannelListSnapshot { repeated ChannelSummary channels = 1; }
+
+message ChannelCreatedEvent { ChannelSummary channel = 1; }
+
+message ChannelMemberCountChangedEvent {
+  string channel_id = 1;
+  int32 member_count = 2;
+}
