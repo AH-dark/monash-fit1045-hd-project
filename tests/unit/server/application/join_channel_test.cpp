@@ -8,8 +8,10 @@
 
 #include <catch2/catch_test_macros.hpp>
 
+#include "fakes/fake_channel_list_publisher.hpp"
 #include "fakes/fake_channel_repository.hpp"
 #include "fakes/fake_client_registry.hpp"
+#include "fakes/fake_message_publisher.hpp"
 #include <memory>
 
 namespace {
@@ -18,13 +20,19 @@ using bcmd::server::application::usecase::JoinChannel;
 using bcmd::server::domain::Channel;
 using bcmd::server::domain::ChannelName;
 using bcmd::server::domain::Username;
+using bcmd::tests::FakeChannelListPublisher;
 using bcmd::tests::FakeChannelRepository;
 using bcmd::tests::FakeClientRegistry;
+using bcmd::tests::FakeMessagePublisher;
 
 struct Fixture {
     std::shared_ptr<FakeChannelRepository> channels = std::make_shared<FakeChannelRepository>();
     std::shared_ptr<FakeClientRegistry> clients = std::make_shared<FakeClientRegistry>();
-    JoinChannel use_case{channels, clients};
+    std::shared_ptr<FakeMessagePublisher> message_publisher =
+        std::make_shared<FakeMessagePublisher>();
+    std::shared_ptr<FakeChannelListPublisher> channel_list_publisher =
+        std::make_shared<FakeChannelListPublisher>();
+    JoinChannel use_case{channels, clients, message_publisher, channel_list_publisher};
 
     bcmd::ClientId registerClient(const char* name) const {
         auto username = Username::create(name);
@@ -139,4 +147,67 @@ TEST_CASE("JoinChannel::executeByName rejects an invalid name",
 
     REQUIRE_FALSE(result.has_value());
     CHECK(result.error() == bcmd::Error::InvalidChannelName);
+}
+
+TEST_CASE(
+    "join_channel successful join via execute(channel_id) calls broadcastMemberJoined exactly once",
+    "[application][use-case][join-channel]") {
+    Fixture fixture;
+    const auto client_id = fixture.registerClient("alice");
+    const auto channel_id = fixture.createChannel("general");
+
+    const auto result = fixture.use_case.execute(client_id, channel_id);
+
+    REQUIRE(result.has_value());
+    REQUIRE(fixture.message_publisher->joinedBroadcasts().size() == 1);
+    const auto& record = fixture.message_publisher->joinedBroadcasts().front();
+    CHECK(record.channel_id == channel_id);
+    CHECK(record.client_id == client_id);
+    CHECK(record.username == "alice");
+}
+
+TEST_CASE("join_channel successful join via executeByName also calls broadcastMemberJoined",
+          "[application][use-case][join-channel]") {
+    Fixture fixture;
+    const auto client_id = fixture.registerClient("alice");
+    const auto channel_id = fixture.createChannel("general");
+
+    const auto result = fixture.use_case.executeByName(client_id, "general");
+
+    REQUIRE(result.has_value());
+    CHECK(*result == channel_id);
+    REQUIRE(fixture.message_publisher->joinedBroadcasts().size() == 1);
+    const auto& record = fixture.message_publisher->joinedBroadcasts().front();
+    CHECK(record.channel_id == channel_id);
+    CHECK(record.client_id == client_id);
+}
+
+TEST_CASE(
+    "join_channel successful join publishes MemberCountChangedEvent on channel-list publisher",
+    "[application][use-case][join-channel]") {
+    Fixture fixture;
+    const auto client_id = fixture.registerClient("alice");
+    const auto channel_id = fixture.createChannel("general");
+
+    const auto result = fixture.use_case.execute(client_id, channel_id);
+
+    REQUIRE(result.has_value());
+    REQUIRE(fixture.channel_list_publisher->publishMemberCountChangedCallCount() == 1);
+    const auto& record = fixture.channel_list_publisher->memberCountCalls().front();
+    CHECK(record.channel_id == channel_id);
+    CHECK(record.member_count == 1);
+}
+
+TEST_CASE("join_channel failed join does NOT publish any event",
+          "[application][use-case][join-channel]") {
+    Fixture fixture;
+    const auto client_id = fixture.registerClient("alice");
+    const auto missing_channel = bcmd::ChannelId::generate();
+
+    const auto result = fixture.use_case.execute(client_id, missing_channel);
+
+    REQUIRE_FALSE(result.has_value());
+    CHECK(fixture.message_publisher->joinedBroadcasts().empty());
+    CHECK(fixture.channel_list_publisher->publishMemberCountChangedCallCount() == 0);
+    CHECK(fixture.channel_list_publisher->publishChannelCreatedCallCount() == 0);
 }

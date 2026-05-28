@@ -51,6 +51,7 @@ target_compile_features(server_domain_tests PRIVATE cxx_std_23)
 catch_discover_tests(server_domain_tests PROPERTIES LABELS "unit")
 
 add_executable(server_application_tests
+    unit/server/application/create_channel_test.cpp
     unit/server/application/join_channel_test.cpp
     unit/server/application/leave_channel_test.cpp
     unit/server/application/send_message_test.cpp
@@ -71,6 +72,23 @@ target_link_libraries(server_application_tests PRIVATE
 target_compile_features(server_application_tests PRIVATE cxx_std_23)
 
 catch_discover_tests(server_application_tests PROPERTIES LABELS "unit")
+
+add_executable(subscribe_to_channel_list_test
+    unit/server/application/subscribe_to_channel_list_test.cpp
+)
+
+target_include_directories(subscribe_to_channel_list_test PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+target_link_libraries(subscribe_to_channel_list_test PRIVATE
+    bcmd_application
+    Catch2::Catch2WithMain
+)
+
+target_compile_features(subscribe_to_channel_list_test PRIVATE cxx_std_23)
+
+catch_discover_tests(subscribe_to_channel_list_test PROPERTIES LABELS "unit")
 
 add_executable(server_adapter_persistence_tests
     unit/server/adapter/persistence/in_memory_client_registry_heartbeat_test.cpp
@@ -94,6 +112,10 @@ add_executable(server_adapter_grpc_tests
     unit/server/adapter/grpc/error_to_status_test.cpp
 )
 
+target_include_directories(server_adapter_grpc_tests PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
 target_link_libraries(server_adapter_grpc_tests PRIVATE
     bcmd_server_adapters
     Catch2::Catch2WithMain
@@ -102,6 +124,23 @@ target_link_libraries(server_adapter_grpc_tests PRIVATE
 target_compile_features(server_adapter_grpc_tests PRIVATE cxx_std_23)
 
 catch_discover_tests(server_adapter_grpc_tests PROPERTIES LABELS "unit")
+
+add_executable(channel_list_publisher_concurrency_test
+    unit/server/adapter/grpc/channel_list_publisher_concurrency_test.cpp
+)
+
+target_include_directories(channel_list_publisher_concurrency_test PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+target_link_libraries(channel_list_publisher_concurrency_test PRIVATE
+    bcmd_server_adapters
+    Catch2::Catch2WithMain
+)
+
+target_compile_features(channel_list_publisher_concurrency_test PRIVATE cxx_std_23)
+
+catch_discover_tests(channel_list_publisher_concurrency_test PROPERTIES LABELS "unit")
 
 add_executable(client_application_tests
     unit/client/application/send_message_command_test.cpp
