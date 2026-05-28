@@ -1,4 +1,5 @@
 #include "bcmd/server/adapter/grpc/broadcast_service_impl.hpp"
+#include "bcmd/server/adapter/grpc/channel_list_publisher.hpp"
 #include "bcmd/server/adapter/grpc/client_publisher.hpp"
 #include "bcmd/server/adapter/grpc/heartbeat_sweeper.hpp"
 #include "bcmd/server/adapter/grpc/server_runner.hpp"
@@ -96,6 +97,8 @@ int run(int argc, char** argv) {
     auto message_repo = std::make_shared<persistence::InMemoryMessageRepository>(history_cap);
     auto event_log = std::make_shared<persistence::InMemoryEventLog>();
     auto publisher = std::make_shared<grpc_adapter::GrpcClientPublisher>(client_registry);
+    auto channel_list_publisher =
+        std::make_shared<grpc_adapter::GrpcChannelListPublisher>(channel_repo);
     (void)event_log;
 
     if (const auto DEFAULT_NAME = bcmd::server::domain::ChannelName::create("general");
@@ -106,13 +109,15 @@ int run(int argc, char** argv) {
         }
     }
 
-    auto join_channel = std::make_shared<usecase::JoinChannel>(channel_repo, client_registry);
-    auto leave_channel =
-        std::make_shared<usecase::LeaveChannel>(channel_repo, client_registry, publisher);
+    auto join_channel = std::make_shared<usecase::JoinChannel>(channel_repo, client_registry,
+                                                               publisher, channel_list_publisher);
+    auto leave_channel = std::make_shared<usecase::LeaveChannel>(channel_repo, client_registry,
+                                                                 publisher, channel_list_publisher);
     auto send_message = std::make_shared<usecase::SendMessage>(channel_repo, client_registry,
                                                                message_repo, publisher);
     auto list_channels = std::make_shared<usecase::ListChannels>(channel_repo);
-    auto create_channel = std::make_shared<usecase::CreateChannel>(channel_repo, client_registry);
+    auto create_channel = std::make_shared<usecase::CreateChannel>(channel_repo, client_registry,
+                                                                   channel_list_publisher);
     auto get_recent = std::make_shared<usecase::GetRecentMessages>(message_repo);
     auto subscribe =
         std::make_shared<usecase::SubscribeToChannel>(channel_repo, message_repo, publisher);

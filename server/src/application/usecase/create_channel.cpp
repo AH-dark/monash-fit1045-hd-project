@@ -1,5 +1,6 @@
 #include "bcmd/server/application/usecase/create_channel.hpp"
 
+#include "bcmd/server/application/port/i_channel_list_publisher.hpp"
 #include "bcmd/server/application/port/i_channel_repository.hpp"
 #include "bcmd/server/application/port/i_client_registry.hpp"
 #include "bcmd/server/domain/model/channel.hpp"
@@ -16,8 +17,11 @@
 namespace bcmd::server::application::usecase {
 
 CreateChannel::CreateChannel(std::shared_ptr<port::IChannelRepository> channels,
-                             std::shared_ptr<port::IClientRegistry> clients)
-    : channels_(std::move(channels)), clients_(std::move(clients)) {}
+                             std::shared_ptr<port::IClientRegistry> clients,
+                             std::shared_ptr<port::IChannelListPublisher> channel_list_publisher)
+    : channels_(std::move(channels)),
+      clients_(std::move(clients)),
+      channel_list_publisher_(std::move(channel_list_publisher)) {}
 
 bcmd::Result<bcmd::ChannelId> CreateChannel::execute(const bcmd::ClientId& client_id,
                                                      std::string_view channel_name) {
@@ -36,6 +40,7 @@ bcmd::Result<bcmd::ChannelId> CreateChannel::execute(const bcmd::ClientId& clien
     if (!created.has_value()) {
         return std::unexpected(created.error());
     }
+    channel_list_publisher_->publishChannelCreated(*created);
     return created->id();
 }
 

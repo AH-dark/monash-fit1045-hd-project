@@ -32,6 +32,8 @@ public:
         std::string username;
     };
 
+    using MemberJoinedRecord = MemberLeftRecord;
+
     void publish(const bcmd::ClientId& recipient_id, const bcmd::server::domain::Message& message,
                  bool from_replay = false) override {
         deliveries.push_back(
@@ -40,7 +42,19 @@ public:
 
     void publishReplayComplete(const bcmd::ClientId& recipient_id,
                                const bcmd::ChannelId& channel_id) override {
-        replay_markers.push_back(ReplayMarker{recipient_id, channel_id});
+        replay_markers.push_back(ReplayMarker{.recipient = recipient_id, .channel = channel_id});
+    }
+
+    void broadcastMemberJoined(const bcmd::ChannelId& channel_id,
+                               const std::unordered_set<bcmd::ClientId>& recipients,
+                               const bcmd::ClientId& client_id,
+                               const bcmd::server::domain::Username& username) override {
+        joined_broadcasts_.push_back(MemberJoinedRecord{
+            .channel_id = channel_id,
+            .recipients = recipients,
+            .client_id = client_id,
+            .username = username.value(),
+        });
     }
 
     void broadcastMemberLeft(const bcmd::ChannelId& channel_id,
@@ -59,7 +73,7 @@ public:
         unregister_calls_.push_back(client_id);
     }
 
-    std::size_t countFor(const bcmd::ClientId& recipient_id) const {
+    [[nodiscard]] std::size_t countFor(const bcmd::ClientId& recipient_id) const {
         std::size_t total = 0;
         for (const auto& delivery : deliveries) {
             if (delivery.recipient == recipient_id) {
@@ -69,14 +83,23 @@ public:
         return total;
     }
 
-    const std::vector<MemberLeftRecord>& broadcasts() const { return broadcasts_; }
+    [[nodiscard]] const std::vector<MemberLeftRecord>& broadcasts() const { return broadcasts_; }
 
-    const std::vector<bcmd::ClientId>& unregisterCalls() const { return unregister_calls_; }
+    [[nodiscard]] const std::vector<MemberJoinedRecord>& joinedBroadcasts() const {
+        return joined_broadcasts_;
+    }
 
-    std::vector<Delivery> deliveries;
-    std::vector<ReplayMarker> replay_markers;
+    [[nodiscard]] const std::vector<bcmd::ClientId>& unregisterCalls() const {
+        return unregister_calls_;
+    }
+
+    std::vector<Delivery>
+        deliveries;  // NOLINT(cppcoreguidelines-non-private-member-variables-in-classes)
+    std::vector<ReplayMarker>
+        replay_markers;  // NOLINT(cppcoreguidelines-non-private-member-variables-in-classes)
 
 private:
+    std::vector<MemberJoinedRecord> joined_broadcasts_;
     std::vector<MemberLeftRecord> broadcasts_;
     std::vector<bcmd::ClientId> unregister_calls_;
 };

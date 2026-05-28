@@ -34,6 +34,11 @@ public:
     void publishReplayComplete(const bcmd::ClientId& recipient_id,
                                const bcmd::ChannelId& channel_id) override;
 
+    void broadcastMemberJoined(const bcmd::ChannelId& channel_id,
+                               const std::unordered_set<bcmd::ClientId>& recipients,
+                               const bcmd::ClientId& client_id,
+                               const domain::Username& username) override;
+
     void broadcastMemberLeft(const bcmd::ChannelId& channel_id,
                              const std::unordered_set<bcmd::ClientId>& recipients,
                              const bcmd::ClientId& client_id,
