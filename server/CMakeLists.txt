@@ -35,6 +35,7 @@ add_library(bcmd_application STATIC
     src/application/usecase/list_channels.cpp
     src/application/usecase/get_recent_messages.cpp
     src/application/usecase/subscribe_to_channel.cpp
+    src/application/usecase/subscribe_to_channel_list.cpp
     src/application/usecase/create_channel.cpp
 )
 
