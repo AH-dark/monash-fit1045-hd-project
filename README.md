@@ -88,3 +88,35 @@ ctest --preset release --output-on-failure
 ## AI Disclosure
 
 All test code under `tests/` (unit tests, integration tests, and test fakes) is AI-generated.
+
+## Envoy gRPC-Web Gateway
+
+The browser cannot speak raw gRPC (HTTP/2). Envoy acts as a sidecar proxy translating between browser gRPC-Web and the C++ server.
+
+### Prerequisites
+- Docker installed and running
+- Dev TLS certificates (run `bash scripts/gen-dev-certs.sh` once)
+- The `bcmd` server running on port 50051
+
+### Quick Start
+
+```bash
+# 1. Generate dev certs (once)
+bash scripts/gen-dev-certs.sh
+
+# 2. Start the bcmd server (in one terminal)
+./build/debug/server/bcmd --bind 0.0.0.0:50051 \
+  --cert certs/dev/server.pem --key certs/dev/server.key
+
+# 3. Start Envoy sidecar (in another terminal)
+bash scripts/run-envoy-dev.sh
+```
+
+### Ports
+- `8080` — gRPC-Web proxy (browser → Envoy → bcmd)
+- `9901` — Envoy admin interface
+
+### client-web Environment
+Set `VITE_GRPC_WEB_URL=http://localhost:8080` in your `client-web/.env` file.
+
+> **Note**: This setup is for development only. Production deployment is out of scope.
