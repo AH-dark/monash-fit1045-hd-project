@@ -1,6 +1,5 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
-
 import type { DependencyList, RefObject } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 export function useAutoScrollBottom(
 	ref: RefObject<HTMLElement | null>,
@@ -23,7 +22,7 @@ export function useAutoScrollBottom(
 		if (atBottom) {
 			el.scrollTop = el.scrollHeight;
 		}
-		// eslint-disable-next-line react-hooks/exhaustive-deps
+		// biome-ignore lint/correctness/useExhaustiveDependencies: deps are passed as parameter by design
 	}, deps);
 
 	useEffect(() => {
@@ -40,5 +39,8 @@ export function useAutoScrollBottom(
 		return () => el.removeEventListener("scroll", handler);
 	}, [ref]);
 
-	return useMemo(() => ({ isAtBottom, scrollToBottom }), [isAtBottom, scrollToBottom]);
+	return useMemo(
+		() => ({ isAtBottom, scrollToBottom }),
+		[isAtBottom, scrollToBottom],
+	);
 }

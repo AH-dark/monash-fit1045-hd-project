@@ -1,6 +1,5 @@
-import { useCallback, useState } from "react";
-
 import type { KeyboardEvent } from "react";
+import { useCallback, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -18,8 +17,7 @@ export function ChannelComposer({ vm }: ChannelComposerProps) {
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const isMobile = useIsMobile();
 
-	const canSend =
-		content.trim().length > 0 && vm.isConnected && !isSubmitting;
+	const canSend = content.trim().length > 0 && vm.isConnected && !isSubmitting;
 
 	const send = useCallback(async () => {
 		const parsed = vm.schema.safeParse({ content });
@@ -61,9 +59,7 @@ export function ChannelComposer({ vm }: ChannelComposerProps) {
 				value={content}
 				onChange={(event) => setContent(event.target.value)}
 				onKeyDown={handleKeyDown}
-				placeholder={
-					vm.isConnected ? "Type a message" : "Not connected"
-				}
+				placeholder={vm.isConnected ? "Type a message" : "Not connected"}
 				disabled={!vm.isConnected || isSubmitting}
 				rows={1}
 				maxLength={2000}

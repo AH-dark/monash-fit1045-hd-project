@@ -55,8 +55,7 @@ export function CreateChannelDialog({
 		event.preventDefault();
 		const parsed = vm.schema.safeParse({ channelName });
 		if (!parsed.success) {
-			const message =
-				parsed.error.issues[0]?.message ?? "Invalid channel name";
+			const message = parsed.error.issues[0]?.message ?? "Invalid channel name";
 			setErrorMessage(message);
 			return;
 		}

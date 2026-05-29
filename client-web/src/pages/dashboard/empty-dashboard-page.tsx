@@ -25,8 +25,8 @@ export function EmptyDashboardPage() {
 					</EmptyMedia>
 					<EmptyTitle>Welcome to bcmd</EmptyTitle>
 					<EmptyDescription>
-						Select a channel from the sidebar to start chatting, or create a
-						new one.
+						Select a channel from the sidebar to start chatting, or create a new
+						one.
 					</EmptyDescription>
 				</EmptyHeader>
 				<EmptyContent>

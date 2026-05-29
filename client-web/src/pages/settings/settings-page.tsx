@@ -1,5 +1,6 @@
-import { Copy } from "lucide-react";
 import { useState } from "react";
+
+import { Copy } from "lucide-react";
 
 import { DisconnectAlertDialog } from "@/components/disconnect-alert-dialog";
 import { ThemeSwitcher } from "@/components/theme-switcher";

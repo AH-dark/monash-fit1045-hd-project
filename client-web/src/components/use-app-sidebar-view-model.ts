@@ -20,10 +20,7 @@ export function useAppSidebarViewModel(): AppSidebarViewModel {
 	const { channels, error } = useChannels(clientId);
 	const routerState = useRouterState();
 
-	const channelList = useMemo(
-		() => Array.from(channels.values()),
-		[channels],
-	);
+	const channelList = useMemo(() => Array.from(channels.values()), [channels]);
 
 	const currentChannelId = useMemo(() => {
 		const match = routerState.location.pathname.match(/\/channels\/([^/]+)/);

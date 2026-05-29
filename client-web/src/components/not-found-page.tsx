@@ -1,6 +1,5 @@
-import { FileQuestion } from "lucide-react";
-
 import { Link } from "@tanstack/react-router";
+import { FileQuestion } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 
