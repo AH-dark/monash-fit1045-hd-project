@@ -24,3 +24,13 @@ export const AuthStateSchema = z.object({
 });
 
 export type AuthState = z.infer<typeof AuthStateSchema>;
+
+export const UsernameInputSchema = z.object({
+	username: z
+		.string()
+		.min(1, "Username is required")
+		.max(32)
+		.regex(/^[a-zA-Z0-9_-]+$/, "Only letters, numbers, _ and - allowed"),
+});
+
+export type UsernameInput = z.infer<typeof UsernameInputSchema>;

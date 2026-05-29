@@ -18,3 +18,11 @@ export const SendMessageVariablesSchema = z.object({
 });
 
 export type SendMessageVariables = z.infer<typeof SendMessageVariablesSchema>;
+
+export const MessageContentSchema = z.object({
+	content: z
+		.string()
+		.trim()
+		.min(1, "Message cannot be empty")
+		.max(2000, "Message too long"),
+});
