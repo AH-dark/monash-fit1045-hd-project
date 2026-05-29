@@ -42,7 +42,7 @@
 		"zustand": "latest"
 	},
 	"devDependencies": {
-		"@biomejs/biome": "2.4.5",
+		"@biomejs/biome": "2.4.16",
 		"@bufbuild/buf": "latest",
 		"@bufbuild/protoc-gen-es": "latest",
 		"@connectrpc/protoc-gen-connect-es": "latest",
