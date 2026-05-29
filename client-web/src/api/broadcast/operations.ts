@@ -68,16 +68,20 @@ export function subscribeToChannel(
 	clientId: string,
 	channelId: string,
 	replayCount?: number,
+	options?: { signal?: AbortSignal },
 ): AsyncIterable<ChannelEvent> {
-	return broadcastClient.subscribeToChannel({
-		clientId,
-		channelId,
-		replayCount,
-	});
+	return broadcastClient.subscribeToChannel(
+		{ clientId, channelId, replayCount },
+		{ signal: options?.signal },
+	);
 }
 
 export function subscribeToChannelList(
 	clientId: string,
+	options?: { signal?: AbortSignal },
 ): AsyncIterable<ChannelListEvent> {
-	return broadcastClient.subscribeToChannelList({ clientId });
+	return broadcastClient.subscribeToChannelList(
+		{ clientId },
+		{ signal: options?.signal },
+	);
 }
