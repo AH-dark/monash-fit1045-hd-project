@@ -1,13 +1,7 @@
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 
-type AuthStatus = "idle" | "connecting" | "connected" | "disconnected";
-
-type AuthState = {
-	status: AuthStatus;
-	clientId: string | null;
-	username: string | null;
-};
+import type { AuthState, AuthStatusValue as AuthStatus } from "@/schemas/auth";
 
 type AuthActions = {
 	setConnecting: () => void;
@@ -16,11 +10,11 @@ type AuthActions = {
 	reset: () => void;
 };
 
-const initialState: AuthState = {
-	status: "idle",
+const initialState = {
+	status: "idle" as AuthStatus,
 	clientId: null,
 	username: null,
-};
+} satisfies AuthState;
 
 export const useAuthStore = create<AuthState & AuthActions>()(
 	persist(

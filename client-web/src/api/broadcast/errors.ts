@@ -1,11 +1,6 @@
 import { Code, ConnectError } from "@connectrpc/connect";
 
-export type BroadcastErrorKind =
-	| "client-not-found"
-	| "channel-not-found"
-	| "invalid-argument"
-	| "unavailable"
-	| "unknown";
+import type { BroadcastErrorKind } from "@/schemas/broadcast-error";
 
 export class BroadcastError extends Error {
 	constructor(

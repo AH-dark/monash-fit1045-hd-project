@@ -1,13 +1,6 @@
 import { create } from "zustand";
 
-type Message = {
-	messageId: string;
-	channelId: string;
-	senderId: string;
-	senderName: string;
-	content: string;
-	timestamp: number;
-};
+import type { Message } from "@/schemas/message";
 
 type MessagesState = {
 	messages: Map<string, Message[]>;

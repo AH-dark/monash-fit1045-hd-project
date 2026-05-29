@@ -1,10 +1,6 @@
 import { create } from "zustand";
 
-type Channel = {
-	id: string;
-	name: string;
-	memberCount: number;
-};
+import type { Channel } from "@/schemas/channel";
 
 type ChannelsState = {
 	channels: Map<string, Channel>;
