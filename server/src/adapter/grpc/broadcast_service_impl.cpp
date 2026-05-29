@@ -2,6 +2,7 @@
 
 #include "bcmd/server/adapter/grpc/client_publisher.hpp"
 #include "bcmd/server/adapter/grpc/detail/error_to_status.hpp"
+#include "bcmd/server/application/port/i_channel_list_publisher.hpp"
 #include "bcmd/server/application/port/i_client_registry.hpp"
 #include "bcmd/server/application/usecase/create_channel.hpp"
 #include "bcmd/server/application/usecase/get_recent_messages.hpp"
@@ -10,6 +11,7 @@
 #include "bcmd/server/application/usecase/list_channels.hpp"
 #include "bcmd/server/application/usecase/send_message.hpp"
 #include "bcmd/server/application/usecase/subscribe_to_channel.hpp"
+#include "bcmd/server/application/usecase/subscribe_to_channel_list.hpp"
 #include "bcmd/server/domain/model/username.hpp"
 #include "bcmd/server/domain/service/message_router.hpp"
 #include "bcmd/shared/ids.hpp"
@@ -41,7 +43,9 @@ BroadcastServiceImpl::BroadcastServiceImpl(
     std::shared_ptr<application::usecase::GetRecentMessages> get_recent,
     std::shared_ptr<application::usecase::SubscribeToChannel> subscribe,
     std::shared_ptr<GrpcClientPublisher> publisher,
-    std::shared_ptr<application::port::IClientRegistry> client_registry)
+    std::shared_ptr<application::port::IClientRegistry> client_registry,
+    std::shared_ptr<application::usecase::SubscribeToChannelList> subscribe_channel_list,
+    std::shared_ptr<application::port::IChannelListPublisher> channel_list_publisher)
     : join_channel_(std::move(join_channel)),
       leave_channel_(std::move(leave_channel)),
       send_message_(std::move(send_message)),
@@ -50,7 +54,9 @@ BroadcastServiceImpl::BroadcastServiceImpl(
       get_recent_(std::move(get_recent)),
       subscribe_(std::move(subscribe)),
       publisher_(std::move(publisher)),
-      client_registry_(std::move(client_registry)) {}
+      client_registry_(std::move(client_registry)),
+      subscribe_channel_list_(std::move(subscribe_channel_list)),
+      channel_list_publisher_(std::move(channel_list_publisher)) {}
 
 ::grpc::Status BroadcastServiceImpl::Connect(::grpc::ServerContext* /*context*/,
                                              const bcmd::v1::ConnectRequest* request,
@@ -222,6 +228,26 @@ BroadcastServiceImpl::BroadcastServiceImpl(
         std::this_thread::sleep_for(std::chrono::milliseconds(50));
     }
     publisher_->unregisterSubscriber(*CLIENT_ID);
+    return ::grpc::Status::OK;
+}
+
+::grpc::Status BroadcastServiceImpl::SubscribeToChannelList(
+    ::grpc::ServerContext* context, const bcmd::v1::SubscribeChannelListRequest* request,
+    ::grpc::ServerWriter<bcmd::v1::ChannelListEvent>* writer) {
+    const auto CLIENT_ID = bcmd::ClientId::parse(bcmd::trim(request->client_id()));
+    if (!CLIENT_ID.has_value()) {
+        return detail::errorToStatus(bcmd::Error::ClientNotFound);
+    }
+
+    const auto SUBSCRIBED = subscribe_channel_list_->execute(*CLIENT_ID, writer);
+    if (!SUBSCRIBED.has_value()) {
+        return detail::errorToStatus(SUBSCRIBED.error());
+    }
+
+    while (!context->IsCancelled()) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(50));
+    }
+    channel_list_publisher_->unregisterSubscriber(*CLIENT_ID);
     return ::grpc::Status::OK;
 }
 

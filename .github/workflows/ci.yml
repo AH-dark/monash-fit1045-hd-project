@@ -44,3 +44,24 @@ jobs:
         run: cmake --build --preset debug
       - name: clang-tidy
         run: ./scripts/lint.sh
+      - name: Test
+        run: ctest --preset debug --output-on-failure
+
+  client-web:
+    name: client-web (build & test)
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: client-web
+    steps:
+      - uses: actions/checkout@v6
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - run: bun install --frozen-lockfile
+      - run: bun --bun run check
+      - run: bunx tsc --noEmit
+      - run: bun --bun run test
+      - env:
+          VITE_GRPC_WEB_URL: http://localhost:8080
+        run: bun --bun run build

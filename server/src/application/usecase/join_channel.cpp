@@ -1,7 +1,9 @@
 #include "bcmd/server/application/usecase/join_channel.hpp"
 
+#include "bcmd/server/application/port/i_channel_list_publisher.hpp"
 #include "bcmd/server/application/port/i_channel_repository.hpp"
 #include "bcmd/server/application/port/i_client_registry.hpp"
+#include "bcmd/server/application/port/i_message_publisher.hpp"
 #include "bcmd/server/domain/model/channel.hpp"
 #include "bcmd/server/domain/model/channel_name.hpp"
 #include "bcmd/server/domain/model/client_session.hpp"
@@ -9,6 +11,7 @@
 #include "bcmd/shared/result.hpp"
 #include "bcmd/shared/string_utils.hpp"
 
+#include <cstdint>
 #include <expected>
 #include <memory>
 #include <string_view>
@@ -17,8 +20,13 @@
 namespace bcmd::server::application::usecase {
 
 JoinChannel::JoinChannel(std::shared_ptr<port::IChannelRepository> channels,
-                         std::shared_ptr<port::IClientRegistry> clients)
-    : channels_(std::move(channels)), clients_(std::move(clients)) {}
+                         std::shared_ptr<port::IClientRegistry> clients,
+                         std::shared_ptr<port::IMessagePublisher> message_publisher,
+                         std::shared_ptr<port::IChannelListPublisher> channel_list_publisher)
+    : channels_(std::move(channels)),
+      clients_(std::move(clients)),
+      message_publisher_(std::move(message_publisher)),
+      channel_list_publisher_(std::move(channel_list_publisher)) {}
 
 bcmd::VoidResult JoinChannel::execute(const bcmd::ClientId& client_id,
                                       const bcmd::ChannelId& channel_id) {
@@ -42,6 +50,10 @@ bcmd::VoidResult JoinChannel::execute(const bcmd::ClientId& client_id,
     if (auto saved = clients_->save(*session); !saved.has_value()) {
         return std::unexpected(saved.error());
     }
+    message_publisher_->broadcastMemberJoined(channel->id(), channel->members(), client_id,
+                                              session->username());
+    channel_list_publisher_->publishMemberCountChanged(
+        channel->id(), static_cast<std::int32_t>(channel->memberCount()));
     return {};
 }
 
@@ -75,6 +87,10 @@ bcmd::Result<bcmd::ChannelId> JoinChannel::executeByName(const bcmd::ClientId& c
     if (auto saved = clients_->save(*session); !saved.has_value()) {
         return std::unexpected(saved.error());
     }
+    message_publisher_->broadcastMemberJoined(channel.id(), channel.members(), client_id,
+                                              session->username());
+    channel_list_publisher_->publishMemberCountChanged(
+        channel.id(), static_cast<std::int32_t>(channel.memberCount()));
     return channel.id();
 }
 

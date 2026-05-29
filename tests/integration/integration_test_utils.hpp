@@ -1,6 +1,7 @@
 #pragma once
 
 #include "bcmd/server/adapter/grpc/broadcast_service_impl.hpp"
+#include "bcmd/server/adapter/grpc/channel_list_publisher.hpp"
 #include "bcmd/server/adapter/grpc/client_publisher.hpp"
 #include "bcmd/server/adapter/grpc/heartbeat_sweeper.hpp"
 #include "bcmd/server/adapter/grpc/server_runner.hpp"
@@ -15,6 +16,7 @@
 #include "bcmd/server/application/usecase/list_channels.hpp"
 #include "bcmd/server/application/usecase/send_message.hpp"
 #include "bcmd/server/application/usecase/subscribe_to_channel.hpp"
+#include "bcmd/server/application/usecase/subscribe_to_channel_list.hpp"
 #include "bcmd/shared/ids.hpp"
 #include "bcmd/v1/broadcast.grpc.pb.h"
 #include "bcmd/v1/broadcast.pb.h"
@@ -85,22 +87,27 @@ public:
         auto client_registry = std::make_shared<persistence::InMemoryClientRegistry>();
         auto message_repo = std::make_shared<persistence::InMemoryMessageRepository>();
         auto publisher = std::make_shared<grpc_adapter::GrpcClientPublisher>(client_registry);
+        auto channel_list_publisher =
+            std::make_shared<grpc_adapter::GrpcChannelListPublisher>(channel_repo);
 
-        auto join_channel = std::make_shared<usecase::JoinChannel>(channel_repo, client_registry);
-        auto leave_channel =
-            std::make_shared<usecase::LeaveChannel>(channel_repo, client_registry, publisher);
+        auto join_channel = std::make_shared<usecase::JoinChannel>(
+            channel_repo, client_registry, publisher, channel_list_publisher);
+        auto leave_channel = std::make_shared<usecase::LeaveChannel>(
+            channel_repo, client_registry, publisher, channel_list_publisher);
         auto send_message = std::make_shared<usecase::SendMessage>(channel_repo, client_registry,
                                                                    message_repo, publisher);
         auto list_channels = std::make_shared<usecase::ListChannels>(channel_repo);
-        auto create_channel =
-            std::make_shared<usecase::CreateChannel>(channel_repo, client_registry);
+        auto create_channel = std::make_shared<usecase::CreateChannel>(
+            channel_repo, client_registry, channel_list_publisher);
         auto get_recent = std::make_shared<usecase::GetRecentMessages>(message_repo);
         auto subscribe =
             std::make_shared<usecase::SubscribeToChannel>(channel_repo, message_repo, publisher);
+        auto subscribe_channel_list = std::make_shared<usecase::SubscribeToChannelList>(
+            client_registry, channel_list_publisher);
 
         service_ = std::make_unique<grpc_adapter::BroadcastServiceImpl>(
             join_channel, leave_channel, send_message, list_channels, create_channel, get_recent,
-            subscribe, publisher, client_registry);
+            subscribe, publisher, client_registry, subscribe_channel_list, channel_list_publisher);
         runner_ = std::make_unique<grpc_adapter::GrpcServerRunner>("127.0.0.1:0");
         runner_->add_service(*service_);
 

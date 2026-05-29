@@ -35,6 +35,7 @@ add_library(bcmd_application STATIC
     src/application/usecase/list_channels.cpp
     src/application/usecase/get_recent_messages.cpp
     src/application/usecase/subscribe_to_channel.cpp
+    src/application/usecase/subscribe_to_channel_list.cpp
     src/application/usecase/create_channel.cpp
 )
 
@@ -61,6 +62,7 @@ add_library(bcmd_server_adapters STATIC
     src/adapter/persistence/in_memory_event_log.cpp
     src/adapter/grpc/tls_config.cpp
     src/adapter/grpc/client_publisher.cpp
+    src/adapter/grpc/channel_list_publisher.cpp
     src/adapter/grpc/detail/error_to_status.cpp
     src/adapter/grpc/broadcast_service_impl.cpp
     src/adapter/grpc/heartbeat_sweeper.cpp

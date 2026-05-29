@@ -1,0 +1,12 @@
+services:
+  envoy:
+    image: envoyproxy/envoy:v1.31-latest
+    ports:
+      - "8080:8080"
+      - "9901:9901"
+    volumes:
+      - ./envoy/envoy.yaml:/etc/envoy/envoy.yaml:ro
+      - ../certs/dev:/etc/envoy/certs:ro
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    command: -c /etc/envoy/envoy.yaml --log-level info

@@ -8,6 +8,7 @@
 
 #include <catch2/catch_test_macros.hpp>
 
+#include "fakes/fake_channel_list_publisher.hpp"
 #include "fakes/fake_channel_repository.hpp"
 #include "fakes/fake_client_registry.hpp"
 #include "fakes/fake_message_publisher.hpp"
@@ -19,6 +20,7 @@ using bcmd::server::application::usecase::JoinChannel;
 using bcmd::server::application::usecase::LeaveChannel;
 using bcmd::server::domain::ChannelName;
 using bcmd::server::domain::Username;
+using bcmd::tests::FakeChannelListPublisher;
 using bcmd::tests::FakeChannelRepository;
 using bcmd::tests::FakeClientRegistry;
 using bcmd::tests::FakeMessagePublisher;
@@ -27,8 +29,10 @@ struct Fixture {
     std::shared_ptr<FakeChannelRepository> channels = std::make_shared<FakeChannelRepository>();
     std::shared_ptr<FakeClientRegistry> clients = std::make_shared<FakeClientRegistry>();
     std::shared_ptr<FakeMessagePublisher> publisher = std::make_shared<FakeMessagePublisher>();
+    std::shared_ptr<FakeChannelListPublisher> channel_list_publisher =
+        std::make_shared<FakeChannelListPublisher>();
     JoinChannel join_use_case{channels, clients};
-    LeaveChannel use_case{channels, clients, publisher};
+    LeaveChannel use_case{channels, clients, publisher, channel_list_publisher};
 
     bcmd::ClientId registerClient(const char* name) const {
         auto username = Username::create(name);
@@ -159,4 +163,21 @@ TEST_CASE("LeaveChannel a second time returns NotAMember",
     REQUIRE_FALSE(second.has_value());
     CHECK(second.error() == bcmd::Error::NotAMember);
     CHECK(fixture.publisher->broadcasts().size() == 1);
+}
+
+TEST_CASE(
+    "leave_channel successful leave publishes MemberCountChangedEvent on channel-list publisher",
+    "[application][use-case][leave-channel]") {
+    Fixture fixture;
+    const auto client_id = fixture.registerClient("alice");
+    const auto channel_id = fixture.createChannel("general");
+    REQUIRE(fixture.join_use_case.execute(client_id, channel_id).has_value());
+
+    const auto result = fixture.use_case.execute(client_id, channel_id);
+
+    REQUIRE(result.has_value());
+    REQUIRE(fixture.channel_list_publisher->publishMemberCountChangedCallCount() == 1);
+    const auto& record = fixture.channel_list_publisher->memberCountCalls().front();
+    CHECK(record.channel_id == channel_id);
+    CHECK(record.member_count == 0);
 }

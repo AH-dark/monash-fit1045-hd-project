@@ -106,6 +106,34 @@ void GrpcClientPublisher::publishReplayComplete(const bcmd::ClientId& recipient_
     }
 }
 
+void GrpcClientPublisher::broadcastMemberJoined(
+    const bcmd::ChannelId& channel_id, const std::unordered_set<bcmd::ClientId>& recipients,
+    const bcmd::ClientId& client_id, const domain::Username& username) {
+    bcmd::v1::ChannelEvent event;
+    auto* member_joined = event.mutable_member_joined();
+    member_joined->set_channel_id(channel_id.value());
+    member_joined->set_client_id(client_id.value());
+    member_joined->set_username(username.value());
+
+    std::vector<std::shared_ptr<GrpcClientPublisher::WriterEntry>> targets;
+    {
+        const std::shared_lock lock(mutex_);
+        targets.reserve(writers_.size());
+        for (const auto& [client_id_str, entry] : writers_) {
+            const auto recipient_id = bcmd::ClientId::parse(client_id_str);
+            if (entry && recipient_id.has_value() && recipients.contains(*recipient_id)) {
+                targets.push_back(entry);
+            }
+        }
+    }
+    for (const auto& entry : targets) {
+        const std::scoped_lock write_lock(entry->write_mutex);
+        if (entry->writer != nullptr) {
+            entry->writer->Write(event);
+        }
+    }
+}
+
 void GrpcClientPublisher::broadcastMemberLeft(const bcmd::ChannelId& channel_id,
                                               const std::unordered_set<bcmd::ClientId>& recipients,
                                               const bcmd::ClientId& client_id,
