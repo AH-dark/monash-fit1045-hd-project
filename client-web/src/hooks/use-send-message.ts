@@ -1,19 +1,34 @@
-import { useCallback } from "react";
+import {
+	type UseMutationOptions,
+	type UseMutationResult,
+	useMutation,
+} from "@tanstack/react-query";
 
-import { mapError } from "@/api/broadcast/errors";
-import { sendMessage as rpcSendMessage } from "@/api/broadcast/operations";
+import { type BroadcastError, mapError } from "@/api/broadcast/errors";
+import { sendMessage } from "@/api/broadcast/operations";
+import type { SendMessageVariables } from "@/schemas/message";
 
-export function useSendMessage() {
-	const sendMessage = useCallback(
-		async (clientId: string, channelId: string, content: string) => {
+type SendMessageResponse = { messageId: string };
+
+export function useSendMessageMutation(
+	options?: UseMutationOptions<
+		SendMessageResponse,
+		BroadcastError,
+		SendMessageVariables
+	>,
+): UseMutationResult<
+	SendMessageResponse,
+	BroadcastError,
+	SendMessageVariables
+> {
+	return useMutation({
+		mutationFn: async ({ clientId, channelId, content }) => {
 			try {
-				return await rpcSendMessage(clientId, channelId, content);
+				return await sendMessage(clientId, channelId, content);
 			} catch (err) {
 				throw mapError(err);
 			}
 		},
-		[],
-	);
-
-	return { sendMessage };
+		...options,
+	});
 }
