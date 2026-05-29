@@ -1,28 +1,29 @@
-import { useCallback } from "react";
-
+import {
+	type UseMutationOptions,
+	type UseMutationResult,
+	useMutation,
+} from "@tanstack/react-query";
 import { useShallow } from "zustand/react/shallow";
 
-import { isClientNotFound, mapError } from "@/api/broadcast/errors";
+import {
+	type BroadcastError,
+	isClientNotFound,
+	mapError,
+} from "@/api/broadcast/errors";
 import {
 	connect as rpcConnect,
 	disconnect as rpcDisconnect,
 } from "@/api/broadcast/operations";
+import type { AuthState } from "@/schemas/auth";
 import { useAuthStore } from "@/stores/auth-store";
 
-export function useAuth() {
-	const {
-		status,
-		clientId,
-		username,
-		setConnecting,
-		setConnected,
-		setDisconnected,
-		reset,
-	} = useAuthStore(
+type ConnectResponse = { clientId: string };
+
+export function useConnectMutation(
+	options?: UseMutationOptions<ConnectResponse, BroadcastError, string>,
+): UseMutationResult<ConnectResponse, BroadcastError, string> {
+	const { setConnecting, setConnected, setDisconnected, reset } = useAuthStore(
 		useShallow((s) => ({
-			status: s.status,
-			clientId: s.clientId,
-			username: s.username,
 			setConnecting: s.setConnecting,
 			setConnected: s.setConnected,
 			setDisconnected: s.setDisconnected,
@@ -30,48 +31,89 @@ export function useAuth() {
 		})),
 	);
 
-	const connect = useCallback(
-		async (usernameInput: string) => {
-			setConnecting();
+	return useMutation({
+		mutationFn: async (username: string) => {
 			try {
-				const result = await rpcConnect(usernameInput);
-				setConnected(result.clientId, usernameInput);
-				return result.clientId;
+				return await rpcConnect(username);
 			} catch (err) {
-				const broadcastError = mapError(err);
-				if (isClientNotFound(broadcastError)) {
-					reset();
-				} else {
-					setDisconnected();
-				}
-				throw broadcastError;
+				throw mapError(err);
 			}
 		},
-		[setConnecting, setConnected, setDisconnected, reset],
+		onMutate: () => {
+			setConnecting();
+		},
+		onSuccess: ({ clientId }, username) => {
+			setConnected(clientId, username);
+		},
+		onError: (err) => {
+			if (isClientNotFound(err)) {
+				reset();
+			} else {
+				setDisconnected();
+			}
+		},
+		...options,
+	});
+}
+
+export function useDisconnectMutation(
+	options?: UseMutationOptions<void, BroadcastError, string>,
+): UseMutationResult<void, BroadcastError, string> {
+	const { setDisconnected, reset } = useAuthStore(
+		useShallow((s) => ({
+			setDisconnected: s.setDisconnected,
+			reset: s.reset,
+		})),
 	);
 
-	const disconnectUser = useCallback(async () => {
-		if (!clientId) return;
-		try {
-			await rpcDisconnect(clientId);
-		} catch (err) {
-			const broadcastError = mapError(err);
-			if (isClientNotFound(broadcastError)) {
-				reset();
-				return;
+	return useMutation({
+		mutationFn: async (clientId: string) => {
+			try {
+				await rpcDisconnect(clientId);
+			} catch (err) {
+				throw mapError(err);
 			}
-			throw broadcastError;
-		} finally {
+		},
+		onError: (err) => {
+			if (isClientNotFound(err)) {
+				reset();
+			}
+		},
+		onSettled: () => {
 			setDisconnected();
-		}
-	}, [clientId, setDisconnected, reset]);
+		},
+		...options,
+	});
+}
+
+type UseAuthResult = AuthState & {
+	reset: () => void;
+	connect: UseMutationResult<
+		ConnectResponse,
+		BroadcastError,
+		string
+	>["mutateAsync"];
+	disconnect: UseMutationResult<void, BroadcastError, string>["mutateAsync"];
+};
+
+export function useAuth(): UseAuthResult {
+	const state = useAuthStore(
+		useShallow((s) => ({
+			status: s.status,
+			clientId: s.clientId,
+			username: s.username,
+			reset: s.reset,
+		})),
+	);
+	const connectMutation = useConnectMutation();
+	const disconnectMutation = useDisconnectMutation();
 
 	return {
-		status,
-		clientId,
-		username,
-		connect,
-		disconnect: disconnectUser,
-		reset,
+		status: state.status,
+		clientId: state.clientId,
+		username: state.username,
+		reset: state.reset,
+		connect: connectMutation.mutateAsync,
+		disconnect: disconnectMutation.mutateAsync,
 	};
 }
