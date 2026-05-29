@@ -7,6 +7,11 @@ import {
 } from "@tanstack/react-router";
 import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
 
+import { ConnectionStatusWatcher } from "@/components/connection-status-watcher";
+import { NotFoundPage } from "@/components/not-found-page";
+import { ThemeProvider } from "@/components/theme-provider";
+import { Toaster } from "@/components/ui/sonner";
+
 import TanStackQueryDevtools from "../integrations/tanstack-query/devtools";
 import appCss from "../styles.css?url";
 
@@ -26,7 +31,7 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
 				content: "width=device-width, initial-scale=1",
 			},
 			{
-				title: "TanStack Start Starter",
+				title: "bcmd",
 			},
 		],
 		links: [
@@ -36,6 +41,7 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
 			},
 		],
 	}),
+	notFoundComponent: () => <NotFoundPage />,
 	shellComponent: RootDocument,
 });
 
@@ -46,7 +52,11 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 				<HeadContent />
 			</head>
 			<body>
-				{children}
+				<ThemeProvider>
+					{children}
+					<ConnectionStatusWatcher />
+					<Toaster richColors closeButton position="top-right" />
+				</ThemeProvider>
 				<TanStackDevtools
 					config={{
 						position: "bottom-right",

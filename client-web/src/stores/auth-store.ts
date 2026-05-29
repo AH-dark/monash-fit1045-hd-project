@@ -31,7 +31,11 @@ export const useAuthStore = create<AuthState & AuthActions>()(
 		{
 			name: "bcmd-auth",
 			storage: createJSONStorage(() => localStorage),
-			partialize: (s) => ({ clientId: s.clientId, username: s.username }),
+			partialize: (s) => ({
+				status: s.status,
+				clientId: s.clientId,
+				username: s.username,
+			}),
 		},
 	),
 );
