@@ -1,14 +1,34 @@
-import { useMutation } from "@tanstack/react-query";
+import {
+	type UseMutationOptions,
+	type UseMutationResult,
+	useMutation,
+} from "@tanstack/react-query";
 
+import { type BroadcastError, mapError } from "@/api/broadcast/errors";
 import { createChannel } from "@/api/broadcast/operations";
+import type { CreateChannelVariables } from "@/schemas/channel";
 
-type CreateChannelVariables = {
-	clientId: string;
-	channelName: string;
-};
+type CreateChannelResponse = { channelId: string; channelName: string };
 
-export const useCreateChannelMutation = () =>
-	useMutation({
-		mutationFn: ({ clientId, channelName }: CreateChannelVariables) =>
-			createChannel(clientId, channelName),
+export function useCreateChannelMutation(
+	options?: UseMutationOptions<
+		CreateChannelResponse,
+		BroadcastError,
+		CreateChannelVariables
+	>,
+): UseMutationResult<
+	CreateChannelResponse,
+	BroadcastError,
+	CreateChannelVariables
+> {
+	return useMutation({
+		mutationFn: async ({ clientId, channelName }) => {
+			try {
+				return await createChannel(clientId, channelName);
+			} catch (err) {
+				throw mapError(err);
+			}
+		},
+		...options,
 	});
+}
