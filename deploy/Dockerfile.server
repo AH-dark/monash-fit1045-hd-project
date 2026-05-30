@@ -1,0 +1,83 @@
+# syntax=docker/dockerfile:1.7
+
+# ===========================================================================
+# Stage 1: builder — Conan + GCC 14 + CMake + Ninja, builds bcmd
+# ===========================================================================
+FROM gcc:14-bookworm AS builder
+
+SHELL ["/bin/bash", "-c"]
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        cmake \
+        ninja-build \
+        python3 \
+        python3-pip \
+        python3-venv \
+        pkg-config \
+        ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Conan 2 in an isolated venv (avoids PEP 668 issue on bookworm)
+RUN python3 -m venv /opt/conan-venv \
+    && /opt/conan-venv/bin/pip install --no-cache-dir 'conan>=2.0,<3.0' \
+    && ln -s /opt/conan-venv/bin/conan /usr/local/bin/conan
+
+WORKDIR /workspace
+
+# Create a Conan profile matching the host's arch but with our compiler settings.
+# This way the build works on both linux/amd64 and linux/arm64 without forcing platform.
+RUN mkdir -p /root/.conan2/profiles \
+    && ARCH=$(uname -m | sed -e 's/aarch64/armv8/' -e 's/arm64/armv8/') \
+    && cat > /root/.conan2/profiles/docker <<EOF
+[settings]
+arch=${ARCH}
+build_type=Release
+compiler=gcc
+compiler.cppstd=gnu23
+compiler.libcxx=libstdc++11
+compiler.version=14
+os=Linux
+
+[conf]
+tools.cmake.cmaketoolchain:generator=Ninja
+EOF
+
+# Cache Conan dependencies aggressively. This is the slow step (~10 min first time).
+COPY conanfile.py ./
+COPY conan_profiles/ ./conan_profiles/
+RUN --mount=type=cache,target=/root/.conan2/p,sharing=locked \
+    --mount=type=cache,target=/root/.conan2/d,sharing=locked \
+    conan install . \
+        --profile=docker \
+        --build=missing \
+        -of=build/release \
+        -s build_type=Release
+
+# Copy source and build bcmd target only (skip tests + bcli to save time)
+COPY CMakeLists.txt CMakePresets.json ./
+COPY proto/ ./proto/
+COPY shared/ ./shared/
+COPY server/ ./server/
+COPY client-cli/ ./client-cli/
+COPY tests/ ./tests/
+
+RUN cmake --preset release \
+    && cmake --build --preset release --target bcmd
+
+# ===========================================================================
+# Stage 2: runtime — minimal image with just the binary + runtime libs
+# ===========================================================================
+FROM debian:bookworm-slim AS runtime
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        libstdc++6 \
+        netcat-openbsd \
+        ca-certificates \
+        tini \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY --from=builder /workspace/build/release/server/bcmd /usr/local/bin/bcmd
+
+EXPOSE 50051
+
+ENTRYPOINT ["/usr/bin/tini", "--", "/usr/local/bin/bcmd"]
