@@ -221,7 +221,7 @@ describe("useChannel", () => {
 		const abortObserved = createDeferred<void>();
 		mocks.subscribeToChannel.mockReturnValueOnce({
 			async *[Symbol.asyncIterator]() {
-				const signal = mocks.subscribeToChannel.mock.calls[0]?.[3]?.signal;
+				const signal = mocks.subscribeToChannel.mock.calls[0]?.[2]?.signal;
 				if (signal) {
 					await new Promise<void>((resolve) => {
 						signal.addEventListener("abort", resolve, { once: true });
@@ -239,7 +239,7 @@ describe("useChannel", () => {
 		const call = mocks.subscribeToChannel.mock.calls[0];
 		expect(call[0]).toBe("client-1");
 		expect(call[1]).toBe("channel-1");
-		expect(call[3]).toEqual(
+		expect(call[2]).toEqual(
 			expect.objectContaining({ signal: expect.any(AbortSignal) }),
 		);
 
@@ -247,22 +247,8 @@ describe("useChannel", () => {
 			unmount();
 		});
 
-		expect(call[3]?.signal.aborted).toBe(true);
+		expect(call[2]?.signal.aborted).toBe(true);
 		await expect(abortObserved.promise).resolves.toBeUndefined();
-	});
-
-	it("forwards replayCount to subscribeToChannel", async () => {
-		renderHook(() =>
-			useChannel({
-				clientId: "client-1",
-				channelId: "channel-1",
-				replayCount: 25,
-			}),
-		);
-
-		await waitFor(() => expect(mocks.subscribeToChannel).toHaveBeenCalled());
-		const call = mocks.subscribeToChannel.mock.calls[0];
-		expect(call[2]).toBe(25);
 	});
 
 	it("calls leaveChannel on unmount", async () => {

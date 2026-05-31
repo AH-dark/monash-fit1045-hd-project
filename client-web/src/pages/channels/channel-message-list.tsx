@@ -1,4 +1,6 @@
-import { useCallback, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
+
+import { Loader2 } from "lucide-react";
 
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Empty } from "@/components/ui/empty";
@@ -54,6 +56,7 @@ function MessageRow({ message }: MessageRowProps) {
 
 export function ChannelMessageList({ vm }: ChannelMessageListProps) {
 	const viewportRef = useRef<HTMLDivElement | null>(null);
+	const topSentinelRef = useRef<HTMLDivElement | null>(null);
 
 	const setScrollRoot = useCallback((node: HTMLDivElement | null) => {
 		if (node) {
@@ -67,9 +70,32 @@ export function ChannelMessageList({ vm }: ChannelMessageListProps) {
 
 	useAutoScrollBottom(viewportRef, [vm.messages.length]);
 
+	const loadOlderHistory = vm.loadOlderHistory;
+	const hasMoreHistory = vm.hasMoreHistory;
+	const isLoadingHistory = vm.isLoadingHistory;
+
+	useEffect(() => {
+		const sentinel = topSentinelRef.current;
+		const root = viewportRef.current;
+		if (!sentinel || !root || !hasMoreHistory) return;
+
+		const observer = new IntersectionObserver(
+			(entries) => {
+				for (const entry of entries) {
+					if (entry.isIntersecting) {
+						loadOlderHistory();
+					}
+				}
+			},
+			{ root, rootMargin: "200px 0px 0px 0px", threshold: 0 },
+		);
+		observer.observe(sentinel);
+		return () => observer.disconnect();
+	}, [hasMoreHistory, loadOlderHistory]);
+
 	return (
 		<ScrollArea ref={setScrollRoot} className="flex-1">
-			{vm.messages.length === 0 ? (
+			{vm.messages.length === 0 && !isLoadingHistory ? (
 				<div className="flex h-full items-center justify-center p-8">
 					<Empty>
 						<p className="text-sm text-muted-foreground">No messages yet.</p>
@@ -77,6 +103,18 @@ export function ChannelMessageList({ vm }: ChannelMessageListProps) {
 				</div>
 			) : (
 				<div className="flex flex-col gap-1 py-2">
+					<div ref={topSentinelRef} className="h-1" />
+					{hasMoreHistory && (
+						<div className="flex items-center justify-center py-2">
+							{isLoadingHistory ? (
+								<Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+							) : (
+								<span className="text-xs text-muted-foreground">
+									Scroll up to load older messages
+								</span>
+							)}
+						</div>
+					)}
 					{vm.messages.map((message) => (
 						<MessageRow key={message.messageId} message={message} />
 					))}

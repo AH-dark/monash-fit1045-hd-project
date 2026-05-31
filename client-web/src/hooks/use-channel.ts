@@ -20,7 +20,6 @@ import { useMessagesStore } from "@/stores/messages-store";
 type UseChannelArgs = {
 	clientId: string | null;
 	channelId: string;
-	replayCount?: number;
 };
 
 type ConnectionState = "idle" | "joining" | "connected" | "disconnected";
@@ -47,11 +46,7 @@ function processChannelEvent(
 
 // Plain effect (not streamedQuery): the stream is long-lived, fetchStatus is not
 // a reliable connected-state signal, and gcTime:0 + StrictMode caused rejoin storms.
-export function useChannel({
-	clientId,
-	channelId,
-	replayCount,
-}: UseChannelArgs) {
+export function useChannel({ clientId, channelId }: UseChannelArgs) {
 	const [connectionState, setConnectionState] =
 		useState<ConnectionState>("idle");
 	const [error, setError] = useState<BroadcastError | null>(null);
@@ -81,12 +76,9 @@ export function useChannel({
 				if (signal.aborted) return;
 				setConnectionState("connected");
 
-				for await (const evt of subscribeToChannel(
-					clientId,
-					channelId,
-					replayCount,
-					{ signal },
-				)) {
+				for await (const evt of subscribeToChannel(clientId, channelId, {
+					signal,
+				})) {
 					if (signal.aborted) break;
 					processChannelEvent(evt, channelId, addMessage);
 				}
@@ -108,7 +100,7 @@ export function useChannel({
 			abortController.abort();
 			void leaveChannel(clientId, channelId).catch(() => undefined);
 		};
-	}, [clientId, channelId, replayCount, addMessage, clearMessages, resetAuth]);
+	}, [clientId, channelId, addMessage, clearMessages, resetAuth]);
 
 	return {
 		messages,

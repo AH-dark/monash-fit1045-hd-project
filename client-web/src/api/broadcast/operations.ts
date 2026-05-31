@@ -67,13 +67,51 @@ export async function heartbeat(clientId: string): Promise<void> {
 export function subscribeToChannel(
 	clientId: string,
 	channelId: string,
-	replayCount?: number,
 	options?: { signal?: AbortSignal },
 ): AsyncIterable<ChannelEvent> {
 	return broadcastClient.subscribeToChannel(
-		{ clientId, channelId, replayCount },
+		{ clientId, channelId },
 		{ signal: options?.signal },
 	);
+}
+
+export type HistoryMessage = {
+	messageId: string;
+	channelId: string;
+	senderId: string;
+	senderName: string;
+	content: string;
+	timestamp: number;
+};
+
+export type ListMessagesPage = {
+	messages: HistoryMessage[];
+	hasMore: boolean;
+};
+
+export async function listMessages(
+	clientId: string,
+	channelId: string,
+	beforeMessageId: string | null,
+	limit: number,
+): Promise<ListMessagesPage> {
+	const res = await broadcastClient.listMessages({
+		clientId,
+		channelId,
+		beforeMessageId: beforeMessageId ?? "",
+		limit,
+	});
+	return {
+		messages: res.messages.map((m) => ({
+			messageId: m.messageId,
+			channelId: m.channelId,
+			senderId: m.senderId,
+			senderName: m.senderName,
+			content: m.content,
+			timestamp: Number(m.sentAtMs),
+		})),
+		hasMore: res.hasMore,
+	};
 }
 
 export function subscribeToChannelList(

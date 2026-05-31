@@ -3,8 +3,8 @@ import { useMemo } from "react";
 import { useShallow } from "zustand/react/shallow";
 
 import type { BroadcastError } from "@/api/broadcast/errors";
-import { env } from "@/env";
 import { useChannel } from "@/hooks/use-channel";
+import { useChannelHistory } from "@/hooks/use-channel-history";
 import { useLeaveChannelMutation } from "@/hooks/use-leave-channel-mutation";
 import { useSendMessageMutation } from "@/hooks/use-send-message";
 import type { Message } from "@/schemas/message";
@@ -18,6 +18,9 @@ export interface ChannelViewModel {
 	readonly memberCount: number | undefined;
 	readonly isConnected: boolean;
 	readonly error: BroadcastError | null;
+	readonly hasMoreHistory: boolean;
+	readonly isLoadingHistory: boolean;
+	readonly loadOlderHistory: () => void;
 	readonly sendMessage: (content: string) => Promise<void>;
 	readonly leaveChannel: () => Promise<void>;
 	readonly schema: typeof MessageContentSchema;
@@ -28,16 +31,18 @@ export function useChannelViewModel(channelId: string): ChannelViewModel {
 	const channel = useChannelsStore(
 		useShallow((s) => s.channels.get(channelId)),
 	);
-	const { messages, isConnected, error } = useChannel({
-		clientId,
-		channelId,
-		replayCount: env.VITE_CHANNEL_REPLAY_COUNT,
-	});
+	const { messages, isConnected, error } = useChannel({ clientId, channelId });
+	const history = useChannelHistory({ clientId, channelId });
 	const sendMutation = useSendMessageMutation();
 	const leaveMutation = useLeaveChannelMutation();
 
 	const sendMutateAsync = sendMutation.mutateAsync;
 	const leaveMutateAsync = leaveMutation.mutateAsync;
+	const fetchOlder = history.fetchOlder;
+	const hasMore = history.hasMore;
+	const isLoadingMore = history.isLoadingMore;
+	const isLoadingInitial = history.isLoadingInitial;
+	const historyError = history.error;
 
 	return useMemo<ChannelViewModel>(
 		() => ({
@@ -45,7 +50,10 @@ export function useChannelViewModel(channelId: string): ChannelViewModel {
 			channelName: channel?.name,
 			memberCount: channel?.memberCount,
 			isConnected,
-			error,
+			error: error ?? historyError ?? null,
+			hasMoreHistory: hasMore,
+			isLoadingHistory: isLoadingInitial || isLoadingMore,
+			loadOlderHistory: fetchOlder,
 			sendMessage: async (content: string) => {
 				if (!clientId) throw new Error("Not connected");
 				await sendMutateAsync({ clientId, channelId, content });
@@ -61,6 +69,11 @@ export function useChannelViewModel(channelId: string): ChannelViewModel {
 			channel,
 			isConnected,
 			error,
+			historyError,
+			hasMore,
+			isLoadingInitial,
+			isLoadingMore,
+			fetchOlder,
 			clientId,
 			channelId,
 			sendMutateAsync,
