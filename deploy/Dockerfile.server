@@ -8,7 +8,6 @@ FROM gcc:14-bookworm AS builder
 SHELL ["/bin/bash", "-c"]
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-        cmake \
         ninja-build \
         python3 \
         python3-pip \
@@ -17,18 +16,22 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
-# Install Conan 2 in an isolated venv (avoids PEP 668 issue on bookworm)
+# Install Conan 2 + CMake in isolated venv.
+# apt's cmake on bookworm is 3.25, but CMakeLists.txt requires >= 3.27.
 RUN python3 -m venv /opt/conan-venv \
-    && /opt/conan-venv/bin/pip install --no-cache-dir 'conan>=2.0,<3.0' \
-    && ln -s /opt/conan-venv/bin/conan /usr/local/bin/conan
+    && /opt/conan-venv/bin/pip install --no-cache-dir 'conan>=2.0,<3.0' 'cmake>=3.27' \
+    && ln -s /opt/conan-venv/bin/conan /usr/local/bin/conan \
+    && ln -s /opt/conan-venv/bin/cmake /usr/local/bin/cmake \
+    && ln -s /opt/conan-venv/bin/ctest /usr/local/bin/ctest
 
 WORKDIR /workspace
 
 # Create a Conan profile matching the host's arch but with our compiler settings.
 # This way the build works on both linux/amd64 and linux/arm64 without forcing platform.
+# Write as `default` so it serves as both --profile:host and --profile:build implicitly.
 RUN mkdir -p /root/.conan2/profiles \
     && ARCH=$(uname -m | sed -e 's/aarch64/armv8/' -e 's/arm64/armv8/') \
-    && cat > /root/.conan2/profiles/docker <<EOF
+    && cat > /root/.conan2/profiles/default <<EOF
 [settings]
 arch=${ARCH}
 build_type=Release
@@ -48,7 +51,6 @@ COPY conan_profiles/ ./conan_profiles/
 RUN --mount=type=cache,target=/root/.conan2/p,sharing=locked \
     --mount=type=cache,target=/root/.conan2/d,sharing=locked \
     conan install . \
-        --profile=docker \
         --build=missing \
         -of=build/release \
         -s build_type=Release
@@ -61,20 +63,30 @@ COPY server/ ./server/
 COPY client-cli/ ./client-cli/
 COPY tests/ ./tests/
 
-RUN cmake --preset release \
+# Cache mounts must be re-declared on every RUN that reads Conan packages.
+# Without them, /root/.conan2/p is empty here and CMake configure fails when
+# resolving package targets like protobuf::libprotoc.
+RUN --mount=type=cache,target=/root/.conan2/p,sharing=locked \
+    --mount=type=cache,target=/root/.conan2/d,sharing=locked \
+    cmake --preset release \
     && cmake --build --preset release --target bcmd
 
 # ===========================================================================
-# Stage 2: runtime — minimal image with just the binary + runtime libs
+# Stage 2: runtime — same gcc:14 base for libstdc++ ABI compatibility.
+# bcmd compiled with gcc 14 requires GLIBCXX_3.4.32, which the gcc 12 libstdc++
+# on debian:bookworm-slim doesn't have. Using gcc:14-bookworm guarantees the
+# same libstdc++ is available; /usr/local/lib64 is added to ldconfig so the
+# binary resolves it at runtime.
 # ===========================================================================
-FROM debian:bookworm-slim AS runtime
+FROM gcc:14-bookworm AS runtime
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-        libstdc++6 \
         netcat-openbsd \
         ca-certificates \
         tini \
-    && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/* \
+    && echo "/usr/local/lib64" > /etc/ld.so.conf.d/gcc-local.conf \
+    && ldconfig
 
 COPY --from=builder /workspace/build/release/server/bcmd /usr/local/bin/bcmd
 
