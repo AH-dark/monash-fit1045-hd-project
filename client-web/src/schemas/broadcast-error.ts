@@ -4,6 +4,7 @@ import * as z from "zod";
 export const BroadcastErrorKind = Enum({
 	ClientNotFound: "client-not-found",
 	ChannelNotFound: "channel-not-found",
+	NotAMember: "not-a-member",
 	InvalidArgument: "invalid-argument",
 	Unavailable: "unavailable",
 	Unknown: "unknown",

@@ -111,6 +111,31 @@ describe("useChannelMessages", () => {
 		);
 	});
 
+	it("does not call listMessages until joinChannel resolves", async () => {
+		const join = createDeferred<void>();
+		mocks.joinChannel.mockReturnValueOnce(join.promise);
+
+		const { Wrapper } = createWrapper();
+		renderHook(
+			() =>
+				useChannelMessages({ clientId: "client-1", channelId: "channel-1" }),
+			{ wrapper: Wrapper },
+		);
+
+		await waitFor(() => expect(mocks.joinChannel).toHaveBeenCalled());
+		await new Promise((resolve) => setTimeout(resolve, 20));
+		expect(mocks.listMessages).not.toHaveBeenCalled();
+
+		await act(async () => {
+			join.resolve();
+		});
+
+		await waitFor(() => expect(mocks.listMessages).toHaveBeenCalled());
+		expect(mocks.joinChannel.mock.invocationCallOrder[0]).toBeLessThan(
+			mocks.listMessages.mock.invocationCallOrder[0],
+		);
+	});
+
 	it("flips isConnected to true after join resolves", async () => {
 		const join = createDeferred<void>();
 		mocks.joinChannel.mockReturnValueOnce(join.promise);

@@ -10,6 +10,7 @@ describe("BroadcastErrorKind enum-plus", () => {
 		expect(BroadcastErrorKind.values).toEqual([
 			"client-not-found",
 			"channel-not-found",
+			"not-a-member",
 			"invalid-argument",
 			"unavailable",
 			"unknown",
@@ -19,6 +20,7 @@ describe("BroadcastErrorKind enum-plus", () => {
 	it("exposes named keys mapping to string values", () => {
 		expect(BroadcastErrorKind.ClientNotFound).toBe("client-not-found");
 		expect(BroadcastErrorKind.ChannelNotFound).toBe("channel-not-found");
+		expect(BroadcastErrorKind.NotAMember).toBe("not-a-member");
 		expect(BroadcastErrorKind.InvalidArgument).toBe("invalid-argument");
 		expect(BroadcastErrorKind.Unavailable).toBe("unavailable");
 		expect(BroadcastErrorKind.Unknown).toBe("unknown");
@@ -38,10 +40,11 @@ describe("BroadcastErrorKindSchema", () => {
 		);
 	});
 
-	it("BroadcastErrorKind type resolves to the correct 5-member literal union", () => {
+	it("BroadcastErrorKind type resolves to the correct 6-member literal union", () => {
 		expectTypeOf<BroadcastErrorKind>().toEqualTypeOf<
 			| "client-not-found"
 			| "channel-not-found"
+			| "not-a-member"
 			| "invalid-argument"
 			| "unavailable"
 			| "unknown"
