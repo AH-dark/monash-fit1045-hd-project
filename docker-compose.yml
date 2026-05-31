@@ -93,7 +93,7 @@ services:
   # envoy: gRPC-Web reverse proxy
   # ---------------------------------------------------------------------------
   envoy:
-    image: envoyproxy/envoy:v1.31-latest
+    image: envoyproxy/envoy:v1.38-latest
     container_name: bcmd-envoy
     depends_on:
       bcmd:
