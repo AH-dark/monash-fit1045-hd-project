@@ -3,8 +3,7 @@ import { useMemo } from "react";
 import { useShallow } from "zustand/react/shallow";
 
 import type { BroadcastError } from "@/api/broadcast/errors";
-import { useChannel } from "@/hooks/use-channel";
-import { useChannelHistory } from "@/hooks/use-channel-history";
+import { useChannelMessages } from "@/hooks/use-channel-messages";
 import { useLeaveChannelMutation } from "@/hooks/use-leave-channel-mutation";
 import { useSendMessageMutation } from "@/hooks/use-send-message";
 import type { Message } from "@/schemas/message";
@@ -31,18 +30,20 @@ export function useChannelViewModel(channelId: string): ChannelViewModel {
 	const channel = useChannelsStore(
 		useShallow((s) => s.channels.get(channelId)),
 	);
-	const { messages, isConnected, error } = useChannel({ clientId, channelId });
-	const history = useChannelHistory({ clientId, channelId });
+	const {
+		messages,
+		isConnected,
+		error,
+		hasMore,
+		isLoadingInitial,
+		isLoadingMore,
+		fetchOlder,
+	} = useChannelMessages({ clientId, channelId });
 	const sendMutation = useSendMessageMutation();
 	const leaveMutation = useLeaveChannelMutation();
 
 	const sendMutateAsync = sendMutation.mutateAsync;
 	const leaveMutateAsync = leaveMutation.mutateAsync;
-	const fetchOlder = history.fetchOlder;
-	const hasMore = history.hasMore;
-	const isLoadingMore = history.isLoadingMore;
-	const isLoadingInitial = history.isLoadingInitial;
-	const historyError = history.error;
 
 	return useMemo<ChannelViewModel>(
 		() => ({
@@ -50,7 +51,7 @@ export function useChannelViewModel(channelId: string): ChannelViewModel {
 			channelName: channel?.name,
 			memberCount: channel?.memberCount,
 			isConnected,
-			error: error ?? historyError ?? null,
+			error,
 			hasMoreHistory: hasMore,
 			isLoadingHistory: isLoadingInitial || isLoadingMore,
 			loadOlderHistory: fetchOlder,
@@ -69,7 +70,6 @@ export function useChannelViewModel(channelId: string): ChannelViewModel {
 			channel,
 			isConnected,
 			error,
-			historyError,
 			hasMore,
 			isLoadingInitial,
 			isLoadingMore,
