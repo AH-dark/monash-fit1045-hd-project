@@ -34,6 +34,15 @@ public:
         return by_id_.at(iter->second);
     }
 
+    bcmd::Result<bcmd::server::domain::Username> lookupUsername(
+        const bcmd::ClientId& client_id) override {
+        const auto iter = historical_usernames_.find(client_id);
+        if (iter == historical_usernames_.end()) {
+            return std::unexpected(bcmd::Error::ClientNotFound);
+        }
+        return iter->second;
+    }
+
     bcmd::Result<bcmd::server::domain::ClientSession> registerClient(
         bcmd::server::domain::Username username) override {
         if (name_to_id_.contains(username)) {
@@ -42,12 +51,14 @@ public:
         bcmd::server::domain::ClientSession session{bcmd::ClientId::generate(), username};
         name_to_id_.emplace(std::move(username), session.id());
         by_id_.emplace(session.id(), session);
+        historical_usernames_.insert_or_assign(session.id(), session.username());
         return session;
     }
 
     bcmd::VoidResult save(const bcmd::server::domain::ClientSession& session) override {
         by_id_.insert_or_assign(session.id(), session);
         name_to_id_.insert_or_assign(session.username(), session.id());
+        historical_usernames_.insert_or_assign(session.id(), session.username());
         return {};
     }
 
@@ -84,6 +95,7 @@ public:
 private:
     std::unordered_map<bcmd::ClientId, bcmd::server::domain::ClientSession> by_id_;
     std::unordered_map<bcmd::server::domain::Username, bcmd::ClientId> name_to_id_;
+    std::unordered_map<bcmd::ClientId, bcmd::server::domain::Username> historical_usernames_;
 };
 
 }  // namespace bcmd::tests

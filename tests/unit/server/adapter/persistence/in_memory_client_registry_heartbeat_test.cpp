@@ -119,3 +119,38 @@ TEST_CASE("InMemoryClientRegistry::collectExpired returns copies that survive la
 
     CHECK(registry.collectExpired(deadline).empty());
 }
+
+TEST_CASE("InMemoryClientRegistry::lookupUsername returns the registered username",
+          "[adapter][persistence][in-memory-client-registry][lookup-username]") {
+    InMemoryClientRegistry registry;
+    const auto client_id = registerClient(registry, "alice");
+
+    auto username = registry.lookupUsername(client_id);
+
+    REQUIRE(username.has_value());
+    CHECK(username->value() == "alice");
+}
+
+TEST_CASE("InMemoryClientRegistry::lookupUsername survives remove",
+          "[adapter][persistence][in-memory-client-registry][lookup-username]") {
+    InMemoryClientRegistry registry;
+    const auto client_id = registerClient(registry, "alice");
+    REQUIRE(registry.remove(client_id).has_value());
+
+    auto username = registry.lookupUsername(client_id);
+
+    REQUIRE(username.has_value());
+    CHECK(username->value() == "alice");
+    CHECK_FALSE(registry.findById(client_id).has_value());
+}
+
+TEST_CASE("InMemoryClientRegistry::lookupUsername returns ClientNotFound for unknown id",
+          "[adapter][persistence][in-memory-client-registry][lookup-username]") {
+    InMemoryClientRegistry registry;
+    const auto unknown_id = bcmd::ClientId::generate();
+
+    auto username = registry.lookupUsername(unknown_id);
+
+    REQUIRE_FALSE(username.has_value());
+    CHECK(username.error() == bcmd::Error::ClientNotFound);
+}

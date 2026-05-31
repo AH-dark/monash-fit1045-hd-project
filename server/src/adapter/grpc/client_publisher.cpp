@@ -195,8 +195,9 @@ bcmd::v1::ChannelEvent GrpcClientPublisher::message_to_event(const domain::Messa
     message_event->set_from_replay(from_replay);
 
     if (client_registry_) {
-        if (auto session = client_registry_->findById(message.senderId()); session.has_value()) {
-            message_event->set_sender_name(session->username().value());
+        if (auto username = client_registry_->lookupUsername(message.senderId());
+            username.has_value()) {
+            message_event->set_sender_name(username->value());
         }
     }
 

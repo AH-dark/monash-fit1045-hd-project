@@ -19,6 +19,11 @@ public:
     virtual bcmd::Result<domain::ClientSession> findById(const bcmd::ClientId& client_id) = 0;
     virtual bcmd::Result<domain::ClientSession> findByUsername(const domain::Username& name) = 0;
 
+    // Looks up the username that was registered for `client_id`, even after the
+    // session has been removed or reaped. Returns `Error::ClientNotFound` only
+    // when the id was never registered.
+    virtual bcmd::Result<domain::Username> lookupUsername(const bcmd::ClientId& client_id) = 0;
+
     // Returns `Error::ClientAlreadyExists` when the username is taken.
     virtual bcmd::Result<domain::ClientSession> registerClient(domain::Username username) = 0;
 
