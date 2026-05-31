@@ -46,17 +46,9 @@ private:
 
     class NullMessagePublisher final : public port::IMessagePublisher {
     public:
-        void publish(const bcmd::ClientId& recipient_id, const domain::Message& message,
-                     bool from_replay) override {
+        void publish(const bcmd::ClientId& recipient_id, const domain::Message& message) override {
             (void)recipient_id;
             (void)message;
-            (void)from_replay;
-        }
-
-        void publishReplayComplete(const bcmd::ClientId& recipient_id,
-                                   const bcmd::ChannelId& channel_id) override {
-            (void)recipient_id;
-            (void)channel_id;
         }
 
         void broadcastMemberJoined(const bcmd::ChannelId& channel_id,

@@ -34,14 +34,6 @@ bcmd::v1::ChannelEvent makeMemberJoinedEvent(const char* channel_id) {
     return event;
 }
 
-bcmd::v1::ChannelEvent makeReplayCompleteEvent(const char* channel_id) {
-    bcmd::v1::ChannelEvent event;
-    auto* complete = event.mutable_replay_complete();
-    complete->set_channel_id(channel_id);
-    complete->set_replayed_count(0);
-    return event;
-}
-
 }  // namespace
 
 TEST_CASE("shouldEmitEventForChannel allows MemberLeft only for the subscribed channel",
@@ -67,7 +59,4 @@ TEST_CASE("shouldEmitEventForChannel always allows non-membership events through
 
     CHECK(detail::shouldEmitEventForChannel(makeMessageEvent("chan-a"), "chan-a"));
     CHECK(detail::shouldEmitEventForChannel(makeMessageEvent("chan-b"), "chan-a"));
-
-    CHECK(detail::shouldEmitEventForChannel(makeReplayCompleteEvent("chan-a"), "chan-a"));
-    CHECK(detail::shouldEmitEventForChannel(makeReplayCompleteEvent("chan-b"), "chan-a"));
 }

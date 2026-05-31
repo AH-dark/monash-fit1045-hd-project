@@ -23,6 +23,9 @@ public:
     bcmd::VoidResult save(const domain::Message& message) override;
     std::vector<domain::Message> recent(const bcmd::ChannelId& channel_id,
                                         std::uint32_t count) override;
+    std::vector<domain::Message> listBefore(const bcmd::ChannelId& channel_id,
+                                            const bcmd::MessageId& before_message_id,
+                                            std::uint32_t count) override;
 
 private:
     mutable std::shared_mutex mutex_{};

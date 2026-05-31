@@ -35,8 +35,7 @@ TEST_CASE("Disconnect broadcasts MemberLeftEvent to every joined channel",
     const auto channel_id = integration::join_channel(*alice, alice_id, "qa");
     REQUIRE(integration::join_channel(*bob, bob_id, channel_id) == channel_id);
 
-    integration::Subscription bob_subscription{*bob, bob_id, channel_id, 0};
-    REQUIRE(bob_subscription.wait_for_events(1, 1s));
+    integration::Subscription bob_subscription{*bob, bob_id, channel_id};
 
     const auto status = integration::disconnect(*alice, alice_id);
     REQUIRE(status.ok());

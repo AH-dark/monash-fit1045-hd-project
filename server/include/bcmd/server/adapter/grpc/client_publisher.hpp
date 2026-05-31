@@ -28,11 +28,7 @@ public:
                             ::grpc::ServerWriterInterface<bcmd::v1::ChannelEvent>* writer);
     void unregisterSubscriber(const bcmd::ClientId& id) override;
 
-    void publish(const bcmd::ClientId& recipient_id, const domain::Message& message,
-                 bool from_replay = false) override;
-
-    void publishReplayComplete(const bcmd::ClientId& recipient_id,
-                               const bcmd::ChannelId& channel_id) override;
+    void publish(const bcmd::ClientId& recipient_id, const domain::Message& message) override;
 
     void broadcastMemberJoined(const bcmd::ChannelId& channel_id,
                                const std::unordered_set<bcmd::ClientId>& recipients,
@@ -56,8 +52,7 @@ private:
     std::unordered_map<std::string, std::shared_ptr<WriterEntry>> writers_;
     std::shared_ptr<application::port::IClientRegistry> client_registry_{};
 
-    bcmd::v1::ChannelEvent message_to_event(const domain::Message& message,
-                                            bool from_replay = false) const;
+    bcmd::v1::ChannelEvent message_to_event(const domain::Message& message) const;
 };
 
 }  // namespace bcmd::server::adapter::grpc

@@ -28,6 +28,8 @@ std::string_view error_message(Error error) noexcept {
             return "invalid username";
         case Error::InvalidChannelName:
             return "invalid channel name (allowed: 1-64 chars of [a-zA-Z0-9-])";
+        case Error::InvalidArgument:
+            return "invalid argument";
         case Error::StorageError:
             return "storage error";
         case Error::NetworkError:

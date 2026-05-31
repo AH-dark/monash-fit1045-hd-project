@@ -20,6 +20,7 @@ namespace bcmd::server::adapter::grpc::detail {
             return {::grpc::StatusCode::ALREADY_EXISTS, std::string(bcmd::error_message(error))};
         case bcmd::Error::InvalidUsername:
         case bcmd::Error::InvalidChannelName:
+        case bcmd::Error::InvalidArgument:
         case bcmd::Error::MessageEmpty:
         case bcmd::Error::MessageInvalidPrefix:
         case bcmd::Error::MessageTooLong:

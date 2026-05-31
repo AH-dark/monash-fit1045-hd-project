@@ -21,10 +21,9 @@ TEST_CASE("channel lifecycle supports create join broadcast and leave",
     const auto channel_id = integration::join_channel(*alice, alice_id, "lifecycle-test");
     REQUIRE(integration::join_channel(*bob, bob_id, channel_id) == channel_id);
 
-    integration::Subscription bob_subscription{*bob, bob_id, channel_id, 0};
-    REQUIRE(bob_subscription.wait_for_events(1, 1s));
+    integration::Subscription bob_subscription{*bob, bob_id, channel_id};
     integration::send_message(*alice, alice_id, channel_id, "before leave");
-    REQUIRE(bob_subscription.wait_for_events(2, 2s));
+    REQUIRE(bob_subscription.wait_for_events(1, 2s));
     CHECK(integration::count_messages(bob_subscription.events(), "before leave") == 1);
 
     ::grpc::ClientContext leave_context;

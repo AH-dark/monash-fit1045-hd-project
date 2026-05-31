@@ -17,12 +17,6 @@ public:
     struct Delivery {
         bcmd::ClientId recipient;
         bcmd::server::domain::Message message;
-        bool from_replay;
-    };
-
-    struct ReplayMarker {
-        bcmd::ClientId recipient;
-        bcmd::ChannelId channel;
     };
 
     struct MemberLeftRecord {
@@ -34,15 +28,9 @@ public:
 
     using MemberJoinedRecord = MemberLeftRecord;
 
-    void publish(const bcmd::ClientId& recipient_id, const bcmd::server::domain::Message& message,
-                 bool from_replay = false) override {
-        deliveries.push_back(
-            Delivery{.recipient = recipient_id, .message = message, .from_replay = from_replay});
-    }
-
-    void publishReplayComplete(const bcmd::ClientId& recipient_id,
-                               const bcmd::ChannelId& channel_id) override {
-        replay_markers.push_back(ReplayMarker{.recipient = recipient_id, .channel = channel_id});
+    void publish(const bcmd::ClientId& recipient_id,
+                 const bcmd::server::domain::Message& message) override {
+        deliveries.push_back(Delivery{.recipient = recipient_id, .message = message});
     }
 
     void broadcastMemberJoined(const bcmd::ChannelId& channel_id,
@@ -95,8 +83,6 @@ public:
 
     std::vector<Delivery>
         deliveries;  // NOLINT(cppcoreguidelines-non-private-member-variables-in-classes)
-    std::vector<ReplayMarker>
-        replay_markers;  // NOLINT(cppcoreguidelines-non-private-member-variables-in-classes)
 
 private:
     std::vector<MemberJoinedRecord> joined_broadcasts_;

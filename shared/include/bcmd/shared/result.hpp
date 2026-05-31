@@ -18,6 +18,7 @@ enum class Error : std::uint8_t {
     MessageTooLong,
     InvalidUsername,
     InvalidChannelName,
+    InvalidArgument,
     StorageError,
     NetworkError,
     NotImplemented,

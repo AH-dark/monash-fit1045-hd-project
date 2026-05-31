@@ -51,10 +51,8 @@ TEST_CASE(
     REQUIRE(integration::join_channel(*bob, bob_id, chan_a_id) == chan_a_id);
     const auto chan_b_id = integration::join_channel(*carol, carol_id, "chan-b");
 
-    integration::Subscription bob_subscription{*bob, bob_id, chan_a_id, 0};
-    REQUIRE(bob_subscription.wait_for_events(1, 1s));
-    integration::Subscription carol_subscription{*carol, carol_id, chan_b_id, 0};
-    REQUIRE(carol_subscription.wait_for_events(1, 1s));
+    integration::Subscription bob_subscription{*bob, bob_id, chan_a_id};
+    integration::Subscription carol_subscription{*carol, carol_id, chan_b_id};
 
     ::grpc::ClientContext leave_context;
     integration::set_timeout(leave_context, 2s);

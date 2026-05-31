@@ -39,4 +39,24 @@ std::vector<domain::Message> InMemoryMessageRepository::recent(const bcmd::Chann
     return {buffer.end() - static_cast<std::ptrdiff_t>(take), buffer.end()};
 }
 
+std::vector<domain::Message> InMemoryMessageRepository::listBefore(
+    const bcmd::ChannelId& channel_id, const bcmd::MessageId& before_message_id,
+    std::uint32_t count) {
+    const std::shared_lock lock(mutex_);
+    const auto found = buffers_.find(channel_id.value());
+    if (found == buffers_.end() || count == 0) {
+        return {};
+    }
+
+    const auto& buffer = found->second;
+    const auto cursor = std::ranges::find_if(
+        buffer, [&](const domain::Message& message) { return message.id() == before_message_id; });
+    if (cursor == buffer.end()) {
+        return {};
+    }
+    const auto distance = static_cast<std::size_t>(std::distance(buffer.begin(), cursor));
+    const auto take = std::min<std::size_t>(count, distance);
+    return {cursor - static_cast<std::ptrdiff_t>(take), cursor};
+}
+
 }  // namespace bcmd::server::adapter::persistence

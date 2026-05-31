@@ -10,10 +10,10 @@
 #include "bcmd/server/adapter/persistence/in_memory_message_repository.hpp"
 #include "bcmd/server/application/usecase/create_channel.hpp"
 #include "bcmd/server/application/usecase/expire_inactive_clients.hpp"
-#include "bcmd/server/application/usecase/get_recent_messages.hpp"
 #include "bcmd/server/application/usecase/join_channel.hpp"
 #include "bcmd/server/application/usecase/leave_channel.hpp"
 #include "bcmd/server/application/usecase/list_channels.hpp"
+#include "bcmd/server/application/usecase/list_messages.hpp"
 #include "bcmd/server/application/usecase/send_message.hpp"
 #include "bcmd/server/application/usecase/subscribe_to_channel.hpp"
 #include "bcmd/server/application/usecase/subscribe_to_channel_list.hpp"
@@ -99,14 +99,13 @@ public:
         auto list_channels = std::make_shared<usecase::ListChannels>(channel_repo);
         auto create_channel = std::make_shared<usecase::CreateChannel>(
             channel_repo, client_registry, channel_list_publisher);
-        auto get_recent = std::make_shared<usecase::GetRecentMessages>(message_repo);
-        auto subscribe =
-            std::make_shared<usecase::SubscribeToChannel>(channel_repo, message_repo, publisher);
+        auto list_messages = std::make_shared<usecase::ListMessages>(channel_repo, message_repo);
+        auto subscribe = std::make_shared<usecase::SubscribeToChannel>(channel_repo);
         auto subscribe_channel_list = std::make_shared<usecase::SubscribeToChannelList>(
             client_registry, channel_list_publisher);
 
         service_ = std::make_unique<grpc_adapter::BroadcastServiceImpl>(
-            join_channel, leave_channel, send_message, list_channels, create_channel, get_recent,
+            join_channel, leave_channel, send_message, list_channels, create_channel, list_messages,
             subscribe, publisher, client_registry, subscribe_channel_list, channel_list_publisher);
         runner_ = std::make_unique<grpc_adapter::GrpcServerRunner>("127.0.0.1:0");
         runner_->add_service(*service_);
@@ -261,13 +260,13 @@ inline void send_message(BroadcastStub& stub, std::string_view client_id,
 class Subscription {
 public:
     Subscription(BroadcastStub& stub, std::string client_id, std::string channel_id,
-                 std::uint32_t replay_count) {
+                 std::uint32_t /*replay_count*/ = 0) {
         bcmd::v1::SubscribeRequest request;
         request.set_client_id(std::move(client_id));
         request.set_channel_id(std::move(channel_id));
-        request.set_replay_count(replay_count);
         reader_ = stub.SubscribeToChannel(&context_, request);
         thread_ = std::thread([this] { read_loop(); });
+        std::this_thread::sleep_for(std::chrono::milliseconds(150));
     }
 
     ~Subscription() { stop(); }

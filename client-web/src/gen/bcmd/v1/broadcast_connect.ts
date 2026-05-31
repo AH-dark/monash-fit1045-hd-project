@@ -3,7 +3,7 @@
 /* eslint-disable */
 // @ts-nocheck
 
-import { ChannelEvent, ChannelListEvent, ConnectRequest, ConnectResponse, CreateChannelRequest, CreateChannelResponse, DisconnectRequest, DisconnectResponse, HeartbeatRequest, HeartbeatResponse, JoinChannelRequest, JoinChannelResponse, LeaveChannelRequest, LeaveChannelResponse, ListChannelsRequest, ListChannelsResponse, SendMessageRequest, SendMessageResponse, SubscribeChannelListRequest, SubscribeRequest } from "./broadcast_pb.ts";
+import { ChannelEvent, ChannelListEvent, ConnectRequest, ConnectResponse, CreateChannelRequest, CreateChannelResponse, DisconnectRequest, DisconnectResponse, HeartbeatRequest, HeartbeatResponse, JoinChannelRequest, JoinChannelResponse, LeaveChannelRequest, LeaveChannelResponse, ListChannelsRequest, ListChannelsResponse, ListMessagesRequest, ListMessagesResponse, SendMessageRequest, SendMessageResponse, SubscribeChannelListRequest, SubscribeRequest } from "./broadcast_pb.ts";
 import { MethodKind } from "@bufbuild/protobuf";
 
 /**
@@ -78,6 +78,18 @@ export const BroadcastService = {
       kind: MethodKind.Unary,
     },
     /**
+     * Cursor-paginated history (unary). Subscribe to a channel and call ListMessages
+     * separately for backfill; the live stream no longer replays history.
+     *
+     * @generated from rpc bcmd.v1.BroadcastService.ListMessages
+     */
+    listMessages: {
+      name: "ListMessages",
+      I: ListMessagesRequest,
+      O: ListMessagesResponse,
+      kind: MethodKind.Unary,
+    },
+    /**
      * Liveness probe (idempotent unary RPC)
      *
      * @generated from rpc bcmd.v1.BroadcastService.Heartbeat
@@ -89,7 +101,8 @@ export const BroadcastService = {
       kind: MethodKind.Unary,
     },
     /**
-     * Event subscription (server-streaming)
+     * Event subscription (server-streaming). Emits only live events after the
+     * subscription is established. Use ListMessages to backfill history.
      *
      * @generated from rpc bcmd.v1.BroadcastService.SubscribeToChannel
      */
