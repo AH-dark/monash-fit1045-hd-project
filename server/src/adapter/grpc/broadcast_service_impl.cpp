@@ -5,10 +5,10 @@
 #include "bcmd/server/application/port/i_channel_list_publisher.hpp"
 #include "bcmd/server/application/port/i_client_registry.hpp"
 #include "bcmd/server/application/usecase/create_channel.hpp"
-#include "bcmd/server/application/usecase/get_recent_messages.hpp"
 #include "bcmd/server/application/usecase/join_channel.hpp"
 #include "bcmd/server/application/usecase/leave_channel.hpp"
 #include "bcmd/server/application/usecase/list_channels.hpp"
+#include "bcmd/server/application/usecase/list_messages.hpp"
 #include "bcmd/server/application/usecase/send_message.hpp"
 #include "bcmd/server/application/usecase/subscribe_to_channel.hpp"
 #include "bcmd/server/application/usecase/subscribe_to_channel_list.hpp"
@@ -27,6 +27,7 @@
 #include <cstdint>
 #include <expected>
 #include <memory>
+#include <optional>
 #include <string>
 #include <thread>
 #include <utility>
@@ -40,7 +41,7 @@ BroadcastServiceImpl::BroadcastServiceImpl(
     std::shared_ptr<application::usecase::SendMessage> send_message,
     std::shared_ptr<application::usecase::ListChannels> list_channels,
     std::shared_ptr<application::usecase::CreateChannel> create_channel,
-    std::shared_ptr<application::usecase::GetRecentMessages> get_recent,
+    std::shared_ptr<application::usecase::ListMessages> list_messages,
     std::shared_ptr<application::usecase::SubscribeToChannel> subscribe,
     std::shared_ptr<GrpcClientPublisher> publisher,
     std::shared_ptr<application::port::IClientRegistry> client_registry,
@@ -51,7 +52,7 @@ BroadcastServiceImpl::BroadcastServiceImpl(
       send_message_(std::move(send_message)),
       list_channels_(std::move(list_channels)),
       create_channel_(std::move(create_channel)),
-      get_recent_(std::move(get_recent)),
+      list_messages_(std::move(list_messages)),
       subscribe_(std::move(subscribe)),
       publisher_(std::move(publisher)),
       client_registry_(std::move(client_registry)),
@@ -191,6 +192,51 @@ BroadcastServiceImpl::BroadcastServiceImpl(
     return ::grpc::Status::OK;
 }
 
+::grpc::Status BroadcastServiceImpl::ListMessages(::grpc::ServerContext* /*context*/,
+                                                  const bcmd::v1::ListMessagesRequest* request,
+                                                  bcmd::v1::ListMessagesResponse* response) {
+    const auto CLIENT_ID = bcmd::ClientId::parse(bcmd::trim(request->client_id()));
+    const auto CHANNEL_ID = bcmd::ChannelId::parse(bcmd::trim(request->channel_id()));
+    if (!CLIENT_ID.has_value()) {
+        return detail::errorToStatus(bcmd::Error::ClientNotFound);
+    }
+    if (!CHANNEL_ID.has_value()) {
+        return detail::errorToStatus(bcmd::Error::ChannelNotFound);
+    }
+
+    std::optional<bcmd::MessageId> cursor;
+    if (const auto trimmed_cursor = bcmd::trim(request->before_message_id());
+        !trimmed_cursor.empty()) {
+        auto parsed = bcmd::MessageId::parse(trimmed_cursor);
+        if (!parsed.has_value()) {
+            return detail::errorToStatus(bcmd::Error::InvalidArgument);
+        }
+        cursor = *parsed;
+    }
+
+    auto result = list_messages_->execute(*CLIENT_ID, *CHANNEL_ID, cursor, request->limit());
+    if (!result.has_value()) {
+        return detail::errorToStatus(result.error());
+    }
+
+    for (const auto& message : result->messages) {
+        auto* event = response->add_messages();
+        event->set_message_id(message.id().value());
+        event->set_channel_id(message.channelId().value());
+        event->set_sender_id(message.senderId().value());
+        if (auto username = client_registry_->lookupUsername(message.senderId());
+            username.has_value()) {
+            event->set_sender_name(username->value());
+        }
+        event->set_content(message.content().value());
+        event->set_sent_at_ms(std::chrono::duration_cast<std::chrono::milliseconds>(
+                                  message.sentAt().time_since_epoch())
+                                  .count());
+    }
+    response->set_has_more(result->has_more);
+    return ::grpc::Status::OK;
+}
+
 ::grpc::Status BroadcastServiceImpl::Heartbeat(::grpc::ServerContext* /*context*/,
                                                const bcmd::v1::HeartbeatRequest* request,
                                                bcmd::v1::HeartbeatResponse* /*response*/) {
@@ -218,10 +264,10 @@ BroadcastServiceImpl::BroadcastServiceImpl(
     }
 
     publisher_->registerSubscriber(*CLIENT_ID, writer);
-    const auto REPLAYED = subscribe_->execute(*CLIENT_ID, *CHANNEL_ID, request->replay_count());
-    if (!REPLAYED.has_value()) {
+    const auto AUTHORIZED = subscribe_->execute(*CLIENT_ID, *CHANNEL_ID);
+    if (!AUTHORIZED.has_value()) {
         publisher_->unregisterSubscriber(*CLIENT_ID);
-        return detail::errorToStatus(REPLAYED.error());
+        return detail::errorToStatus(AUTHORIZED.error());
     }
 
     while (!context->IsCancelled()) {

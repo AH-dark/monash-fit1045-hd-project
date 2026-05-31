@@ -1,9 +1,5 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
-import {
-	experimental_streamedQuery as streamedQuery,
-	useQuery,
-} from "@tanstack/react-query";
 import { useShallow } from "zustand/react/shallow";
 
 import {
@@ -16,22 +12,6 @@ import type { ChannelListEvent } from "@/gen/bcmd/v1/broadcast_pb.ts";
 import type { Channel } from "@/schemas/channel";
 import { useAuthStore } from "@/stores/auth-store";
 import { useChannelsStore } from "@/stores/channels-store";
-
-async function* makeChannelListGenerator(
-	args: { clientId: string; signal?: AbortSignal },
-	dispatch: (event: ChannelListEvent) => void,
-): AsyncGenerator<ChannelListEvent> {
-	try {
-		for await (const event of subscribeToChannelList(args.clientId, {
-			signal: args.signal,
-		})) {
-			dispatch(event);
-			yield event;
-		}
-	} catch (err) {
-		throw mapError(err);
-	}
-}
 
 function processChannelListEvent(
 	event: ChannelListEvent,
@@ -68,6 +48,8 @@ function processChannelListEvent(
 }
 
 export function useChannels(clientId: string | null) {
+	const [error, setError] = useState<BroadcastError | null>(null);
+
 	const {
 		applySnapshot,
 		applyCreated,
@@ -87,49 +69,53 @@ export function useChannels(clientId: string | null) {
 	);
 	const resetAuth = useAuthStore((state) => state.reset);
 
-	const query = useQuery({
-		queryKey: ["channels", clientId],
-		enabled: !!clientId && typeof window !== "undefined",
-		staleTime: Number.POSITIVE_INFINITY,
-		gcTime: 0,
-		refetchOnWindowFocus: false,
-		retry: (failureCount, err) => !isClientNotFound(err) && failureCount < 3,
-		queryFn: streamedQuery({
-			streamFn: ({ signal }) => {
-				if (!clientId) {
-					throw new Error("clientId is required");
-				}
-				return makeChannelListGenerator({ clientId, signal }, (event) => {
+	useEffect(() => {
+		if (!clientId || typeof window === "undefined") return;
+
+		const abortController = new AbortController();
+		const { signal } = abortController;
+
+		setError(null);
+
+		void (async () => {
+			try {
+				for await (const event of subscribeToChannelList(clientId, {
+					signal,
+				})) {
+					if (signal.aborted) break;
 					processChannelListEvent(
 						event,
 						applySnapshot,
 						applyCreated,
 						applyMemberCountChanged,
 					);
-				});
-			},
-			reducer: (_: ChannelListEvent | null, chunk) => chunk,
-			initialValue: null as ChannelListEvent | null,
-			refetchMode: "reset",
-		}),
-	});
+				}
+			} catch (err) {
+				if (signal.aborted) return;
+				const broadcastError = mapError(err);
+				setError(broadcastError);
+				if (isClientNotFound(broadcastError)) {
+					resetAuth();
+				}
+			}
+		})();
 
-	useEffect(() => {
-		const err = query.error;
-		if (err && isClientNotFound(err)) {
-			resetAuth();
-		}
-	}, [query.error, resetAuth]);
-
-	useEffect(() => {
 		return () => {
+			abortController.abort();
 			resetChannels();
 		};
-	}, [resetChannels]);
+	}, [
+		clientId,
+		applySnapshot,
+		applyCreated,
+		applyMemberCountChanged,
+		resetChannels,
+		resetAuth,
+	]);
 
 	return {
 		channels,
 		snapshotApplied,
-		error: query.error as BroadcastError | null,
+		error,
 	};
 }

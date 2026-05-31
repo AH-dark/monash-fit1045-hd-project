@@ -1,0 +1,149 @@
+# bcmd full-stack one-click startup
+#
+# First run (heavy, ~10 min — C++ deps + gRPC build):
+#   docker compose up --build
+#
+# Subsequent runs:
+#   docker compose up
+#
+# Stop:
+#   docker compose down
+#
+# Clean (incl. certs, build cache):
+#   docker compose down -v && rm -rf certs/dev/server.* certs/dev/ca.*
+#
+# Access:
+#   - Client web:  http://localhost:3000
+#   - gRPC-Web:    http://localhost:8080
+#   - Envoy admin: http://localhost:9901
+#   - bcmd gRPC:   localhost:50051 (TLS)
+
+name: bcmd
+
+services:
+  # ---------------------------------------------------------------------------
+  # certs-init: generate dev TLS certs if missing (idempotent)
+  # ---------------------------------------------------------------------------
+  certs-init:
+    image: alpine:3.20
+    container_name: bcmd-certs-init
+    volumes:
+      - ./certs/dev:/certs
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        set -e
+        if [ -f /certs/server.pem ] && [ -f /certs/server.key ] && [ -f /certs/ca.pem ]; then
+          echo "[certs-init] Existing certs found, skipping generation."
+          exit 0
+        fi
+        echo "[certs-init] Generating dev TLS certs..."
+        apk add --no-cache openssl >/dev/null
+        openssl genrsa -out /certs/ca.key 4096 2>/dev/null
+        openssl req -new -x509 -days 3650 -key /certs/ca.key \
+          -subj "/CN=BcmdDevCA/O=bcmd-dev" -out /certs/ca.pem
+        openssl genrsa -out /certs/server.key 2048 2>/dev/null
+        openssl req -new -key /certs/server.key \
+          -subj "/CN=bcmd/O=bcmd-dev" -out /certs/server.csr
+        cat > /tmp/san.cnf <<EOF
+        subjectAltName=DNS:bcmd,DNS:localhost,IP:127.0.0.1
+        EOF
+        openssl x509 -req -days 365 \
+          -in /certs/server.csr \
+          -CA /certs/ca.pem -CAkey /certs/ca.key \
+          -CAcreateserial \
+          -extfile /tmp/san.cnf \
+          -out /certs/server.pem
+        rm -f /certs/server.csr /certs/ca.key /certs/ca.srl
+        chmod 644 /certs/server.pem /certs/ca.pem /certs/server.key
+        echo "[certs-init] Done."
+
+  # ---------------------------------------------------------------------------
+  # bcmd: C++23 broadcast messaging server (~10 min first build)
+  # ---------------------------------------------------------------------------
+  bcmd:
+    build:
+      context: .
+      dockerfile: deploy/Dockerfile.server
+    image: bcmd-server:dev
+    container_name: bcmd-server
+    depends_on:
+      certs-init:
+        condition: service_completed_successfully
+    ports:
+      - "50051:50051"
+    volumes:
+      - ./certs/dev:/etc/bcmd/certs:ro
+    command:
+      - --bind
+      - 0.0.0.0:50051
+      - --cert
+      - /etc/bcmd/certs/server.pem
+      - --key
+      - /etc/bcmd/certs/server.key
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z localhost 50051 || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 3s
+    restart: unless-stopped
+
+  # ---------------------------------------------------------------------------
+  # envoy: gRPC-Web reverse proxy
+  # ---------------------------------------------------------------------------
+  envoy:
+    image: envoyproxy/envoy:v1.31-latest
+    container_name: bcmd-envoy
+    depends_on:
+      bcmd:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+      - "9901:9901"
+    volumes:
+      - ./deploy/envoy/envoy.docker.yaml:/etc/envoy/envoy.yaml:ro
+      - ./certs/dev:/etc/envoy/certs:ro
+    command:
+      - -c
+      - /etc/envoy/envoy.yaml
+      - --log-level
+      - info
+    restart: unless-stopped
+
+  # ---------------------------------------------------------------------------
+  # client-web: TanStack Start dev server with hot reload
+  # ---------------------------------------------------------------------------
+  client-web:
+    build:
+      context: ./client-web
+      dockerfile: Dockerfile
+      target: dev
+    image: bcmd-client-web:dev
+    container_name: bcmd-client-web
+    depends_on:
+      - envoy
+    ports:
+      - "3000:3000"
+    environment:
+      VITE_GRPC_WEB_URL: "http://localhost:8080"
+      VITE_HEARTBEAT_INTERVAL_MS: "3000"
+      VITE_CHANNEL_HISTORY_PAGE_SIZE: "50"
+      HOST: "0.0.0.0"
+    volumes:
+      # Bind source for hot reload, but shield node_modules with anonymous volume
+      - ./client-web/src:/app/src
+      - ./client-web/public:/app/public
+      - ./client-web/vite.config.ts:/app/vite.config.ts:ro
+      - ./client-web/vitest.config.ts:/app/vitest.config.ts:ro
+      - ./client-web/vitest.setup.ts:/app/vitest.setup.ts:ro
+      - ./client-web/tsconfig.json:/app/tsconfig.json:ro
+      - ./client-web/biome.json:/app/biome.json:ro
+      - ./client-web/components.json:/app/components.json:ro
+      - ./client-web/package.json:/app/package.json:ro
+      - /app/node_modules
+      - /app/.output
+      - /app/.tanstack
+    restart: unless-stopped
+
+volumes: {}

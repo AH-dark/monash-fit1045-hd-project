@@ -21,6 +21,13 @@ public:
     virtual std::vector<domain::Message> recent(const bcmd::ChannelId& channel_id,
                                                 std::uint32_t count) = 0;
 
+    // Up to `count` messages strictly older than `before_message_id`, in
+    // chronological order (oldest first). Returns an empty vector when the
+    // cursor id is unknown or no older messages exist.
+    virtual std::vector<domain::Message> listBefore(const bcmd::ChannelId& channel_id,
+                                                    const bcmd::MessageId& before_message_id,
+                                                    std::uint32_t count) = 0;
+
 protected:
     IMessageRepository() = default;
     IMessageRepository(const IMessageRepository&) = default;

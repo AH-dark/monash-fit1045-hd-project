@@ -11,7 +11,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file bcmd/v1/broadcast.proto.
  */
 export const file_bcmd_v1_broadcast: GenFile = /*@__PURE__*/
-  fileDesc("ChdiY21kL3YxL2Jyb2FkY2FzdC5wcm90bxIHYmNtZC52MSIiCg5Db25uZWN0UmVxdWVzdBIQCgh1c2VybmFtZRgBIAEoCSIkCg9Db25uZWN0UmVzcG9uc2USEQoJY2xpZW50X2lkGAEgASgJIiYKEURpc2Nvbm5lY3RSZXF1ZXN0EhEKCWNsaWVudF9pZBgBIAEoCSIUChJEaXNjb25uZWN0UmVzcG9uc2UiFQoTTGlzdENoYW5uZWxzUmVxdWVzdCJBChRMaXN0Q2hhbm5lbHNSZXNwb25zZRIpCghjaGFubmVscxgBIAMoCzIXLmJjbWQudjEuQ2hhbm5lbFN1bW1hcnkiQAoOQ2hhbm5lbFN1bW1hcnkSCgoCaWQYASABKAkSDAoEbmFtZRgCIAEoCRIUCgxtZW1iZXJfY291bnQYAyABKAUiPwoUQ3JlYXRlQ2hhbm5lbFJlcXVlc3QSEQoJY2xpZW50X2lkGAEgASgJEhQKDGNoYW5uZWxfbmFtZRgCIAEoCSJBChVDcmVhdGVDaGFubmVsUmVzcG9uc2USEgoKY2hhbm5lbF9pZBgBIAEoCRIUCgxjaGFubmVsX25hbWUYAiABKAkiOwoSSm9pbkNoYW5uZWxSZXF1ZXN0EhEKCWNsaWVudF9pZBgBIAEoCRISCgpjaGFubmVsX2lkGAIgASgJIhUKE0pvaW5DaGFubmVsUmVzcG9uc2UiPAoTTGVhdmVDaGFubmVsUmVxdWVzdBIRCgljbGllbnRfaWQYASABKAkSEgoKY2hhbm5lbF9pZBgCIAEoCSIWChRMZWF2ZUNoYW5uZWxSZXNwb25zZSJMChJTZW5kTWVzc2FnZVJlcXVlc3QSEQoJY2xpZW50X2lkGAEgASgJEhIKCmNoYW5uZWxfaWQYAiABKAkSDwoHY29udGVudBgDIAEoCSIpChNTZW5kTWVzc2FnZVJlc3BvbnNlEhIKCm1lc3NhZ2VfaWQYASABKAkiJQoQSGVhcnRiZWF0UmVxdWVzdBIRCgljbGllbnRfaWQYASABKAkiEwoRSGVhcnRiZWF0UmVzcG9uc2UiTwoQU3Vic2NyaWJlUmVxdWVzdBIRCgljbGllbnRfaWQYASABKAkSEgoKY2hhbm5lbF9pZBgCIAEoCRIUCgxyZXBsYXlfY291bnQYAyABKA0ilwIKDENoYW5uZWxFdmVudBIoCgdtZXNzYWdlGAEgASgLMhUuYmNtZC52MS5NZXNzYWdlRXZlbnRIABIzCg1tZW1iZXJfam9pbmVkGAIgASgLMhouYmNtZC52MS5NZW1iZXJKb2luZWRFdmVudEgAEi8KC21lbWJlcl9sZWZ0GAMgASgLMhguYmNtZC52MS5NZW1iZXJMZWZ0RXZlbnRIABI1Cg5jaGFubmVsX2Nsb3NlZBgEIAEoCzIbLmJjbWQudjEuQ2hhbm5lbENsb3NlZEV2ZW50SAASNwoPcmVwbGF5X2NvbXBsZXRlGAUgASgLMhwuYmNtZC52MS5SZXBsYXlDb21wbGV0ZUV2ZW50SABCBwoFZXZlbnQimAEKDE1lc3NhZ2VFdmVudBISCgptZXNzYWdlX2lkGAEgASgJEhIKCmNoYW5uZWxfaWQYAiABKAkSEQoJc2VuZGVyX2lkGAMgASgJEhMKC3NlbmRlcl9uYW1lGAQgASgJEg8KB2NvbnRlbnQYBSABKAkSEgoKc2VudF9hdF9tcxgGIAEoAxITCgtmcm9tX3JlcGxheRgHIAEoCCJMChFNZW1iZXJKb2luZWRFdmVudBISCgpjaGFubmVsX2lkGAEgASgJEhEKCWNsaWVudF9pZBgCIAEoCRIQCgh1c2VybmFtZRgDIAEoCSJKCg9NZW1iZXJMZWZ0RXZlbnQSEgoKY2hhbm5lbF9pZBgBIAEoCRIRCgljbGllbnRfaWQYAiABKAkSEAoIdXNlcm5hbWUYAyABKAkiOAoSQ2hhbm5lbENsb3NlZEV2ZW50EhIKCmNoYW5uZWxfaWQYASABKAkSDgoGcmVhc29uGAIgASgJIkEKE1JlcGxheUNvbXBsZXRlRXZlbnQSEgoKY2hhbm5lbF9pZBgBIAEoCRIWCg5yZXBsYXllZF9jb3VudBgCIAEoDSIwChtTdWJzY3JpYmVDaGFubmVsTGlzdFJlcXVlc3QSEQoJY2xpZW50X2lkGAEgASgJIscBChBDaGFubmVsTGlzdEV2ZW50EjAKCHNuYXBzaG90GAEgASgLMhwuYmNtZC52MS5DaGFubmVsTGlzdFNuYXBzaG90SAASLwoHY3JlYXRlZBgCIAEoCzIcLmJjbWQudjEuQ2hhbm5lbENyZWF0ZWRFdmVudEgAEkcKFG1lbWJlcl9jb3VudF9jaGFuZ2VkGAMgASgLMicuYmNtZC52MS5DaGFubmVsTWVtYmVyQ291bnRDaGFuZ2VkRXZlbnRIAEIHCgVldmVudCJAChNDaGFubmVsTGlzdFNuYXBzaG90EikKCGNoYW5uZWxzGAEgAygLMhcuYmNtZC52MS5DaGFubmVsU3VtbWFyeSI/ChNDaGFubmVsQ3JlYXRlZEV2ZW50EigKB2NoYW5uZWwYASABKAsyFy5iY21kLnYxLkNoYW5uZWxTdW1tYXJ5IkoKHkNoYW5uZWxNZW1iZXJDb3VudENoYW5nZWRFdmVudBISCgpjaGFubmVsX2lkGAEgASgJEhQKDG1lbWJlcl9jb3VudBgCIAEoBTKABgoQQnJvYWRjYXN0U2VydmljZRI8CgdDb25uZWN0EhcuYmNtZC52MS5Db25uZWN0UmVxdWVzdBoYLmJjbWQudjEuQ29ubmVjdFJlc3BvbnNlEkUKCkRpc2Nvbm5lY3QSGi5iY21kLnYxLkRpc2Nvbm5lY3RSZXF1ZXN0GhsuYmNtZC52MS5EaXNjb25uZWN0UmVzcG9uc2USSwoMTGlzdENoYW5uZWxzEhwuYmNtZC52MS5MaXN0Q2hhbm5lbHNSZXF1ZXN0Gh0uYmNtZC52MS5MaXN0Q2hhbm5lbHNSZXNwb25zZRJOCg1DcmVhdGVDaGFubmVsEh0uYmNtZC52MS5DcmVhdGVDaGFubmVsUmVxdWVzdBoeLmJjbWQudjEuQ3JlYXRlQ2hhbm5lbFJlc3BvbnNlEkgKC0pvaW5DaGFubmVsEhsuYmNtZC52MS5Kb2luQ2hhbm5lbFJlcXVlc3QaHC5iY21kLnYxLkpvaW5DaGFubmVsUmVzcG9uc2USSwoMTGVhdmVDaGFubmVsEhwuYmNtZC52MS5MZWF2ZUNoYW5uZWxSZXF1ZXN0Gh0uYmNtZC52MS5MZWF2ZUNoYW5uZWxSZXNwb25zZRJICgtTZW5kTWVzc2FnZRIbLmJjbWQudjEuU2VuZE1lc3NhZ2VSZXF1ZXN0GhwuYmNtZC52MS5TZW5kTWVzc2FnZVJlc3BvbnNlEkIKCUhlYXJ0YmVhdBIZLmJjbWQudjEuSGVhcnRiZWF0UmVxdWVzdBoaLmJjbWQudjEuSGVhcnRiZWF0UmVzcG9uc2USSAoSU3Vic2NyaWJlVG9DaGFubmVsEhkuYmNtZC52MS5TdWJzY3JpYmVSZXF1ZXN0GhUuYmNtZC52MS5DaGFubmVsRXZlbnQwARJbChZTdWJzY3JpYmVUb0NoYW5uZWxMaXN0EiQuYmNtZC52MS5TdWJzY3JpYmVDaGFubmVsTGlzdFJlcXVlc3QaGS5iY21kLnYxLkNoYW5uZWxMaXN0RXZlbnQwAUICSAFiBnByb3RvMw", [file_bcmd_v1_common]);
+  fileDesc("ChdiY21kL3YxL2Jyb2FkY2FzdC5wcm90bxIHYmNtZC52MSIiCg5Db25uZWN0UmVxdWVzdBIQCgh1c2VybmFtZRgBIAEoCSIkCg9Db25uZWN0UmVzcG9uc2USEQoJY2xpZW50X2lkGAEgASgJIiYKEURpc2Nvbm5lY3RSZXF1ZXN0EhEKCWNsaWVudF9pZBgBIAEoCSIUChJEaXNjb25uZWN0UmVzcG9uc2UiFQoTTGlzdENoYW5uZWxzUmVxdWVzdCJBChRMaXN0Q2hhbm5lbHNSZXNwb25zZRIpCghjaGFubmVscxgBIAMoCzIXLmJjbWQudjEuQ2hhbm5lbFN1bW1hcnkiQAoOQ2hhbm5lbFN1bW1hcnkSCgoCaWQYASABKAkSDAoEbmFtZRgCIAEoCRIUCgxtZW1iZXJfY291bnQYAyABKAUiPwoUQ3JlYXRlQ2hhbm5lbFJlcXVlc3QSEQoJY2xpZW50X2lkGAEgASgJEhQKDGNoYW5uZWxfbmFtZRgCIAEoCSJBChVDcmVhdGVDaGFubmVsUmVzcG9uc2USEgoKY2hhbm5lbF9pZBgBIAEoCRIUCgxjaGFubmVsX25hbWUYAiABKAkiOwoSSm9pbkNoYW5uZWxSZXF1ZXN0EhEKCWNsaWVudF9pZBgBIAEoCRISCgpjaGFubmVsX2lkGAIgASgJIhUKE0pvaW5DaGFubmVsUmVzcG9uc2UiPAoTTGVhdmVDaGFubmVsUmVxdWVzdBIRCgljbGllbnRfaWQYASABKAkSEgoKY2hhbm5lbF9pZBgCIAEoCSIWChRMZWF2ZUNoYW5uZWxSZXNwb25zZSJMChJTZW5kTWVzc2FnZVJlcXVlc3QSEQoJY2xpZW50X2lkGAEgASgJEhIKCmNoYW5uZWxfaWQYAiABKAkSDwoHY29udGVudBgDIAEoCSIpChNTZW5kTWVzc2FnZVJlc3BvbnNlEhIKCm1lc3NhZ2VfaWQYASABKAkiJQoQSGVhcnRiZWF0UmVxdWVzdBIRCgljbGllbnRfaWQYASABKAkiEwoRSGVhcnRiZWF0UmVzcG9uc2UiTQoQU3Vic2NyaWJlUmVxdWVzdBIRCgljbGllbnRfaWQYASABKAkSEgoKY2hhbm5lbF9pZBgCIAEoCUoECAMQBFIMcmVwbGF5X2NvdW50IvUBCgxDaGFubmVsRXZlbnQSKAoHbWVzc2FnZRgBIAEoCzIVLmJjbWQudjEuTWVzc2FnZUV2ZW50SAASMwoNbWVtYmVyX2pvaW5lZBgCIAEoCzIaLmJjbWQudjEuTWVtYmVySm9pbmVkRXZlbnRIABIvCgttZW1iZXJfbGVmdBgDIAEoCzIYLmJjbWQudjEuTWVtYmVyTGVmdEV2ZW50SAASNQoOY2hhbm5lbF9jbG9zZWQYBCABKAsyGy5iY21kLnYxLkNoYW5uZWxDbG9zZWRFdmVudEgAQgcKBWV2ZW50SgQIBRAGUg9yZXBsYXlfY29tcGxldGUilgEKDE1lc3NhZ2VFdmVudBISCgptZXNzYWdlX2lkGAEgASgJEhIKCmNoYW5uZWxfaWQYAiABKAkSEQoJc2VuZGVyX2lkGAMgASgJEhMKC3NlbmRlcl9uYW1lGAQgASgJEg8KB2NvbnRlbnQYBSABKAkSEgoKc2VudF9hdF9tcxgGIAEoA0oECAcQCFILZnJvbV9yZXBsYXkiTAoRTWVtYmVySm9pbmVkRXZlbnQSEgoKY2hhbm5lbF9pZBgBIAEoCRIRCgljbGllbnRfaWQYAiABKAkSEAoIdXNlcm5hbWUYAyABKAkiSgoPTWVtYmVyTGVmdEV2ZW50EhIKCmNoYW5uZWxfaWQYASABKAkSEQoJY2xpZW50X2lkGAIgASgJEhAKCHVzZXJuYW1lGAMgASgJIjgKEkNoYW5uZWxDbG9zZWRFdmVudBISCgpjaGFubmVsX2lkGAEgASgJEg4KBnJlYXNvbhgCIAEoCSJmChNMaXN0TWVzc2FnZXNSZXF1ZXN0EhEKCWNsaWVudF9pZBgBIAEoCRISCgpjaGFubmVsX2lkGAIgASgJEhkKEWJlZm9yZV9tZXNzYWdlX2lkGAMgASgJEg0KBWxpbWl0GAQgASgNIlEKFExpc3RNZXNzYWdlc1Jlc3BvbnNlEicKCG1lc3NhZ2VzGAEgAygLMhUuYmNtZC52MS5NZXNzYWdlRXZlbnQSEAoIaGFzX21vcmUYAiABKAgiMAobU3Vic2NyaWJlQ2hhbm5lbExpc3RSZXF1ZXN0EhEKCWNsaWVudF9pZBgBIAEoCSLHAQoQQ2hhbm5lbExpc3RFdmVudBIwCghzbmFwc2hvdBgBIAEoCzIcLmJjbWQudjEuQ2hhbm5lbExpc3RTbmFwc2hvdEgAEi8KB2NyZWF0ZWQYAiABKAsyHC5iY21kLnYxLkNoYW5uZWxDcmVhdGVkRXZlbnRIABJHChRtZW1iZXJfY291bnRfY2hhbmdlZBgDIAEoCzInLmJjbWQudjEuQ2hhbm5lbE1lbWJlckNvdW50Q2hhbmdlZEV2ZW50SABCBwoFZXZlbnQiQAoTQ2hhbm5lbExpc3RTbmFwc2hvdBIpCghjaGFubmVscxgBIAMoCzIXLmJjbWQudjEuQ2hhbm5lbFN1bW1hcnkiPwoTQ2hhbm5lbENyZWF0ZWRFdmVudBIoCgdjaGFubmVsGAEgASgLMhcuYmNtZC52MS5DaGFubmVsU3VtbWFyeSJKCh5DaGFubmVsTWVtYmVyQ291bnRDaGFuZ2VkRXZlbnQSEgoKY2hhbm5lbF9pZBgBIAEoCRIUCgxtZW1iZXJfY291bnQYAiABKAUyzQYKEEJyb2FkY2FzdFNlcnZpY2USPAoHQ29ubmVjdBIXLmJjbWQudjEuQ29ubmVjdFJlcXVlc3QaGC5iY21kLnYxLkNvbm5lY3RSZXNwb25zZRJFCgpEaXNjb25uZWN0EhouYmNtZC52MS5EaXNjb25uZWN0UmVxdWVzdBobLmJjbWQudjEuRGlzY29ubmVjdFJlc3BvbnNlEksKDExpc3RDaGFubmVscxIcLmJjbWQudjEuTGlzdENoYW5uZWxzUmVxdWVzdBodLmJjbWQudjEuTGlzdENoYW5uZWxzUmVzcG9uc2USTgoNQ3JlYXRlQ2hhbm5lbBIdLmJjbWQudjEuQ3JlYXRlQ2hhbm5lbFJlcXVlc3QaHi5iY21kLnYxLkNyZWF0ZUNoYW5uZWxSZXNwb25zZRJICgtKb2luQ2hhbm5lbBIbLmJjbWQudjEuSm9pbkNoYW5uZWxSZXF1ZXN0GhwuYmNtZC52MS5Kb2luQ2hhbm5lbFJlc3BvbnNlEksKDExlYXZlQ2hhbm5lbBIcLmJjbWQudjEuTGVhdmVDaGFubmVsUmVxdWVzdBodLmJjbWQudjEuTGVhdmVDaGFubmVsUmVzcG9uc2USSAoLU2VuZE1lc3NhZ2USGy5iY21kLnYxLlNlbmRNZXNzYWdlUmVxdWVzdBocLmJjbWQudjEuU2VuZE1lc3NhZ2VSZXNwb25zZRJLCgxMaXN0TWVzc2FnZXMSHC5iY21kLnYxLkxpc3RNZXNzYWdlc1JlcXVlc3QaHS5iY21kLnYxLkxpc3RNZXNzYWdlc1Jlc3BvbnNlEkIKCUhlYXJ0YmVhdBIZLmJjbWQudjEuSGVhcnRiZWF0UmVxdWVzdBoaLmJjbWQudjEuSGVhcnRiZWF0UmVzcG9uc2USSAoSU3Vic2NyaWJlVG9DaGFubmVsEhkuYmNtZC52MS5TdWJzY3JpYmVSZXF1ZXN0GhUuYmNtZC52MS5DaGFubmVsRXZlbnQwARJbChZTdWJzY3JpYmVUb0NoYW5uZWxMaXN0EiQuYmNtZC52MS5TdWJzY3JpYmVDaGFubmVsTGlzdFJlcXVlc3QaGS5iY21kLnYxLkNoYW5uZWxMaXN0RXZlbnQwAUICSAFiBnByb3RvMw", [file_bcmd_v1_common]);
 
 /**
  * @generated from message bcmd.v1.ConnectRequest
@@ -335,11 +335,6 @@ export type SubscribeRequest = Message<"bcmd.v1.SubscribeRequest"> & {
    * @generated from field: string channel_id = 2;
    */
   channelId: string;
-
-  /**
-   * @generated from field: uint32 replay_count = 3;
-   */
-  replayCount: number;
 };
 
 /**
@@ -380,12 +375,6 @@ export type ChannelEvent = Message<"bcmd.v1.ChannelEvent"> & {
      */
     value: ChannelClosedEvent;
     case: "channelClosed";
-  } | {
-    /**
-     * @generated from field: bcmd.v1.ReplayCompleteEvent replay_complete = 5;
-     */
-    value: ReplayCompleteEvent;
-    case: "replayComplete";
   } | { case: undefined; value?: undefined };
 };
 
@@ -429,11 +418,6 @@ export type MessageEvent = Message<"bcmd.v1.MessageEvent"> & {
    * @generated from field: int64 sent_at_ms = 6;
    */
   sentAtMs: bigint;
-
-  /**
-   * @generated from field: bool from_replay = 7;
-   */
-  fromReplay: boolean;
 };
 
 /**
@@ -520,26 +504,65 @@ export const ChannelClosedEventSchema: GenMessage<ChannelClosedEvent> = /*@__PUR
   messageDesc(file_bcmd_v1_broadcast, 22);
 
 /**
- * @generated from message bcmd.v1.ReplayCompleteEvent
+ * @generated from message bcmd.v1.ListMessagesRequest
  */
-export type ReplayCompleteEvent = Message<"bcmd.v1.ReplayCompleteEvent"> & {
+export type ListMessagesRequest = Message<"bcmd.v1.ListMessagesRequest"> & {
   /**
-   * @generated from field: string channel_id = 1;
+   * @generated from field: string client_id = 1;
+   */
+  clientId: string;
+
+  /**
+   * @generated from field: string channel_id = 2;
    */
   channelId: string;
 
   /**
-   * @generated from field: uint32 replayed_count = 2;
+   * Cursor: when non-empty, returns messages strictly older than this id.
+   * When empty, returns the most recent `limit` messages.
+   *
+   * @generated from field: string before_message_id = 3;
    */
-  replayedCount: number;
+  beforeMessageId: string;
+
+  /**
+   * @generated from field: uint32 limit = 4;
+   */
+  limit: number;
 };
 
 /**
- * Describes the message bcmd.v1.ReplayCompleteEvent.
- * Use `create(ReplayCompleteEventSchema)` to create a new message.
+ * Describes the message bcmd.v1.ListMessagesRequest.
+ * Use `create(ListMessagesRequestSchema)` to create a new message.
  */
-export const ReplayCompleteEventSchema: GenMessage<ReplayCompleteEvent> = /*@__PURE__*/
+export const ListMessagesRequestSchema: GenMessage<ListMessagesRequest> = /*@__PURE__*/
   messageDesc(file_bcmd_v1_broadcast, 23);
+
+/**
+ * @generated from message bcmd.v1.ListMessagesResponse
+ */
+export type ListMessagesResponse = Message<"bcmd.v1.ListMessagesResponse"> & {
+  /**
+   * Chronological order, oldest first.
+   *
+   * @generated from field: repeated bcmd.v1.MessageEvent messages = 1;
+   */
+  messages: MessageEvent[];
+
+  /**
+   * True when there are more messages older than `messages[0]`.
+   *
+   * @generated from field: bool has_more = 2;
+   */
+  hasMore: boolean;
+};
+
+/**
+ * Describes the message bcmd.v1.ListMessagesResponse.
+ * Use `create(ListMessagesResponseSchema)` to create a new message.
+ */
+export const ListMessagesResponseSchema: GenMessage<ListMessagesResponse> = /*@__PURE__*/
+  messageDesc(file_bcmd_v1_broadcast, 24);
 
 /**
  * @generated from message bcmd.v1.SubscribeChannelListRequest
@@ -556,7 +579,7 @@ export type SubscribeChannelListRequest = Message<"bcmd.v1.SubscribeChannelListR
  * Use `create(SubscribeChannelListRequestSchema)` to create a new message.
  */
 export const SubscribeChannelListRequestSchema: GenMessage<SubscribeChannelListRequest> = /*@__PURE__*/
-  messageDesc(file_bcmd_v1_broadcast, 24);
+  messageDesc(file_bcmd_v1_broadcast, 25);
 
 /**
  * @generated from message bcmd.v1.ChannelListEvent
@@ -591,7 +614,7 @@ export type ChannelListEvent = Message<"bcmd.v1.ChannelListEvent"> & {
  * Use `create(ChannelListEventSchema)` to create a new message.
  */
 export const ChannelListEventSchema: GenMessage<ChannelListEvent> = /*@__PURE__*/
-  messageDesc(file_bcmd_v1_broadcast, 25);
+  messageDesc(file_bcmd_v1_broadcast, 26);
 
 /**
  * @generated from message bcmd.v1.ChannelListSnapshot
@@ -608,7 +631,7 @@ export type ChannelListSnapshot = Message<"bcmd.v1.ChannelListSnapshot"> & {
  * Use `create(ChannelListSnapshotSchema)` to create a new message.
  */
 export const ChannelListSnapshotSchema: GenMessage<ChannelListSnapshot> = /*@__PURE__*/
-  messageDesc(file_bcmd_v1_broadcast, 26);
+  messageDesc(file_bcmd_v1_broadcast, 27);
 
 /**
  * @generated from message bcmd.v1.ChannelCreatedEvent
@@ -625,7 +648,7 @@ export type ChannelCreatedEvent = Message<"bcmd.v1.ChannelCreatedEvent"> & {
  * Use `create(ChannelCreatedEventSchema)` to create a new message.
  */
 export const ChannelCreatedEventSchema: GenMessage<ChannelCreatedEvent> = /*@__PURE__*/
-  messageDesc(file_bcmd_v1_broadcast, 27);
+  messageDesc(file_bcmd_v1_broadcast, 28);
 
 /**
  * @generated from message bcmd.v1.ChannelMemberCountChangedEvent
@@ -647,7 +670,7 @@ export type ChannelMemberCountChangedEvent = Message<"bcmd.v1.ChannelMemberCount
  * Use `create(ChannelMemberCountChangedEventSchema)` to create a new message.
  */
 export const ChannelMemberCountChangedEventSchema: GenMessage<ChannelMemberCountChangedEvent> = /*@__PURE__*/
-  messageDesc(file_bcmd_v1_broadcast, 28);
+  messageDesc(file_bcmd_v1_broadcast, 29);
 
 /**
  * @generated from service bcmd.v1.BroadcastService
@@ -712,6 +735,17 @@ export const BroadcastService: GenService<{
     output: typeof SendMessageResponseSchema;
   },
   /**
+   * Cursor-paginated history (unary). Subscribe to a channel and call ListMessages
+   * separately for backfill; the live stream no longer replays history.
+   *
+   * @generated from rpc bcmd.v1.BroadcastService.ListMessages
+   */
+  listMessages: {
+    methodKind: "unary";
+    input: typeof ListMessagesRequestSchema;
+    output: typeof ListMessagesResponseSchema;
+  },
+  /**
    * Liveness probe (idempotent unary RPC)
    *
    * @generated from rpc bcmd.v1.BroadcastService.Heartbeat
@@ -722,7 +756,8 @@ export const BroadcastService: GenService<{
     output: typeof HeartbeatResponseSchema;
   },
   /**
-   * Event subscription (server-streaming)
+   * Event subscription (server-streaming). Emits only live events after the
+   * subscription is established. Use ListMessages to backfill history.
    *
    * @generated from rpc bcmd.v1.BroadcastService.SubscribeToChannel
    */

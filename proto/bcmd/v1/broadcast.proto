@@ -17,10 +17,15 @@ service BroadcastService {
   rpc LeaveChannel(LeaveChannelRequest) returns (LeaveChannelResponse);
   rpc SendMessage(SendMessageRequest) returns (SendMessageResponse);
 
+  // Cursor-paginated history (unary). Subscribe to a channel and call ListMessages
+  // separately for backfill; the live stream no longer replays history.
+  rpc ListMessages(ListMessagesRequest) returns (ListMessagesResponse);
+
   // Liveness probe (idempotent unary RPC)
   rpc Heartbeat(HeartbeatRequest) returns (HeartbeatResponse);
 
-  // Event subscription (server-streaming)
+  // Event subscription (server-streaming). Emits only live events after the
+  // subscription is established. Use ListMessages to backfill history.
   rpc SubscribeToChannel(SubscribeRequest) returns (stream ChannelEvent);
 
   rpc SubscribeToChannelList(SubscribeChannelListRequest) returns (stream ChannelListEvent);
@@ -67,7 +72,8 @@ message HeartbeatResponse {}
 message SubscribeRequest {
   string client_id    = 1;
   string channel_id   = 2;
-  uint32 replay_count = 3;
+  reserved 3;
+  reserved "replay_count";
 }
 
 message ChannelEvent {
@@ -76,8 +82,9 @@ message ChannelEvent {
     MemberJoinedEvent   member_joined   = 2;
     MemberLeftEvent     member_left     = 3;
     ChannelClosedEvent  channel_closed  = 4;
-    ReplayCompleteEvent replay_complete = 5;
   }
+  reserved 5;
+  reserved "replay_complete";
 }
 
 message MessageEvent {
@@ -87,7 +94,8 @@ message MessageEvent {
   string sender_name = 4;
   string content     = 5;
   int64  sent_at_ms  = 6;
-  bool   from_replay = 7;
+  reserved 7;
+  reserved "from_replay";
 }
 
 message MemberJoinedEvent  { string channel_id = 1; string client_id = 2; string username = 3; }
@@ -96,7 +104,21 @@ message MemberLeftEvent    { string channel_id = 1; string client_id = 2; string
 
 message ChannelClosedEvent { string channel_id = 1; string reason = 2; }
 
-message ReplayCompleteEvent { string channel_id = 1; uint32 replayed_count = 2; }
+message ListMessagesRequest {
+  string client_id         = 1;
+  string channel_id        = 2;
+  // Cursor: when non-empty, returns messages strictly older than this id.
+  // When empty, returns the most recent `limit` messages.
+  string before_message_id = 3;
+  uint32 limit             = 4;
+}
+
+message ListMessagesResponse {
+  // Chronological order, oldest first.
+  repeated MessageEvent messages = 1;
+  // True when there are more messages older than `messages[0]`.
+  bool has_more = 2;
+}
 
 message SubscribeChannelListRequest { string client_id = 1; }
 

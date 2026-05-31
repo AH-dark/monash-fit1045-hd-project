@@ -171,18 +171,16 @@ bcmd::VoidResult GrpcServerGateway::sendHeartbeat(std::string_view client_id) {
 
 bcmd::VoidResult GrpcServerGateway::subscribeToChannel(std::string_view client_id,
                                                        std::string_view channel_id,
-                                                       std::uint32_t replay_count,
+                                                       std::uint32_t /*replay_count*/,
                                                        MessageCallback callback) {
     ::grpc::ClientContext context;
     bcmd::v1::SubscribeRequest request;
     const auto trimmed_channel_id = bcmd::trim_copy(channel_id);
     request.set_client_id(bcmd::trim_copy(client_id));
     request.set_channel_id(trimmed_channel_id);
-    request.set_replay_count(replay_count);
 
     auto reader = stub_->SubscribeToChannel(&context, request);
     bcmd::v1::ChannelEvent event;
-    bool in_history = replay_count > 0;
     while (reader->Read(&event)) {
         if (!detail::shouldEmitEventForChannel(event, trimmed_channel_id)) {
             continue;
@@ -195,10 +193,8 @@ bcmd::VoidResult GrpcServerGateway::subscribeToChannel(std::string_view client_i
             inbox_message.sender_name = message.sender_name();
             inbox_message.content = message.content();
             inbox_message.sent_at_ms = message.sent_at_ms();
-            inbox_message.is_history = in_history || message.from_replay();
+            inbox_message.is_history = false;
             callback(std::move(inbox_message));
-        } else if (event.has_replay_complete()) {
-            in_history = false;
         } else if (event.has_member_left()) {
             const auto& left = event.member_left();
             domain::InboxMessage system_message;

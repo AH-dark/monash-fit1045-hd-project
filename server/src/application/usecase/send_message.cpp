@@ -56,7 +56,7 @@ bcmd::Result<bcmd::MessageId> SendMessage::execute(const bcmd::ClientId& sender_
 
     for (const auto& recipient :
          domain::MessageRouter::recipientsFor(*channel, message, echo_policy)) {
-        publisher_->publish(recipient, message, /*from_replay=*/false);
+        publisher_->publish(recipient, message);
     }
 
     return message.id();

@@ -56,7 +56,7 @@ add_executable(server_application_tests
     unit/server/application/leave_channel_test.cpp
     unit/server/application/send_message_test.cpp
     unit/server/application/list_channels_test.cpp
-    unit/server/application/get_recent_messages_test.cpp
+    unit/server/application/list_messages_test.cpp
     unit/server/application/expire_inactive_clients_test.cpp
 )
 
@@ -228,9 +228,6 @@ add_bcmd_integration_test(integration_reconnect_test
 )
 add_bcmd_integration_test(integration_channel_lifecycle_test
     integration/channel_lifecycle_test.cpp
-)
-add_bcmd_integration_test(integration_history_replay_test
-    integration/history_replay_test.cpp
 )
 add_bcmd_integration_test(integration_tls_enforcement_test
     integration/tls_enforcement_test.cpp

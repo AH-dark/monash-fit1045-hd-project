@@ -31,6 +31,26 @@ public:
         return {stream.end() - static_cast<std::ptrdiff_t>(take), stream.end()};
     }
 
+    std::vector<bcmd::server::domain::Message> listBefore(const bcmd::ChannelId& channel_id,
+                                                          const bcmd::MessageId& before_message_id,
+                                                          std::uint32_t count) override {
+        const auto iter = by_channel_.find(channel_id);
+        if (iter == by_channel_.end() || count == 0) {
+            return {};
+        }
+        const auto& stream = iter->second;
+        const auto cursor =
+            std::ranges::find_if(stream, [&](const bcmd::server::domain::Message& message) {
+                return message.id() == before_message_id;
+            });
+        if (cursor == stream.end()) {
+            return {};
+        }
+        const auto distance = static_cast<std::size_t>(std::distance(stream.begin(), cursor));
+        const auto take = std::min<std::size_t>(count, distance);
+        return {cursor - static_cast<std::ptrdiff_t>(take), cursor};
+    }
+
     [[nodiscard]] std::size_t totalFor(const bcmd::ChannelId& channel_id) const {
         const auto iter = by_channel_.find(channel_id);
         return iter == by_channel_.end() ? 0 : iter->second.size();

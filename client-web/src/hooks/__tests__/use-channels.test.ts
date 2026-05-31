@@ -1,8 +1,5 @@
-import { createElement, type PropsWithChildren } from "react";
-
 import { Code, ConnectError } from "@connectrpc/connect";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { renderHook, waitFor } from "@testing-library/react";
+import { act, renderHook, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { BroadcastError } from "@/api/broadcast/errors";
@@ -21,13 +18,6 @@ const mocks = vi.hoisted(() => ({
 vi.mock("@/api/broadcast/operations", () => ({
 	subscribeToChannelList: mocks.subscribeToChannelList,
 }));
-
-function wrapper({ children }: PropsWithChildren) {
-	const queryClient = new QueryClient({
-		defaultOptions: { queries: { retry: false } },
-	});
-	return createElement(QueryClientProvider, { client: queryClient }, children);
-}
 
 function createChannelListStream(events: ReadonlyArray<ChannelListEvent>) {
 	return {
@@ -51,10 +41,16 @@ describe("useChannels", () => {
 	});
 
 	it("returns channels and snapshotApplied from store", () => {
-		const { result } = renderHook(() => useChannels("client-1"), { wrapper });
+		const { result } = renderHook(() => useChannels("client-1"));
 
 		expect(result.current.channels).toBeInstanceOf(Map);
 		expect(result.current.snapshotApplied).toBe(false);
+	});
+
+	it("does not subscribe when clientId is null", () => {
+		renderHook(() => useChannels(null));
+
+		expect(mocks.subscribeToChannelList).not.toHaveBeenCalled();
 	});
 
 	it("dispatches snapshot events to applySnapshot", async () => {
@@ -71,7 +67,7 @@ describe("useChannels", () => {
 			]),
 		);
 
-		renderHook(() => useChannels("client-1"), { wrapper });
+		renderHook(() => useChannels("client-1"));
 
 		await waitFor(() => {
 			expect(applySnapshot).toHaveBeenCalledWith(channels);
@@ -89,7 +85,7 @@ describe("useChannels", () => {
 			]),
 		);
 
-		renderHook(() => useChannels("client-1"), { wrapper });
+		renderHook(() => useChannels("client-1"));
 
 		await waitFor(() => {
 			expect(applyCreated).toHaveBeenCalledWith(channel);
@@ -112,7 +108,7 @@ describe("useChannels", () => {
 			]),
 		);
 
-		renderHook(() => useChannels("client-1"), { wrapper });
+		renderHook(() => useChannels("client-1"));
 
 		await waitFor(() => {
 			expect(applyMemberCountChanged).toHaveBeenCalledWith("channel-1", 7);
@@ -130,7 +126,7 @@ describe("useChannels", () => {
 			},
 		});
 
-		const { result } = renderHook(() => useChannels("client-1"), { wrapper });
+		const { result } = renderHook(() => useChannels("client-1"));
 
 		await waitFor(() => {
 			expect(result.current.error).toBeInstanceOf(BroadcastError);
@@ -143,7 +139,7 @@ describe("useChannels", () => {
 		useChannelsStore
 			.getState()
 			.applySnapshot([{ id: "channel-1", name: "General", memberCount: 1 }]);
-		const { unmount } = renderHook(() => useChannels("client-1"), { wrapper });
+		const { unmount } = renderHook(() => useChannels("client-1"));
 
 		unmount();
 
@@ -152,13 +148,22 @@ describe("useChannels", () => {
 		expect(useChannelsStore.getState().snapshotApplied).toBe(false);
 	});
 
-	it("passes the query abort signal to subscribeToChannelList", async () => {
-		renderHook(() => useChannels("client-1"), { wrapper });
+	it("passes an AbortSignal to subscribeToChannelList and aborts on unmount", async () => {
+		const { unmount } = renderHook(() => useChannels("client-1"));
 
 		await waitFor(() => {
 			expect(subscribeToChannelList).toHaveBeenCalledWith("client-1", {
 				signal: expect.any(AbortSignal),
 			});
 		});
+		const call = mocks.subscribeToChannelList.mock.calls[0];
+		const signal = call?.[1]?.signal as AbortSignal | undefined;
+		expect(signal?.aborted).toBe(false);
+
+		await act(async () => {
+			unmount();
+		});
+
+		expect(signal?.aborted).toBe(true);
 	});
 });

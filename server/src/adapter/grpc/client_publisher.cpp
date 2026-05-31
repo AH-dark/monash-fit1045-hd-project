@@ -61,7 +61,7 @@ void GrpcClientPublisher::unregisterSubscriber(const bcmd::ClientId& id) {
 }
 
 void GrpcClientPublisher::publish(const bcmd::ClientId& recipient_id,
-                                  const domain::Message& message, bool from_replay) {
+                                  const domain::Message& message) {
     std::shared_ptr<GrpcClientPublisher::WriterEntry> entry;
     {
         const std::shared_lock lock(mutex_);
@@ -76,33 +76,7 @@ void GrpcClientPublisher::publish(const bcmd::ClientId& recipient_id,
     }
     const std::scoped_lock write_lock(entry->write_mutex);
     if (entry->writer != nullptr) {
-        entry->writer->Write(message_to_event(message, from_replay));
-    }
-}
-
-void GrpcClientPublisher::publishReplayComplete(const bcmd::ClientId& recipient_id,
-                                                const bcmd::ChannelId& channel_id) {
-    std::shared_ptr<GrpcClientPublisher::WriterEntry> entry;
-    {
-        const std::shared_lock lock(mutex_);
-        const auto found = writers_.find(recipient_id.value());
-        if (found == writers_.end()) {
-            return;
-        }
-        entry = found->second;
-    }
-    if (!entry) {
-        return;
-    }
-
-    bcmd::v1::ChannelEvent event;
-    auto* replay_complete = event.mutable_replay_complete();
-    replay_complete->set_channel_id(channel_id.value());
-    replay_complete->set_replayed_count(0);
-
-    const std::scoped_lock write_lock(entry->write_mutex);
-    if (entry->writer != nullptr) {
-        entry->writer->Write(event);
+        entry->writer->Write(message_to_event(message));
     }
 }
 
@@ -183,8 +157,7 @@ void GrpcClientPublisher::broadcastEvent(const bcmd::ChannelId& /*channel_id*/,
     }
 }
 
-bcmd::v1::ChannelEvent GrpcClientPublisher::message_to_event(const domain::Message& message,
-                                                             bool from_replay) const {
+bcmd::v1::ChannelEvent GrpcClientPublisher::message_to_event(const domain::Message& message) const {
     bcmd::v1::ChannelEvent event;
     auto* message_event = event.mutable_message();
     message_event->set_message_id(message.id().value());
@@ -192,11 +165,11 @@ bcmd::v1::ChannelEvent GrpcClientPublisher::message_to_event(const domain::Messa
     message_event->set_sender_id(message.senderId().value());
     message_event->set_content(message.content().value());
     message_event->set_sent_at_ms(to_epoch_ms(message.sentAt()));
-    message_event->set_from_replay(from_replay);
 
     if (client_registry_) {
-        if (auto session = client_registry_->findById(message.senderId()); session.has_value()) {
-            message_event->set_sender_name(session->username().value());
+        if (auto username = client_registry_->lookupUsername(message.senderId());
+            username.has_value()) {
+            message_event->set_sender_name(username->value());
         }
     }
 

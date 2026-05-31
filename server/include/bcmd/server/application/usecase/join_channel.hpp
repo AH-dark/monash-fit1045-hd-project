@@ -38,19 +38,17 @@ public:
                                                 std::string_view channel_name);
 
 private:
+    // Removes `session` from every channel except `target_channel_id`, broadcasting
+    // a member-left event and emitting a member-count change for each. Tolerates
+    // `NotAMember`/`ChannelNotFound` from racing leaves/deletions.
+    bcmd::VoidResult leaveOtherChannels(domain::ClientSession& session,
+                                        const bcmd::ChannelId& target_channel_id);
+
     class NullMessagePublisher final : public port::IMessagePublisher {
     public:
-        void publish(const bcmd::ClientId& recipient_id, const domain::Message& message,
-                     bool from_replay) override {
+        void publish(const bcmd::ClientId& recipient_id, const domain::Message& message) override {
             (void)recipient_id;
             (void)message;
-            (void)from_replay;
-        }
-
-        void publishReplayComplete(const bcmd::ClientId& recipient_id,
-                                   const bcmd::ChannelId& channel_id) override {
-            (void)recipient_id;
-            (void)channel_id;
         }
 
         void broadcastMemberJoined(const bcmd::ChannelId& channel_id,

@@ -17,14 +17,12 @@ TEST_CASE("TLS gRPC server broadcasts a live message between two clients",
     const auto channel_id = integration::join_channel(*alice, alice_id, "test-channel");
     REQUIRE(integration::join_channel(*bob, bob_id, channel_id) == channel_id);
 
-    integration::Subscription alice_subscription{*alice, alice_id, channel_id, 0};
-    integration::Subscription bob_subscription{*bob, bob_id, channel_id, 0};
-    REQUIRE(alice_subscription.wait_for_events(1, 1s));
-    REQUIRE(bob_subscription.wait_for_events(1, 1s));
+    integration::Subscription alice_subscription{*alice, alice_id, channel_id};
+    integration::Subscription bob_subscription{*bob, bob_id, channel_id};
 
     integration::send_message(*alice, alice_id, channel_id, "hello bob");
 
-    REQUIRE(bob_subscription.wait_for_events(2, 2s));
+    REQUIRE(bob_subscription.wait_for_events(1, 2s));
     const auto events = bob_subscription.events();
     CHECK(integration::count_messages(events, "hello bob") == 1);
 }

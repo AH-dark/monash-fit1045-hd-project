@@ -96,7 +96,7 @@ TEST_CASE("JoinChannel adds the client to the channel on success",
     CHECK(session->isInChannel(channel_id));
 }
 
-TEST_CASE("JoinChannel returns AlreadyMember when re-joining",
+TEST_CASE("JoinChannel is idempotent when re-joining the same channel",
           "[application][use-case][join-channel]") {
     Fixture fixture;
     const auto client_id = fixture.registerClient("alice");
@@ -105,8 +105,116 @@ TEST_CASE("JoinChannel returns AlreadyMember when re-joining",
     REQUIRE(fixture.use_case.execute(client_id, channel_id).has_value());
     const auto second = fixture.use_case.execute(client_id, channel_id);
 
-    REQUIRE_FALSE(second.has_value());
-    CHECK(second.error() == bcmd::Error::AlreadyMember);
+    REQUIRE(second.has_value());
+
+    auto stored = fixture.channels->findById(channel_id);
+    REQUIRE(stored.has_value());
+    CHECK(stored->memberCount() == 1);
+    CHECK(stored->hasMember(client_id));
+    CHECK(fixture.message_publisher->joinedBroadcasts().size() == 1);
+    CHECK(fixture.channel_list_publisher->publishMemberCountChangedCallCount() == 1);
+}
+
+TEST_CASE("JoinChannel leaves the previous channel when joining a different one",
+          "[application][use-case][join-channel]") {
+    Fixture fixture;
+    const auto client_id = fixture.registerClient("alice");
+    const auto general_id = fixture.createChannel("general");
+    const auto random_id = fixture.createChannel("random");
+
+    REQUIRE(fixture.use_case.execute(client_id, general_id).has_value());
+    REQUIRE(fixture.use_case.execute(client_id, random_id).has_value());
+
+    auto general = fixture.channels->findById(general_id);
+    REQUIRE(general.has_value());
+    CHECK(general->memberCount() == 0);
+    CHECK_FALSE(general->hasMember(client_id));
+
+    auto random = fixture.channels->findById(random_id);
+    REQUIRE(random.has_value());
+    CHECK(random->memberCount() == 1);
+    CHECK(random->hasMember(client_id));
+
+    auto session = fixture.clients->findById(client_id);
+    REQUIRE(session.has_value());
+    CHECK(session->joinedChannels().size() == 1);
+    CHECK(session->isInChannel(random_id));
+    CHECK_FALSE(session->isInChannel(general_id));
+}
+
+TEST_CASE("JoinChannel broadcasts memberLeft when leaving the previous channel",
+          "[application][use-case][join-channel]") {
+    Fixture fixture;
+    const auto alice = fixture.registerClient("alice");
+    const auto general_id = fixture.createChannel("general");
+    const auto random_id = fixture.createChannel("random");
+
+    REQUIRE(fixture.use_case.execute(alice, general_id).has_value());
+    REQUIRE(fixture.use_case.execute(alice, random_id).has_value());
+
+    const auto& left = fixture.message_publisher->broadcasts();
+    REQUIRE(left.size() == 1);
+    CHECK(left.front().channel_id == general_id);
+    CHECK(left.front().client_id == alice);
+    CHECK(left.front().username == "alice");
+}
+
+TEST_CASE("JoinChannel publishes MemberCountChanged for both the left and joined channels",
+          "[application][use-case][join-channel]") {
+    Fixture fixture;
+    const auto client_id = fixture.registerClient("alice");
+    const auto general_id = fixture.createChannel("general");
+    const auto random_id = fixture.createChannel("random");
+
+    REQUIRE(fixture.use_case.execute(client_id, general_id).has_value());
+    REQUIRE(fixture.use_case.execute(client_id, random_id).has_value());
+
+    const auto& calls = fixture.channel_list_publisher->memberCountCalls();
+    REQUIRE(calls.size() == 3);
+    CHECK(calls[0].channel_id == general_id);
+    CHECK(calls[0].member_count == 1);
+    CHECK(calls[1].channel_id == general_id);
+    CHECK(calls[1].member_count == 0);
+    CHECK(calls[2].channel_id == random_id);
+    CHECK(calls[2].member_count == 1);
+}
+
+TEST_CASE("JoinChannel::executeByName is idempotent when already a member of the same channel",
+          "[application][use-case][join-channel]") {
+    Fixture fixture;
+    const auto client_id = fixture.registerClient("alice");
+    const auto channel_id = fixture.createChannel("general");
+
+    REQUIRE(fixture.use_case.executeByName(client_id, "general").has_value());
+    const auto second = fixture.use_case.executeByName(client_id, "general");
+
+    REQUIRE(second.has_value());
+    CHECK(*second == channel_id);
+
+    auto stored = fixture.channels->findById(channel_id);
+    REQUIRE(stored.has_value());
+    CHECK(stored->memberCount() == 1);
+    CHECK(fixture.message_publisher->joinedBroadcasts().size() == 1);
+}
+
+TEST_CASE("JoinChannel::executeByName also leaves the previous channel",
+          "[application][use-case][join-channel]") {
+    Fixture fixture;
+    const auto client_id = fixture.registerClient("alice");
+    const auto general_id = fixture.createChannel("general");
+    fixture.createChannel("random");
+
+    REQUIRE(fixture.use_case.executeByName(client_id, "general").has_value());
+    REQUIRE(fixture.use_case.executeByName(client_id, "random").has_value());
+
+    auto general = fixture.channels->findById(general_id);
+    REQUIRE(general.has_value());
+    CHECK(general->memberCount() == 0);
+
+    auto session = fixture.clients->findById(client_id);
+    REQUIRE(session.has_value());
+    CHECK(session->joinedChannels().size() == 1);
+    CHECK_FALSE(session->isInChannel(general_id));
 }
 
 TEST_CASE("JoinChannel::executeByName returns ChannelNotFound when absent",

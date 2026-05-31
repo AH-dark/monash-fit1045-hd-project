@@ -33,7 +33,7 @@ add_library(bcmd_application STATIC
     src/application/usecase/internal/remove_member_broadcast.cpp
     src/application/usecase/send_message.cpp
     src/application/usecase/list_channels.cpp
-    src/application/usecase/get_recent_messages.cpp
+    src/application/usecase/list_messages.cpp
     src/application/usecase/subscribe_to_channel.cpp
     src/application/usecase/subscribe_to_channel_list.cpp
     src/application/usecase/create_channel.cpp

@@ -1,0 +1,34 @@
+node_modules/
+.output/
+.tanstack/
+test-results/
+playwright-report/
+coverage/
+*.log
+.DS_Store
+
+# Don't copy the local .env into the image (use compose env instead)
+.env
+.env.local
+.env.development
+.env.production
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# Build artifacts
+dist/
+build/
+
+# Sisyphus
+.sisyphus/
+
+# Git
+.git/
+.gitignore
+
+# Docker files themselves
+Dockerfile
+.dockerignore

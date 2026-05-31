@@ -38,6 +38,16 @@ bcmd::Result<domain::ClientSession> InMemoryClientRegistry::findByUsername(
     return client_found->second;
 }
 
+bcmd::Result<domain::Username> InMemoryClientRegistry::lookupUsername(
+    const bcmd::ClientId& client_id) {
+    const std::shared_lock lock(mutex_);
+    const auto found = historical_usernames_.find(client_id.value());
+    if (found == historical_usernames_.end()) {
+        return std::unexpected(bcmd::Error::ClientNotFound);
+    }
+    return found->second;
+}
+
 bcmd::Result<domain::ClientSession> InMemoryClientRegistry::registerClient(
     domain::Username username) {
     const std::unique_lock lock(mutex_);
@@ -50,6 +60,7 @@ bcmd::Result<domain::ClientSession> InMemoryClientRegistry::registerClient(
     const auto username_value = session.username().value();
     clients_by_id_.emplace(id, session);
     username_to_id_.emplace(username_value, id);
+    historical_usernames_.insert_or_assign(id, session.username());
     return session;
 }
 
@@ -57,6 +68,7 @@ bcmd::VoidResult InMemoryClientRegistry::save(const domain::ClientSession& sessi
     const std::unique_lock lock(mutex_);
     clients_by_id_.insert_or_assign(session.id().value(), session);
     username_to_id_.insert_or_assign(session.username().value(), session.id().value());
+    historical_usernames_.insert_or_assign(session.id().value(), session.username());
     return {};
 }
 

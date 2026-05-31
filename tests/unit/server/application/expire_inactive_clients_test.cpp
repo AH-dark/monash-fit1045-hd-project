@@ -48,6 +48,20 @@ struct Fixture {
         REQUIRE(channel.has_value());
         return channel->id();
     }
+
+    // Direct repository setup that bypasses JoinChannel's single-channel constraint.
+    // Used to exercise multi-channel cleanup paths in isolation.
+    void joinDirect(const bcmd::ClientId& client_id, const bcmd::ChannelId& channel_id) const {
+        auto channel = channels->findById(channel_id);
+        REQUIRE(channel.has_value());
+        REQUIRE(channel->addMember(client_id).has_value());
+        REQUIRE(channels->save(*channel).has_value());
+
+        auto session = clients->findById(client_id);
+        REQUIRE(session.has_value());
+        session->joinChannel(channel_id);
+        REQUIRE(clients->save(*session).has_value());
+    }
 };
 
 std::chrono::steady_clock::time_point deadlineExpiringEverySession() {
@@ -83,8 +97,8 @@ TEST_CASE(
     const auto client_id = fixture.registerClient("alice");
     const auto general_id = fixture.createChannel("general");
     const auto random_id = fixture.createChannel("random");
-    REQUIRE(fixture.join_use_case.execute(client_id, general_id).has_value());
-    REQUIRE(fixture.join_use_case.execute(client_id, random_id).has_value());
+    fixture.joinDirect(client_id, general_id);
+    fixture.joinDirect(client_id, random_id);
 
     const auto expired_count = fixture.use_case.run(deadlineExpiringEverySession());
 

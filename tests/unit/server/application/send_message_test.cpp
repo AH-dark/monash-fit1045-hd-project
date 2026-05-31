@@ -168,7 +168,7 @@ TEST_CASE("SendMessage persists the message via the repository",
     CHECK(stored.front().channelId() == channel_id);
 }
 
-TEST_CASE("SendMessage emits live (non-replay) deliveries",
+TEST_CASE("SendMessage emits live deliveries to other members",
           "[application][use-case][send-message]") {
     Fixture fixture;
     const auto alice = fixture.registerClient("alice");
@@ -180,5 +180,5 @@ TEST_CASE("SendMessage emits live (non-replay) deliveries",
     REQUIRE(fixture.use_case.execute(alice, channel_id, "ping").has_value());
 
     REQUIRE(fixture.publisher->deliveries.size() == 1);
-    CHECK_FALSE(fixture.publisher->deliveries.front().from_replay);
+    CHECK(fixture.publisher->deliveries.front().recipient == bob);
 }

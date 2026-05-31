@@ -87,13 +87,10 @@ TEST_CASE("GrpcClientPublisher serializes Write() calls on the same writer",
                               thread_index] {
             std::unordered_set<bcmd::ClientId> recipients{recipient_id};
             for (int call_index = 0; call_index < writes_per_thread; ++call_index) {
-                switch ((thread_index + call_index) % 3) {
+                switch ((thread_index + call_index) % 2) {
                     case 0:
                         publisher.publish(recipient_id,
                                           makeMessage(recipient_id, channel_id, *message_content));
-                        break;
-                    case 1:
-                        publisher.publishReplayComplete(recipient_id, channel_id);
                         break;
                     default:
                         publisher.broadcastMemberLeft(channel_id, recipients, recipient_id,

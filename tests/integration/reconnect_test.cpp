@@ -3,18 +3,7 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include "integration/integration_test_utils.hpp"
-#include <algorithm>
 #include <chrono>
-#include <vector>
-
-namespace {
-
-bool has_replay_complete(const std::vector<bcmd::v1::ChannelEvent>& events) {
-    return std::ranges::any_of(events,
-                               [](const auto& event) { return event.has_replay_complete(); });
-}
-
-}  // namespace
 
 TEST_CASE("client can resubscribe after dropping a stream", "[integration][grpc][reconnect]") {
     using namespace std::chrono_literals;
@@ -30,15 +19,15 @@ TEST_CASE("client can resubscribe after dropping a stream", "[integration][grpc]
     REQUIRE(integration::join_channel(*bob, bob_id, channel_id) == channel_id);
 
     {
-        integration::Subscription first_subscription{*alice, alice_id, channel_id, 0};
-        REQUIRE(first_subscription.wait_for_events(1, 1s));
+        integration::Subscription first_subscription{*alice, alice_id, channel_id};
+        integration::send_message(*bob, bob_id, channel_id, "before drop");
+        REQUIRE(first_subscription.wait_for_events(1, 2s));
         first_subscription.stop();
     }
+    std::this_thread::sleep_for(200ms);
 
-    integration::Subscription second_subscription{*alice, alice_id, channel_id, 0};
-    REQUIRE(second_subscription.wait_for(2s, has_replay_complete));
-
+    integration::Subscription second_subscription{*alice, alice_id, channel_id};
     integration::send_message(*bob, bob_id, channel_id, "after resubscribe");
-    REQUIRE(second_subscription.wait_for_events(2, 2s));
+    REQUIRE(second_subscription.wait_for_events(1, 2s));
     CHECK(integration::count_messages(second_subscription.events(), "after resubscribe") == 1);
 }
