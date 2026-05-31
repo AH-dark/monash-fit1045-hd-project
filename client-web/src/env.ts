@@ -20,6 +20,12 @@ export const env = createEnv({
 			.int()
 			.positive()
 			.default(3000),
+		VITE_CHANNEL_REPLAY_COUNT: z.coerce
+			.number()
+			.int()
+			.nonnegative()
+			.max(200)
+			.default(50),
 	},
 
 	/**

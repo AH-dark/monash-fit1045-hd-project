@@ -128,6 +128,7 @@ services:
     environment:
       VITE_GRPC_WEB_URL: "http://localhost:8080"
       VITE_HEARTBEAT_INTERVAL_MS: "3000"
+      VITE_CHANNEL_REPLAY_COUNT: "50"
       HOST: "0.0.0.0"
     volumes:
       # Bind source for hot reload, but shield node_modules with anonymous volume

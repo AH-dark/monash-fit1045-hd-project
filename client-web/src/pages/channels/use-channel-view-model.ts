@@ -3,6 +3,7 @@ import { useMemo } from "react";
 import { useShallow } from "zustand/react/shallow";
 
 import type { BroadcastError } from "@/api/broadcast/errors";
+import { env } from "@/env";
 import { useChannel } from "@/hooks/use-channel";
 import { useLeaveChannelMutation } from "@/hooks/use-leave-channel-mutation";
 import { useSendMessageMutation } from "@/hooks/use-send-message";
@@ -27,7 +28,11 @@ export function useChannelViewModel(channelId: string): ChannelViewModel {
 	const channel = useChannelsStore(
 		useShallow((s) => s.channels.get(channelId)),
 	);
-	const { messages, isConnected, error } = useChannel({ clientId, channelId });
+	const { messages, isConnected, error } = useChannel({
+		clientId,
+		channelId,
+		replayCount: env.VITE_CHANNEL_REPLAY_COUNT,
+	});
 	const sendMutation = useSendMessageMutation();
 	const leaveMutation = useLeaveChannelMutation();
 

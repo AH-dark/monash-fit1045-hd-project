@@ -251,6 +251,20 @@ describe("useChannel", () => {
 		await expect(abortObserved.promise).resolves.toBeUndefined();
 	});
 
+	it("forwards replayCount to subscribeToChannel", async () => {
+		renderHook(() =>
+			useChannel({
+				clientId: "client-1",
+				channelId: "channel-1",
+				replayCount: 25,
+			}),
+		);
+
+		await waitFor(() => expect(mocks.subscribeToChannel).toHaveBeenCalled());
+		const call = mocks.subscribeToChannel.mock.calls[0];
+		expect(call[2]).toBe(25);
+	});
+
 	it("calls leaveChannel on unmount", async () => {
 		const { unmount } = renderHook(() =>
 			useChannel({ clientId: "client-1", channelId: "channel-1" }),
