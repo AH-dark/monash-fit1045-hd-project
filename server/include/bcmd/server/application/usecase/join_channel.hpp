@@ -40,8 +40,10 @@ public:
 private:
     // Removes `session` from every channel except `target_channel_id`, broadcasting
     // a member-left event and emitting a member-count change for each. Tolerates
-    // `NotAMember`/`ChannelNotFound` from racing leaves/deletions.
-    bcmd::VoidResult leaveOtherChannels(domain::ClientSession& session,
+    // `NotAMember`/`ChannelNotFound` from racing leaves/deletions. Uses
+    // `leaveChannelAtomic` to mutate the session in place; no longer requires the
+    // caller to `save` the session afterwards.
+    bcmd::VoidResult leaveOtherChannels(const domain::ClientSession& session,
                                         const bcmd::ChannelId& target_channel_id);
 
     class NullMessagePublisher final : public port::IMessagePublisher {

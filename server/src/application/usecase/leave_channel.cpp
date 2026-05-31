@@ -35,9 +35,9 @@ bcmd::VoidResult LeaveChannel::execute(const bcmd::ClientId& client_id,
         !removed.has_value()) {
         return std::unexpected(removed.error());
     }
-    session->leaveChannel(channel_id);
-    if (auto saved = clients_->save(*session); !saved.has_value()) {
-        return std::unexpected(saved.error());
+    if (auto left = clients_->leaveChannelAtomic(client_id, channel_id);
+        !left.has_value() && left.error() != bcmd::Error::ClientNotFound) {
+        return std::unexpected(left.error());
     }
     auto channel = channels_->findById(channel_id);
     if (!channel.has_value()) {

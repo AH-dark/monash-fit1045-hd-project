@@ -5,6 +5,7 @@
 
 #include <catch2/catch_test_macros.hpp>
 
+#include <atomic>
 #include <chrono>
 #include <thread>
 
@@ -153,4 +154,118 @@ TEST_CASE("InMemoryClientRegistry::lookupUsername returns ClientNotFound for unk
 
     REQUIRE_FALSE(username.has_value());
     CHECK(username.error() == bcmd::Error::ClientNotFound);
+}
+
+TEST_CASE("InMemoryClientRegistry::joinChannelAtomic mutates joined channels in place",
+          "[adapter][persistence][in-memory-client-registry][atomic-channels]") {
+    InMemoryClientRegistry registry;
+    const auto client_id = registerClient(registry, "alice");
+    const auto channel_a = bcmd::ChannelId::generate();
+    const auto channel_b = bcmd::ChannelId::generate();
+
+    REQUIRE(registry.joinChannelAtomic(client_id, channel_a).has_value());
+    REQUIRE(registry.joinChannelAtomic(client_id, channel_b).has_value());
+
+    auto session = registry.findById(client_id);
+    REQUIRE(session.has_value());
+    CHECK(session->isInChannel(channel_a));
+    CHECK(session->isInChannel(channel_b));
+}
+
+TEST_CASE("InMemoryClientRegistry::joinChannelAtomic is idempotent",
+          "[adapter][persistence][in-memory-client-registry][atomic-channels]") {
+    InMemoryClientRegistry registry;
+    const auto client_id = registerClient(registry, "alice");
+    const auto channel_id = bcmd::ChannelId::generate();
+
+    REQUIRE(registry.joinChannelAtomic(client_id, channel_id).has_value());
+    REQUIRE(registry.joinChannelAtomic(client_id, channel_id).has_value());
+
+    auto session = registry.findById(client_id);
+    REQUIRE(session.has_value());
+    CHECK(session->joinedChannels().size() == 1);
+    CHECK(session->isInChannel(channel_id));
+}
+
+TEST_CASE("InMemoryClientRegistry::joinChannelAtomic returns ClientNotFound for unknown id",
+          "[adapter][persistence][in-memory-client-registry][atomic-channels]") {
+    InMemoryClientRegistry registry;
+    const auto unknown_id = bcmd::ClientId::generate();
+    const auto channel_id = bcmd::ChannelId::generate();
+
+    const auto result = registry.joinChannelAtomic(unknown_id, channel_id);
+
+    REQUIRE_FALSE(result.has_value());
+    CHECK(result.error() == bcmd::Error::ClientNotFound);
+}
+
+TEST_CASE("InMemoryClientRegistry::leaveChannelAtomic removes channel and is idempotent",
+          "[adapter][persistence][in-memory-client-registry][atomic-channels]") {
+    InMemoryClientRegistry registry;
+    const auto client_id = registerClient(registry, "alice");
+    const auto channel_id = bcmd::ChannelId::generate();
+
+    REQUIRE(registry.joinChannelAtomic(client_id, channel_id).has_value());
+    REQUIRE(registry.leaveChannelAtomic(client_id, channel_id).has_value());
+    REQUIRE(registry.leaveChannelAtomic(client_id, channel_id).has_value());
+
+    auto session = registry.findById(client_id);
+    REQUIRE(session.has_value());
+    CHECK_FALSE(session->isInChannel(channel_id));
+}
+
+TEST_CASE("InMemoryClientRegistry::leaveChannelAtomic returns ClientNotFound for unknown id",
+          "[adapter][persistence][in-memory-client-registry][atomic-channels]") {
+    InMemoryClientRegistry registry;
+    const auto unknown_id = bcmd::ClientId::generate();
+    const auto channel_id = bcmd::ChannelId::generate();
+
+    const auto result = registry.leaveChannelAtomic(unknown_id, channel_id);
+
+    REQUIRE_FALSE(result.has_value());
+    CHECK(result.error() == bcmd::Error::ClientNotFound);
+}
+
+// Regression: prior to the atomic join/leave methods, JoinChannel did a
+// read-modify-write on the entire session via `save()`. That clobbered
+// concurrent `touchHeartbeat()` updates and produced lost-update on the
+// `last_heartbeat_at_` timestamp. This test interleaves continuous heartbeats
+// with join/leave churn and asserts the timestamp never goes backwards.
+TEST_CASE("joinChannelAtomic does not clobber concurrent heartbeat updates",
+          "[adapter][persistence][in-memory-client-registry][heartbeat][race]") {
+    InMemoryClientRegistry registry;
+    const auto client_id = registerClient(registry, "alice");
+
+    REQUIRE(registry.touchHeartbeat(client_id).has_value());
+    const auto baseline = registry.findById(client_id).value().lastHeartbeatAt();
+
+    std::atomic<bool> stop{false};
+    std::atomic<bool> heartbeat_failed{false};
+
+    std::thread heartbeater([&] {
+        while (!stop.load(std::memory_order_relaxed)) {
+            if (!registry.touchHeartbeat(client_id).has_value()) {
+                heartbeat_failed.store(true, std::memory_order_relaxed);
+                return;
+            }
+            std::this_thread::sleep_for(std::chrono::microseconds(50));
+        }
+    });
+
+    constexpr int iterations = 500;
+    std::thread churner([&] {
+        for (int i = 0; i < iterations; ++i) {
+            const auto channel_id = bcmd::ChannelId::generate();
+            [[maybe_unused]] auto joined = registry.joinChannelAtomic(client_id, channel_id);
+            [[maybe_unused]] auto left = registry.leaveChannelAtomic(client_id, channel_id);
+        }
+    });
+
+    churner.join();
+    stop.store(true, std::memory_order_relaxed);
+    heartbeater.join();
+
+    CHECK_FALSE(heartbeat_failed.load(std::memory_order_relaxed));
+    const auto after = registry.findById(client_id).value().lastHeartbeatAt();
+    CHECK(after > baseline);
 }

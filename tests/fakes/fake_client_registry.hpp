@@ -81,6 +81,26 @@ public:
         return {};
     }
 
+    bcmd::VoidResult joinChannelAtomic(const bcmd::ClientId& client_id,
+                                       const bcmd::ChannelId& channel_id) override {
+        const auto iter = by_id_.find(client_id);
+        if (iter == by_id_.end()) {
+            return std::unexpected(bcmd::Error::ClientNotFound);
+        }
+        iter->second.joinChannel(channel_id);
+        return {};
+    }
+
+    bcmd::VoidResult leaveChannelAtomic(const bcmd::ClientId& client_id,
+                                        const bcmd::ChannelId& channel_id) override {
+        const auto iter = by_id_.find(client_id);
+        if (iter == by_id_.end()) {
+            return std::unexpected(bcmd::Error::ClientNotFound);
+        }
+        iter->second.leaveChannel(channel_id);
+        return {};
+    }
+
     std::vector<bcmd::server::domain::ClientSession> collectExpired(
         std::chrono::steady_clock::time_point deadline) override {
         std::vector<bcmd::server::domain::ClientSession> expired;
