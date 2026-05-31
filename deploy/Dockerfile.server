@@ -3,7 +3,7 @@
 # ===========================================================================
 # Stage 1: builder — Conan + GCC 14 + CMake + Ninja, builds bcmd
 # ===========================================================================
-FROM gcc:14-bookworm AS builder
+FROM gcc:15-bookworm AS builder
 
 SHELL ["/bin/bash", "-c"]
 
@@ -78,7 +78,7 @@ RUN --mount=type=cache,target=/root/.conan2/p,sharing=locked \
 # same libstdc++ is available; /usr/local/lib64 is added to ldconfig so the
 # binary resolves it at runtime.
 # ===========================================================================
-FROM gcc:14-bookworm AS runtime
+FROM gcc:15-bookworm AS runtime
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
         netcat-openbsd \
