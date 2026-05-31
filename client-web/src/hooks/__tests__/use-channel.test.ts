@@ -12,13 +12,11 @@ const emptyMessages: [] = [];
 
 const mocks = vi.hoisted(() => ({
 	joinChannel: vi.fn().mockResolvedValue(undefined),
-	leaveChannel: vi.fn().mockResolvedValue(undefined),
 	subscribeToChannel: vi.fn(),
 }));
 
 vi.mock("@/api/broadcast/operations", () => ({
 	joinChannel: mocks.joinChannel,
-	leaveChannel: mocks.leaveChannel,
 	subscribeToChannel: mocks.subscribeToChannel,
 }));
 
@@ -72,7 +70,6 @@ describe("useChannel", () => {
 			username: "Ada",
 		});
 		mocks.joinChannel.mockResolvedValue(undefined);
-		mocks.leaveChannel.mockResolvedValue(undefined);
 		mocks.subscribeToChannel.mockReturnValue({
 			[Symbol.asyncIterator]: () => ({ next: () => new Promise(() => {}) }),
 		});
@@ -251,21 +248,7 @@ describe("useChannel", () => {
 		await expect(abortObserved.promise).resolves.toBeUndefined();
 	});
 
-	it("calls leaveChannel on unmount", async () => {
-		const { unmount } = renderHook(() =>
-			useChannel({ clientId: "client-1", channelId: "channel-1" }),
-		);
-
-		await waitFor(() => expect(mocks.joinChannel).toHaveBeenCalled());
-
-		await act(async () => {
-			unmount();
-		});
-
-		expect(mocks.leaveChannel).toHaveBeenCalledWith("client-1", "channel-1");
-	});
-
-	it("calls leaveChannel when switching channelId", async () => {
+	it("joins the new channel when channelId changes (server enforces single-channel)", async () => {
 		const { rerender } = renderHook(
 			({ channelId }: { channelId: string }) =>
 				useChannel({ clientId: "client-1", channelId }),
@@ -280,9 +263,6 @@ describe("useChannel", () => {
 			rerender({ channelId: "channel-2" });
 		});
 
-		await waitFor(() =>
-			expect(mocks.leaveChannel).toHaveBeenCalledWith("client-1", "channel-1"),
-		);
 		await waitFor(() =>
 			expect(mocks.joinChannel).toHaveBeenCalledWith("client-1", "channel-2"),
 		);

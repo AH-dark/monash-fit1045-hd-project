@@ -7,11 +7,7 @@ import {
 	isClientNotFound,
 	mapError,
 } from "@/api/broadcast/errors";
-import {
-	joinChannel,
-	leaveChannel,
-	subscribeToChannel,
-} from "@/api/broadcast/operations";
+import { joinChannel, subscribeToChannel } from "@/api/broadcast/operations";
 import type { ChannelEvent } from "@/gen/bcmd/v1/broadcast_pb.ts";
 import type { Message } from "@/schemas/message";
 import { useAuthStore } from "@/stores/auth-store";
@@ -98,7 +94,6 @@ export function useChannel({ clientId, channelId }: UseChannelArgs) {
 
 		return () => {
 			abortController.abort();
-			void leaveChannel(clientId, channelId).catch(() => undefined);
 		};
 	}, [clientId, channelId, addMessage, clearMessages, resetAuth]);
 
