@@ -4,6 +4,7 @@
 #include "bcmd/server/application/port/i_channel_repository.hpp"
 #include "bcmd/server/application/port/i_client_registry.hpp"
 #include "bcmd/server/application/port/i_message_publisher.hpp"
+#include "bcmd/server/application/usecase/internal/remove_member_broadcast.hpp"
 #include "bcmd/server/domain/model/channel.hpp"
 #include "bcmd/server/domain/model/channel_name.hpp"
 #include "bcmd/server/domain/model/client_session.hpp"
@@ -11,11 +12,13 @@
 #include "bcmd/shared/result.hpp"
 #include "bcmd/shared/string_utils.hpp"
 
+#include <algorithm>
 #include <cstdint>
 #include <expected>
 #include <memory>
 #include <string_view>
 #include <utility>
+#include <vector>
 
 namespace bcmd::server::application::usecase {
 
@@ -28,6 +31,34 @@ JoinChannel::JoinChannel(std::shared_ptr<port::IChannelRepository> channels,
       message_publisher_(std::move(message_publisher)),
       channel_list_publisher_(std::move(channel_list_publisher)) {}
 
+bcmd::VoidResult JoinChannel::leaveOtherChannels(domain::ClientSession& session,
+                                                 const bcmd::ChannelId& target_channel_id) {
+    std::vector<bcmd::ChannelId> other_channels;
+    other_channels.reserve(session.joinedChannels().size());
+    for (const auto& joined : session.joinedChannels()) {
+        if (joined != target_channel_id) {
+            other_channels.push_back(joined);
+        }
+    }
+
+    for (const auto& other_channel_id : other_channels) {
+        if (auto removed = internal::removeMemberAndBroadcast(*channels_, *message_publisher_,
+                                                              session, other_channel_id);
+            !removed.has_value()) {
+            if (removed.error() != bcmd::Error::NotAMember &&
+                removed.error() != bcmd::Error::ChannelNotFound) {
+                return std::unexpected(removed.error());
+            }
+        }
+        session.leaveChannel(other_channel_id);
+        if (auto other = channels_->findById(other_channel_id); other.has_value()) {
+            channel_list_publisher_->publishMemberCountChanged(
+                other_channel_id, static_cast<std::int32_t>(other->memberCount()));
+        }
+    }
+    return {};
+}
+
 bcmd::VoidResult JoinChannel::execute(const bcmd::ClientId& client_id,
                                       const bcmd::ChannelId& channel_id) {
     auto session = clients_->findById(client_id);
@@ -37,6 +68,21 @@ bcmd::VoidResult JoinChannel::execute(const bcmd::ClientId& client_id,
     auto channel = channels_->findById(channel_id);
     if (!channel.has_value()) {
         return std::unexpected(channel.error());
+    }
+
+    const bool had_other_channels = std::ranges::any_of(
+        session->joinedChannels(), [&](const auto& id) { return id != channel_id; });
+    if (auto left = leaveOtherChannels(*session, channel_id); !left.has_value()) {
+        return std::unexpected(left.error());
+    }
+
+    if (channel->hasMember(client_id)) {
+        if (had_other_channels) {
+            if (auto saved = clients_->save(*session); !saved.has_value()) {
+                return std::unexpected(saved.error());
+            }
+        }
+        return {};
     }
 
     if (auto added = channel->addMember(client_id); !added.has_value()) {
@@ -75,6 +121,21 @@ bcmd::Result<bcmd::ChannelId> JoinChannel::executeByName(const bcmd::ClientId& c
         return std::unexpected(existing.error());
     }
     auto channel = *existing;
+
+    const bool had_other_channels = std::ranges::any_of(
+        session->joinedChannels(), [&](const auto& id) { return id != channel.id(); });
+    if (auto left = leaveOtherChannels(*session, channel.id()); !left.has_value()) {
+        return std::unexpected(left.error());
+    }
+
+    if (channel.hasMember(client_id)) {
+        if (had_other_channels) {
+            if (auto saved = clients_->save(*session); !saved.has_value()) {
+                return std::unexpected(saved.error());
+            }
+        }
+        return channel.id();
+    }
 
     if (auto added = channel.addMember(client_id); !added.has_value()) {
         return std::unexpected(added.error());
