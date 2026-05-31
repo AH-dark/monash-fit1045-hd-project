@@ -48,4 +48,13 @@ describe("auth-store", () => {
 		expect(state.clientId).toBeNull();
 		expect(state.username).toBeNull();
 	});
+
+	it("persists only username (status and clientId stay ephemeral)", () => {
+		useAuthStore.getState().setConnected("client-123", "alice");
+
+		const raw = localStorage.getItem("bcmd-auth");
+		expect(raw).not.toBeNull();
+		const persisted = JSON.parse(raw ?? "{}");
+		expect(persisted.state).toEqual({ username: "alice" });
+	});
 });
