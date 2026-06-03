@@ -12,7 +12,6 @@
 #include "bcmd/shared/result.hpp"
 #include "bcmd/shared/string_utils.hpp"
 
-#include <algorithm>
 #include <cstdint>
 #include <expected>
 #include <memory>
@@ -31,7 +30,7 @@ JoinChannel::JoinChannel(std::shared_ptr<port::IChannelRepository> channels,
       message_publisher_(std::move(message_publisher)),
       channel_list_publisher_(std::move(channel_list_publisher)) {}
 
-bcmd::VoidResult JoinChannel::leaveOtherChannels(domain::ClientSession& session,
+bcmd::VoidResult JoinChannel::leaveOtherChannels(const domain::ClientSession& session,
                                                  const bcmd::ChannelId& target_channel_id) {
     std::vector<bcmd::ChannelId> other_channels;
     other_channels.reserve(session.joinedChannels().size());
@@ -50,7 +49,10 @@ bcmd::VoidResult JoinChannel::leaveOtherChannels(domain::ClientSession& session,
                 return std::unexpected(removed.error());
             }
         }
-        session.leaveChannel(other_channel_id);
+        if (auto left = clients_->leaveChannelAtomic(session.id(), other_channel_id);
+            !left.has_value() && left.error() != bcmd::Error::ClientNotFound) {
+            return std::unexpected(left.error());
+        }
         if (auto other = channels_->findById(other_channel_id); other.has_value()) {
             channel_list_publisher_->publishMemberCountChanged(
                 other_channel_id, static_cast<std::int32_t>(other->memberCount()));
@@ -70,36 +72,31 @@ bcmd::VoidResult JoinChannel::execute(const bcmd::ClientId& client_id,
         return std::unexpected(channel.error());
     }
 
-    const bool had_other_channels = std::ranges::any_of(
-        session->joinedChannels(), [&](const auto& id) { return id != channel_id; });
     if (auto left = leaveOtherChannels(*session, channel_id); !left.has_value()) {
         return std::unexpected(left.error());
     }
 
-    if (channel->hasMember(client_id)) {
-        if (had_other_channels) {
-            if (auto saved = clients_->save(*session); !saved.has_value()) {
-                return std::unexpected(saved.error());
-            }
+    const bool was_already_member = channel->hasMember(client_id);
+
+    if (!was_already_member) {
+        if (auto added = channel->addMember(client_id); !added.has_value()) {
+            return std::unexpected(added.error());
         }
-        return {};
+        if (auto saved = channels_->save(*channel); !saved.has_value()) {
+            return std::unexpected(saved.error());
+        }
     }
 
-    if (auto added = channel->addMember(client_id); !added.has_value()) {
-        return std::unexpected(added.error());
+    if (auto joined = clients_->joinChannelAtomic(client_id, channel_id); !joined.has_value()) {
+        return std::unexpected(joined.error());
     }
-    session->joinChannel(channel_id);
 
-    if (auto saved = channels_->save(*channel); !saved.has_value()) {
-        return std::unexpected(saved.error());
+    if (!was_already_member) {
+        message_publisher_->broadcastMemberJoined(channel->id(), channel->members(), client_id,
+                                                  session->username());
+        channel_list_publisher_->publishMemberCountChanged(
+            channel->id(), static_cast<std::int32_t>(channel->memberCount()));
     }
-    if (auto saved = clients_->save(*session); !saved.has_value()) {
-        return std::unexpected(saved.error());
-    }
-    message_publisher_->broadcastMemberJoined(channel->id(), channel->members(), client_id,
-                                              session->username());
-    channel_list_publisher_->publishMemberCountChanged(
-        channel->id(), static_cast<std::int32_t>(channel->memberCount()));
     return {};
 }
 
@@ -122,36 +119,31 @@ bcmd::Result<bcmd::ChannelId> JoinChannel::executeByName(const bcmd::ClientId& c
     }
     auto channel = *existing;
 
-    const bool had_other_channels = std::ranges::any_of(
-        session->joinedChannels(), [&](const auto& id) { return id != channel.id(); });
     if (auto left = leaveOtherChannels(*session, channel.id()); !left.has_value()) {
         return std::unexpected(left.error());
     }
 
-    if (channel.hasMember(client_id)) {
-        if (had_other_channels) {
-            if (auto saved = clients_->save(*session); !saved.has_value()) {
-                return std::unexpected(saved.error());
-            }
+    const bool was_already_member = channel.hasMember(client_id);
+
+    if (!was_already_member) {
+        if (auto added = channel.addMember(client_id); !added.has_value()) {
+            return std::unexpected(added.error());
         }
-        return channel.id();
+        if (auto saved = channels_->save(channel); !saved.has_value()) {
+            return std::unexpected(saved.error());
+        }
     }
 
-    if (auto added = channel.addMember(client_id); !added.has_value()) {
-        return std::unexpected(added.error());
+    if (auto joined = clients_->joinChannelAtomic(client_id, channel.id()); !joined.has_value()) {
+        return std::unexpected(joined.error());
     }
-    session->joinChannel(channel.id());
 
-    if (auto saved = channels_->save(channel); !saved.has_value()) {
-        return std::unexpected(saved.error());
+    if (!was_already_member) {
+        message_publisher_->broadcastMemberJoined(channel.id(), channel.members(), client_id,
+                                                  session->username());
+        channel_list_publisher_->publishMemberCountChanged(
+            channel.id(), static_cast<std::int32_t>(channel.memberCount()));
     }
-    if (auto saved = clients_->save(*session); !saved.has_value()) {
-        return std::unexpected(saved.error());
-    }
-    message_publisher_->broadcastMemberJoined(channel.id(), channel.members(), client_id,
-                                              session->username());
-    channel_list_publisher_->publishMemberCountChanged(
-        channel.id(), static_cast<std::int32_t>(channel.memberCount()));
     return channel.id();
 }
 

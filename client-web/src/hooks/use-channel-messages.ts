@@ -71,6 +71,7 @@ export function useChannelMessages({
 	const queryClient = useQueryClient();
 	const [connectionState, setConnectionState] =
 		useState<ConnectionState>("idle");
+	const [isJoined, setIsJoined] = useState(false);
 	const [streamError, setStreamError] = useState<BroadcastError | null>(null);
 	const resetAuth = useAuthStore((s) => s.reset);
 
@@ -82,7 +83,9 @@ export function useChannelMessages({
 		string | null
 	>({
 		queryKey: channelMessagesKeys.history(clientId, channelId),
-		enabled: Boolean(clientId && channelId && typeof window !== "undefined"),
+		enabled: Boolean(
+			clientId && channelId && typeof window !== "undefined" && isJoined,
+		),
 		initialPageParam: null,
 		staleTime: Number.POSITIVE_INFINITY,
 		gcTime: 5 * 60_000,
@@ -130,6 +133,7 @@ export function useChannelMessages({
 	useEffect(() => {
 		pendingLiveRef.current = [];
 		initialFetchedRef.current = false;
+		setIsJoined(false);
 		if (!clientId || !channelId || typeof window === "undefined") return;
 
 		const abortController = new AbortController();
@@ -142,6 +146,7 @@ export function useChannelMessages({
 			try {
 				await joinChannel(clientId, channelId);
 				if (signal.aborted) return;
+				setIsJoined(true);
 				setConnectionState("connected");
 
 				for await (const evt of subscribeToChannel(clientId, channelId, {

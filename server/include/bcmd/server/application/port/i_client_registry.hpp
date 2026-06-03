@@ -36,6 +36,20 @@ public:
     // `Error::ClientNotFound` when the id is unknown.
     virtual bcmd::VoidResult touchHeartbeat(const bcmd::ClientId& client_id) = 0;
 
+    // Atomically adds `channel_id` to the session's joined-channel set. Use this
+    // instead of read-modify-`save` to avoid clobbering the last-seen timestamp
+    // (which `touchHeartbeat` mutates concurrently). Returns
+    // `Error::ClientNotFound` when the id is unknown. Idempotent for a channel
+    // the client is already in.
+    virtual bcmd::VoidResult joinChannelAtomic(const bcmd::ClientId& client_id,
+                                               const bcmd::ChannelId& channel_id) = 0;
+
+    // Atomically removes `channel_id` from the session's joined-channel set.
+    // Returns `Error::ClientNotFound` when the id is unknown. Idempotent for a
+    // channel the client is not in.
+    virtual bcmd::VoidResult leaveChannelAtomic(const bcmd::ClientId& client_id,
+                                                const bcmd::ChannelId& channel_id) = 0;
+
     // Returns copies of every session whose last-seen timestamp is older
     // than `deadline`. Callers decide whether to remove them.
     virtual std::vector<domain::ClientSession> collectExpired(

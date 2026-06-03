@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 import {
 	BroadcastError,
 	isClientNotFound,
+	isNotAMember,
 	mapError,
 } from "@/api/broadcast/errors";
 
@@ -23,6 +24,15 @@ describe("broadcast/errors", () => {
 			const result = mapError(err);
 			expect(result.kind).toBe("channel-not-found");
 			expect(result.code).toBe(Code.NotFound);
+		});
+
+		it("maps Code.NotFound with 'not a member' to not-a-member", () => {
+			const err = new ConnectError("not a member", Code.NotFound);
+			const result = mapError(err);
+			expect(result).toBeInstanceOf(BroadcastError);
+			expect(result.kind).toBe("not-a-member");
+			expect(result.code).toBe(Code.NotFound);
+			expect(result.original).toBe(err);
 		});
 
 		it("maps Code.InvalidArgument to invalid-argument", () => {
@@ -77,6 +87,24 @@ describe("broadcast/errors", () => {
 			expect(isClientNotFound(null)).toBe(false);
 			expect(isClientNotFound(undefined)).toBe(false);
 			expect(isClientNotFound("client-not-found")).toBe(false);
+		});
+	});
+
+	describe("isNotAMember", () => {
+		it("returns true for not-a-member BroadcastError", () => {
+			const err = mapError(new ConnectError("not a member", Code.NotFound));
+			expect(isNotAMember(err)).toBe(true);
+		});
+
+		it("returns false for client-not-found BroadcastError", () => {
+			const err = mapError(new ConnectError("client missing", Code.NotFound));
+			expect(isNotAMember(err)).toBe(false);
+		});
+
+		it("returns false for non-BroadcastError values", () => {
+			expect(isNotAMember(new Error("plain"))).toBe(false);
+			expect(isNotAMember(null)).toBe(false);
+			expect(isNotAMember(undefined)).toBe(false);
 		});
 	});
 });

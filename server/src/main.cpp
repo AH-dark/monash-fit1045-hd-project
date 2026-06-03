@@ -40,7 +40,7 @@ int run(int argc, char** argv) {
     std::string key_path;
     bool insecure{false};
     std::uint32_t history_cap{200};
-    std::uint32_t heartbeat_timeout_secs{30};
+    std::uint32_t heartbeat_timeout_secs{90};
     std::uint32_t heartbeat_sweep_interval_secs{5};
     bool verbose{false};
     bool quiet{false};
@@ -52,7 +52,7 @@ int run(int argc, char** argv) {
     app.add_option("--history-cap", history_cap, "Max messages per channel")->default_val(200);
     app.add_option("--heartbeat-timeout", heartbeat_timeout_secs,
                    "Seconds without a heartbeat before a client is considered dead (0 disables)")
-        ->default_val(30);
+        ->default_val(90);
     app.add_option("--heartbeat-sweep-interval", heartbeat_sweep_interval_secs,
                    "Seconds between expiry sweeps")
         ->default_val(5);

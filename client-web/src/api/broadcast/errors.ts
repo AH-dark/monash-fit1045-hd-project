@@ -15,6 +15,9 @@ export class BroadcastError extends Error {
 
 export function mapError(err: unknown): BroadcastError {
 	if (err instanceof ConnectError) {
+		if (err.code === Code.NotFound && /not a member/i.test(err.message)) {
+			return new BroadcastError("not-a-member", Code.NotFound, err);
+		}
 		if (err.code === Code.NotFound && /client/i.test(err.message)) {
 			return new BroadcastError("client-not-found", Code.NotFound, err);
 		}
@@ -35,4 +38,8 @@ export function mapError(err: unknown): BroadcastError {
 
 export function isClientNotFound(err: unknown): boolean {
 	return err instanceof BroadcastError && err.kind === "client-not-found";
+}
+
+export function isNotAMember(err: unknown): boolean {
+	return err instanceof BroadcastError && err.kind === "not-a-member";
 }

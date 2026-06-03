@@ -93,6 +93,28 @@ bcmd::VoidResult InMemoryClientRegistry::touchHeartbeat(const bcmd::ClientId& cl
     return {};
 }
 
+bcmd::VoidResult InMemoryClientRegistry::joinChannelAtomic(const bcmd::ClientId& client_id,
+                                                           const bcmd::ChannelId& channel_id) {
+    const std::unique_lock lock(mutex_);
+    const auto found = clients_by_id_.find(client_id.value());
+    if (found == clients_by_id_.end()) {
+        return std::unexpected(bcmd::Error::ClientNotFound);
+    }
+    found->second.joinChannel(channel_id);
+    return {};
+}
+
+bcmd::VoidResult InMemoryClientRegistry::leaveChannelAtomic(const bcmd::ClientId& client_id,
+                                                            const bcmd::ChannelId& channel_id) {
+    const std::unique_lock lock(mutex_);
+    const auto found = clients_by_id_.find(client_id.value());
+    if (found == clients_by_id_.end()) {
+        return std::unexpected(bcmd::Error::ClientNotFound);
+    }
+    found->second.leaveChannel(channel_id);
+    return {};
+}
+
 std::vector<domain::ClientSession> InMemoryClientRegistry::collectExpired(
     std::chrono::steady_clock::time_point deadline) {
     const std::shared_lock lock(mutex_);
