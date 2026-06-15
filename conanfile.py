@@ -17,7 +17,7 @@ class BcmdRecipe(ConanFile):
 
     def build_requirements(self):
         self.test_requires("catch2/3.7.1")
-        self.tool_requires("cmake/[>=3.27]")
+        self.tool_requires("cmake/[>=4.3.3]")
         self.tool_requires("protobuf/<host_version>")
 
     def layout(self):
