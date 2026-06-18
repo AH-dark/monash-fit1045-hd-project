@@ -25,7 +25,7 @@ services:
   # certs-init: generate dev TLS certs if missing (idempotent)
   # ---------------------------------------------------------------------------
   certs-init:
-    image: alpine:3.23
+    image: alpine:3.24
     container_name: bcmd-certs-init
     volumes:
       - ./certs/dev:/certs
