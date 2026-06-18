@@ -1,4 +1,4 @@
-# syntax=docker/dockerfile:1.24
+# syntax=docker/dockerfile:1.25
 
 # ===========================================================================
 # Stage 1: builder — Conan + GCC 14 + CMake + Ninja, builds bcmd
